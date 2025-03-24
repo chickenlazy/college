@@ -1,0 +1,193 @@
+-- Drop existing database if it exists
+DROP DATABASE IF EXISTS College;
+
+-- Create new database
+CREATE DATABASE College;
+
+-- Use the newly created database
+USE College;
+
+-- Start creating Admin user
+DROP USER IF EXISTS 'Admin'@'localhost';
+CREATE USER 'Admin'@'localhost' IDENTIFIED BY 'Admin';
+GRANT ALL PRIVILEGES ON ProjectManagement.* TO 'Admin'@'localhost';
+FLUSH PRIVILEGES;
+SHOW GRANTS FOR 'Admin'@'localhost';
+-- End creating Admin user
+
+-- Disable foreign key checks before dropping tables
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Drop existing tables if they exist
+DROP TABLE IF EXISTS Users;
+DROP TABLE IF EXISTS Projects;
+DROP TABLE IF EXISTS ProjectMembers;
+DROP TABLE IF EXISTS Tasks;
+DROP TABLE IF EXISTS Subtasks;
+DROP TABLE IF EXISTS TaskDependencies;
+DROP TABLE IF EXISTS Comments;
+DROP TABLE IF EXISTS Documents;
+DROP TABLE IF EXISTS ActivityLogs;
+DROP TABLE IF EXISTS Notifications;
+DROP TABLE IF EXISTS Tags;
+DROP TABLE IF EXISTS TaskTags;
+DROP TABLE IF EXISTS ProjectTags;
+
+-- Re-enable foreign key checks after dropping tables
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('ADMIN', 'PROJECT_MANAGER', 'TEAM_MEMBER') NOT NULL,
+    avatar VARCHAR(255),
+    position VARCHAR(100),
+    department VARCHAR(100),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    startDate DATETIME NOT NULL,
+    dueDate DATETIME NOT NULL,
+    status ENUM('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD') NOT NULL DEFAULT 'NOT_STARTED',
+    managerId INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (managerId) REFERENCES Users(id)
+);
+
+CREATE TABLE ProjectMembers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    projectId INT NOT NULL,
+    userId INT NOT NULL,
+    role VARCHAR(100),
+    joinedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (userId) REFERENCES Users(id),
+    UNIQUE KEY uniqueProjectUser (projectId, userId)
+);
+
+CREATE TABLE Tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    projectId INT NOT NULL,
+    assigneeId INT,
+    creatorId INT NOT NULL,
+    startDate DATETIME NOT NULL,
+    dueDate DATETIME NOT NULL,
+    completedDate DATETIME,
+    status ENUM('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD') NOT NULL DEFAULT 'NOT_STARTED',
+    priority ENUM('LOW', 'MEDIUM', 'HIGH') NOT NULL DEFAULT 'MEDIUM',
+    progress INT DEFAULT 0,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigneeId) REFERENCES Users(id),
+    FOREIGN KEY (creatorId) REFERENCES Users(id)
+);
+
+CREATE TABLE Subtasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    taskId INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE
+);
+
+CREATE TABLE TaskDependencies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    taskId INT NOT NULL,
+    dependencyTaskId INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (dependencyTaskId) REFERENCES Tasks(id) ON DELETE CASCADE,
+    UNIQUE KEY uniqueDependency (taskId, dependencyTaskId)
+);
+
+CREATE TABLE Comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    content TEXT NOT NULL,
+    userId INT NOT NULL,
+    taskId INT,
+    projectId INT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id),
+    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
+    CHECK (taskId IS NOT NULL OR projectId IS NOT NULL)
+);
+
+CREATE TABLE Documents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    filePath VARCHAR(255) NOT NULL,
+    fileType VARCHAR(100) NOT NULL,
+    fileSize INT NOT NULL,
+    uploadedBy INT NOT NULL,
+    taskId INT,
+    projectId INT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploadedBy) REFERENCES Users(id),
+    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
+    CHECK (taskId IS NOT NULL OR projectId IS NOT NULL)
+);
+
+CREATE TABLE ActivityLogs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    actionType ENUM('CREATED', 'UPDATED', 'DELETED', 'COMPLETED', 'ASSIGNED', 'COMMENT_ADDED', 'ATTACHMENT_ADDED', 'STATUS_CHANGE', 'MEMBER_ADDED', 'MEMBER_REMOVED') NOT NULL,
+    entityType ENUM('PROJECT', 'TASK', 'SUBTASK', 'COMMENT', 'DOCUMENT') NOT NULL,
+    entityId INT NOT NULL,
+    details TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id)
+);
+
+CREATE TABLE Notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    link VARCHAR(255),
+    isRead BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id)
+);
+
+CREATE TABLE Tags (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    color VARCHAR(20) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE TaskTags (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    taskId INT NOT NULL,
+    tagId INT NOT NULL,
+    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (tagId) REFERENCES Tags(id) ON DELETE CASCADE,
+    UNIQUE KEY uniqueTaskTag (taskId, tagId)
+);
+
+CREATE TABLE ProjectTags (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    projectId INT NOT NULL,
+    tagId INT NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (tagId) REFERENCES Tags(id) ON DELETE CASCADE,
+    UNIQUE KEY uniqueProjectTag (projectId, tagId)
+);

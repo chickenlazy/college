@@ -1,0 +1,11 @@
+// Để tạo dự án mới
+<ProjectEdit isNew={true} />
+
+// Để chỉnh sửa dự án hiện có
+<ProjectEdit isNew={false} />
+
+// Để tạo task mới
+<TaskEdit isNew={true} />
+
+// Để chỉnh sửa task hiện có
+<TaskEdit isNew={false} />
