@@ -9,6 +9,7 @@ import Sumary from "./Sumary";
 import ProjectEdit from "../edit/ProjectEdit";
 import TaskEdit from "../edit/TaskEdit";
 import UserProfile from "../utils/UserProfile";
+import Login from "../utils/Login";
 
 import {
   Menu,
@@ -21,11 +22,14 @@ import {
   FolderKanban,
   FileText,
   File,
+  LogIn,
 } from "lucide-react";
+import UserManagement from "./UserManagement";
 
 const DashboardUI = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeComponent, setActiveComponent] = useState("dashboard");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Function to render the active component
   const renderComponent = () => {
@@ -48,6 +52,10 @@ const DashboardUI = () => {
         return <SelfTask />;
       case "teamTask":
         return <TeamTask />;
+      case "userManagement":
+        return <UserManagement />;
+      case "login":
+        return <Login />;
       case "files":
         return (
           <div className="bg-gray-900 rounded-lg p-6">
@@ -57,8 +65,8 @@ const DashboardUI = () => {
             </div>
           </div>
         );
-        case "userProfile":
-          return <UserProfile />
+      case "userProfile":
+        return <UserProfile />;
       default:
         return (
           <div className="bg-gray-900 rounded-lg p-6">
@@ -69,6 +77,10 @@ const DashboardUI = () => {
           </div>
         );
     }
+  };
+
+  const toggleSettingsMenu = () => {
+    setIsSettingsOpen(!isSettingsOpen);
   };
 
   return (
@@ -248,6 +260,38 @@ const DashboardUI = () => {
             <li className="px-2 mt-2">
               <button
                 onClick={() => {
+                  setActiveComponent("userManagement");
+                  setIsMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                  activeComponent === "userManagement"
+                    ? "bg-purple-600 text-white"
+                    : "hover:bg-gray-800"
+                }`}
+              >
+                <Users size={20} />
+                <span>User Management</span>
+              </button>
+            </li>
+            <li className="px-2 mt-2">
+              <button
+                onClick={() => {
+                  setActiveComponent("login");
+                  setIsMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                  activeComponent === "login"
+                    ? "bg-purple-600 text-white"
+                    : "hover:bg-gray-800"
+                }`}
+              >
+                <LogIn size={20} />
+                <span>Login</span>
+              </button>
+            </li>
+            <li className="px-2 mt-2">
+              <button
+                onClick={() => {
                   setActiveComponent("files");
                   setIsMenuOpen(false);
                 }}
@@ -282,9 +326,6 @@ const DashboardUI = () => {
                 <Search size={20} />
               </button>
               <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
-                <Settings size={20} />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
                 <Bell size={20} />
               </button>
               <div className="flex items-center gap-2">
@@ -293,10 +334,42 @@ const DashboardUI = () => {
                 </button>
                 <span className="hidden md:inline">Chicken Lazy</span>
               </div>
-              <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
+              <button
+                className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white"
+                onClick={toggleSettingsMenu}
+              >
                 <Settings size={20} />
               </button>
             </div>
+            {isSettingsOpen && (
+              <div className="absolute top-14 right-4 bg-gray-800 text-white rounded-md shadow-lg p-2 z-10">
+                <ul>
+                  <li>
+                    <button
+                      onClick={() => {
+                        setActiveComponent("userProfile");
+                        setIsSettingsOpen(false);
+                      }}
+                      className="block px-4 py-2 text-sm hover:bg-gray-700"
+                    >
+                      Profile
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => {
+                        // Call logout logic here (e.g., clearing tokens, redirecting to login)
+                        setIsSettingsOpen(false);
+                        alert("Logged out!");
+                      }}
+                      className="block px-4 py-2 text-sm hover:bg-gray-700"
+                    >
+                      Logout
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         </header>
 

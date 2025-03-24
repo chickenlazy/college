@@ -594,6 +594,16 @@ const Project = () => {
     setShowProjectEdit(true);
   };
 
+  // Handle Reset functionality
+const handleReset = () => {
+  setSearch(""); // Reset search query
+  setActiveFilter("all"); // Reset active filter to 'all'
+  setCurrentPage(1); // Reset to the first page
+  setSelectAll(false); // Unselect 'select all' checkbox
+  setSelectedProjects([]); // Deselect all projects
+};
+
+
   return (
     <div className="p-6 bg-gray-950 text-white">
       {showProjectDetail ? (
@@ -628,7 +638,7 @@ const Project = () => {
                 <Edit size={18} />
                 <span>Edit</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-md">
+              <button className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md" onClick={handleReset}>
                 <RotateCcw size={18} />
                 <span>Reset</span>
               </button>

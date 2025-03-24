@@ -381,7 +381,7 @@ const Subtask = ({ subtask, onChange, onRemove }) => (
   </div>
 );
 
-const TaskEdit = ({
+const TaskEdit = ({ // task
   isNew = false,
   projectId = null,
   projectName = "",

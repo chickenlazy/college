@@ -1,11 +1,22 @@
-// Để tạo dự án mới
-<ProjectEdit isNew={true} />
+import React, { useState } from 'react';
+import Dashboard from './components/main/Dashboard';
+import Login from './components/utils/Login';
 
-// Để chỉnh sửa dự án hiện có
-<ProjectEdit isNew={false} />
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-// Để tạo task mới
-<TaskEdit isNew={true} />
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+  return (
+    <div className="App">
+       {!isLoggedIn ? (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <Dashboard />
+      )}
+    </div>
+  );
+}
 
-// Để chỉnh sửa task hiện có
-<TaskEdit isNew={false} />
+export default App;

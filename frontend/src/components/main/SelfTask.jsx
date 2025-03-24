@@ -19,6 +19,7 @@ import {
   ListChecks
 } from "lucide-react";
 import TaskEdit from "../edit/TaskEdit";
+import TaskDetail from "../detail/TaskDetail";
 
 // Mock data for self tasks
 const mockTasks = [
@@ -214,7 +215,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 // Task Card Component
-const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete }) => {
+const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -259,6 +260,7 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete }) => {
         setIsHovered(false);
         setShowMenu(false);
       }}
+      onClick={onClick}
     >
       {/* Task Status Bar */}
       <div className={`h-1.5 w-full ${statusColor}`}></div>
@@ -546,6 +548,11 @@ const SelfTask = () => {
     );
   }
 
+  if (selectedTask) {
+    return <TaskDetail task={selectedTask} onBack={() => setSelectedTask(null)} />;
+  }
+  
+
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
       {/* Header Section */}
@@ -653,13 +660,15 @@ const SelfTask = () => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onEdit={handleEditTask}
-                onMarkAsCompleted={handleMarkAsCompleted}
-                onDelete={handleDeleteTask}
-              />
+             <TaskCard
+             key={task.id}
+             task={task}
+             onEdit={handleEditTask}
+             onMarkAsCompleted={handleMarkAsCompleted}
+             onDelete={handleDeleteTask}
+             onClick={() => setSelectedTask(task)}  // Thêm onClick để set selectedTask
+           />
+           
             ))}
           </div>
 
@@ -687,46 +696,48 @@ const SelfTask = () => {
       />
 
       {/* Add CSS animations for better UX */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fade-in-up {
-          from { 
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes scale-in {
-          from { 
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to { 
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.3s ease-out;
-        }
-        
-        .animate-scale-in {
-          animation: scale-in 0.3s ease-out;
-        }
-      `}</style>
+      <style>
+{`
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes fade-in-up {
+    from { 
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes scale-in {
+    from { 
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out;
+  }
+`}
+</style>
     </div>
   );
 };

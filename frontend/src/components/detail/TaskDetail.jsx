@@ -18,6 +18,7 @@ import {
   X,
   Plus
 } from 'lucide-react';
+import TaskEdit from '../edit/TaskEdit';
 
 // Mock task data
 const taskData = {
@@ -458,7 +459,7 @@ const Tab = ({ icon, label, active, onClick }) => (
   </button>
 );
 
-const TaskDetail = () => {
+const TaskDetail = ({onBack}) => { //task,
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('details');
@@ -466,7 +467,12 @@ const TaskDetail = () => {
   const [commentText, setCommentText] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
   const [showAddSubtask, setShowAddSubtask] = useState(false);
-  
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleEdit = () => {
+    setIsEditing(true); // Set isEditing thành true khi nhấn nút Edit
+  };
+
   // Load task data
   useEffect(() => {
     // Simulate API call
@@ -501,11 +507,15 @@ const TaskDetail = () => {
   const priorityInfo = getPriorityInfo(task.priority);
   const daysRemaining = getDaysRemaining(task.dueDate);
   
+  if (isEditing) {
+    return <TaskEdit task={task} onBack={() => setIsEditing(false)} />; // Trả về TaskEdit khi đang chỉnh sửa
+  }
+
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <button className="flex items-center text-gray-400 hover:text-white">
+        <button onClick={onBack} className="flex items-center text-gray-400 hover:text-white">
           <ChevronLeft size={20} className="mr-1" />
           <span>Back to Project</span>
         </button>
@@ -517,7 +527,8 @@ const TaskDetail = () => {
               Mark Complete
             </button>
           )}
-          <button className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center">
+          <button className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
+          onClick={handleEdit}>
             <Edit size={16} className="mr-2" />
             Edit Task
           </button>
