@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Search,
   Plus,
@@ -17,291 +18,6 @@ import {
 import ProjectDetail from "../detail/ProjectDetail";
 import ProjectEdit from "../edit/ProjectEdit";
 
-// Mock data from the provided JSON
-const mockData = {
-  content: [
-    {
-      id: 32,
-      name: "GIang ne ne ne",
-      description: "gjdfjg",
-      startDate: "2025-03-21T21:00:00",
-      dueDate: "2025-03-24T21:00:00",
-      status: "NOT_STARTED",
-      managerId: 1,
-      users: [],
-      tasks: [],
-      totalTask: 0,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-    {
-      id: 31,
-      name: "Đồ án tốt nghiệp updated",
-      description: "Đồ án tốt nghiệp Description",
-      startDate: "2025-03-17T23:53:00",
-      dueDate: "2025-05-17T23:53:00",
-      status: "IN_PROGRESS",
-      managerId: 1,
-      users: [
-        {
-          id: 1,
-          firstName: "John",
-          lastName: "Doe",
-          email: "john.doe@example.com",
-        },
-        {
-          id: 2,
-          firstName: "Jane",
-          lastName: "Smith",
-          email: "jane.smith@example.com",
-        },
-      ],
-      tasks: [],
-      totalTask: 0,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-    {
-      id: 1,
-      name: "Project A",
-      description: "Description for Project A",
-      startDate: "2025-03-01T08:00:00",
-      dueDate: "2025-06-01T08:00:00",
-      status: "NOT_STARTED",
-      managerId: 1,
-      users: [
-        {
-          id: 1,
-          firstName: "John",
-          lastName: "Doe",
-          email: "john.doe@example.com",
-        },
-        {
-          id: 2,
-          firstName: "Jane",
-          lastName: "Smith",
-          email: "jane.smith@example.com",
-        },
-        {
-          id: 3,
-          firstName: "Michael",
-          lastName: "Johnson",
-          email: "michael.johnson@example.com",
-        },
-        {
-          id: 4,
-          firstName: "Emily",
-          lastName: "Davis",
-          email: "emily.davis@example.com",
-        },
-      ],
-      tasks: [
-        {
-          id: 2,
-          name: "Task 2 for Project A",
-          status: "IN_PROGRESS",
-        },
-        {
-          id: 1,
-          name: "Task 1 for Project A",
-          status: "PENDING",
-        },
-      ],
-      totalTask: 2,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-    {
-      id: 2,
-      name: "Project B",
-      description: "Description for Project B",
-      startDate: "2025-04-01T09:00:00",
-      dueDate: "2025-07-01T09:00:00",
-      status: "IN_PROGRESS",
-      managerId: 2,
-      users: [
-        {
-          id: 1,
-          firstName: "John",
-          lastName: "Doe",
-          email: "john.doe@example.com",
-        },
-        {
-          id: 5,
-          firstName: "William",
-          lastName: "Martinez",
-          email: "william.martinez@example.com",
-        },
-      ],
-      tasks: [
-        {
-          id: 3,
-          name: "Task 3 for Project B",
-          status: "COMPLETED",
-        },
-        {
-          id: 4,
-          name: "Task 4 for Project B",
-          status: "ON_HOLD",
-        },
-      ],
-      totalTask: 2,
-      totalCompletedTask: 1,
-      progress: 50.0,
-    },
-    {
-      id: 3,
-      name: "Project C",
-      description: "Description for Project C",
-      startDate: "2025-05-01T10:00:00",
-      dueDate: "2025-08-01T10:00:00",
-      status: "COMPLETED",
-      managerId: 3,
-      users: [
-        {
-          id: 2,
-          firstName: "Jane",
-          lastName: "Smith",
-          email: "jane.smith@example.com",
-        },
-        {
-          id: 6,
-          firstName: "Olivia",
-          lastName: "Hernandez",
-          email: "olivia.hernandez@example.com",
-        },
-      ],
-      tasks: [
-        {
-          id: 5,
-          name: "Task 5 for Project C",
-          status: "PENDING",
-        },
-      ],
-      totalTask: 1,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-    {
-      id: 4,
-      name: "Project D",
-      description: "Description for Project D",
-      startDate: "2025-06-01T11:00:00",
-      dueDate: "2025-09-01T11:00:00",
-      status: "ON_HOLD",
-      managerId: 4,
-      users: [
-        {
-          id: 3,
-          firstName: "Michael",
-          lastName: "Johnson",
-          email: "michael.johnson@example.com",
-        },
-        {
-          id: 7,
-          firstName: "James",
-          lastName: "Lopez",
-          email: "james.lopez@example.com",
-        },
-      ],
-      tasks: [
-        {
-          id: 7,
-          name: "Task 7 for Project D",
-          status: "COMPLETED",
-        },
-        {
-          id: 6,
-          name: "Task 6 for Project D",
-          status: "IN_PROGRESS",
-        },
-      ],
-      totalTask: 2,
-      totalCompletedTask: 1,
-      progress: 50.0,
-    },
-    {
-      id: 5,
-      name: "Project E",
-      description: "Description for Project E",
-      startDate: "2025-07-01T12:00:00",
-      dueDate: "2025-10-01T12:00:00",
-      status: "NOT_STARTED",
-      managerId: 5,
-      users: [],
-      tasks: [
-        {
-          id: 8,
-          name: "Task 8 for Project E",
-          status: "ON_HOLD",
-        },
-      ],
-      totalTask: 1,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-    {
-      id: 6,
-      name: "Project F",
-      description: "Description for Project F",
-      startDate: "2025-08-01T13:00:00",
-      dueDate: "2025-11-01T13:00:00",
-      status: "IN_PROGRESS",
-      managerId: 6,
-      users: [],
-      tasks: [
-        {
-          id: 9,
-          name: "Task 9 for Project F",
-          status: "PENDING",
-        },
-      ],
-      totalTask: 1,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-    {
-      id: 7,
-      name: "Project G",
-      description: "Description for Project G",
-      startDate: "2025-09-01T14:00:00",
-      dueDate: "2025-12-01T14:00:00",
-      status: "COMPLETED",
-      managerId: 7,
-      users: [],
-      tasks: [
-        {
-          id: 10,
-          name: "Task 10 for Project G",
-          status: "IN_PROGRESS",
-        },
-      ],
-      totalTask: 1,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-    {
-      id: 8,
-      name: "Project H",
-      description: "Description for Project H",
-      startDate: "2025-10-01T15:00:00",
-      dueDate: "2026-01-01T15:00:00",
-      status: "ON_HOLD",
-      managerId: 8,
-      users: [],
-      tasks: [],
-      totalTask: 0,
-      totalCompletedTask: 0,
-      progress: 0.0,
-    },
-  ],
-  pageNo: 0,
-  pageSize: 10,
-  totalElements: 32,
-  totalPages: 4,
-  last: false,
-};
-
 // Format date to show in the table
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -318,7 +34,7 @@ const formatDate = (dateString) => {
 // Get assigned users as a comma-separated string
 const getAssignedUsers = (users) => {
   if (!users || users.length === 0) return "No body assigned";
-  return users.map((user) => `${user.lastName}, ${user.firstName}`).join(", ");
+  return users.map((user) => user.fullName).join(", ");
 };
 
 // Status Badge Component
@@ -339,11 +55,14 @@ const StatusBadge = ({ status }) => {
     case "ON_HOLD":
       color = "text-blue-500";
       break;
+    case "OVER_DUE":
+      color = "text-orange-500";
+      break;
     default:
       color = "text-gray-500";
   }
 
-  return <span className={color}>{status}</span>;
+  return <span className={color}>{displayText}</span>;
 };
 
 // Progress Bar Component
@@ -483,6 +202,7 @@ const FilterTabs = ({ activeFilter, onFilterChange }) => {
     { id: "IN_PROGRESS", label: "In Progress" },
     { id: "COMPLETED", label: "Completed" },
     { id: "ON_HOLD", label: "On Hold" },
+    { id: "OVER_DUE", label: "Over Due" },
   ];
 
   return (
@@ -507,21 +227,51 @@ const FilterTabs = ({ activeFilter, onFilterChange }) => {
 const Project = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [apiData, setApiData] = useState({
+    content: [],
+    pageNo: 1,
+    pageSize: 10,
+    totalElements: 0,
+    totalPages: 1,
+    last: true
+  });
+
+  // Load data from API
+  const fetchProjects = async (page = currentPage, size = itemsPerPage) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`http://localhost:8080/api/projects`, {
+        params: {
+          pageNo: page,
+          pageSize: size
+        }
+      });
+      setApiData(response.data);
+      setProjects(response.data.content);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      setError("Failed to load projects. Please try again later.");
+      setLoading(false);
+    }
+  };
 
   // Load data initially
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setProjects(mockData.content);
-      setLoading(false);
-    }, 500);
+    fetchProjects();
   }, []);
+
+  // Reload data when page or items per page changes
+  useEffect(() => {
+    fetchProjects(currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage]);
 
   // Handle checkbox selection
   const handleSelectProject = (id) => {
@@ -544,7 +294,7 @@ const Project = () => {
     setSelectAll(!selectAll);
   };
 
-  // Filter projects based on active filter
+  // Filter projects based on active filter and search
   const filteredProjects = projects.filter((project) => {
     // Apply status filter
     if (activeFilter !== "all" && project.status !== activeFilter) {
@@ -559,24 +309,40 @@ const Project = () => {
     return true;
   });
 
-  // Calculate pagination
+  // Calculate pagination for client-side filtering
   const indexOfLastProject = currentPage * itemsPerPage;
   const indexOfFirstProject = indexOfLastProject - itemsPerPage;
-  const currentProjects = filteredProjects.slice(
-    indexOfFirstProject,
-    indexOfLastProject
-  );
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  let currentProjects = filteredProjects;
+  
+  // Only do client-side pagination if we're filtering or searching
+  if (activeFilter !== "all" || search !== "") {
+    currentProjects = filteredProjects.slice(
+      indexOfFirstProject,
+      indexOfLastProject
+    );
+  }
+  
+  const totalPages = activeFilter !== "all" || search !== "" 
+    ? Math.ceil(filteredProjects.length / itemsPerPage)
+    : apiData.totalPages;
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+    // Only fetch from API if we're not filtering
+    if (activeFilter === "all" && search === "") {
+      fetchProjects(pageNumber, itemsPerPage);
+    }
   };
 
   // Handle items per page change
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page
+    // Only fetch from API if we're not filtering
+    if (activeFilter === "all" && search === "") {
+      fetchProjects(1, newItemsPerPage);
+    }
   };
 
   const [showProjectDetail, setShowProjectDetail] = useState(false);
@@ -595,14 +361,14 @@ const Project = () => {
   };
 
   // Handle Reset functionality
-const handleReset = () => {
-  setSearch(""); // Reset search query
-  setActiveFilter("all"); // Reset active filter to 'all'
-  setCurrentPage(1); // Reset to the first page
-  setSelectAll(false); // Unselect 'select all' checkbox
-  setSelectedProjects([]); // Deselect all projects
-};
-
+  const handleReset = () => {
+    setSearch(""); // Reset search query
+    setActiveFilter("all"); // Reset active filter to 'all'
+    setCurrentPage(1); // Reset to the first page
+    setSelectAll(false); // Unselect 'select all' checkbox
+    setSelectedProjects([]); // Deselect all projects
+    fetchProjects(1, itemsPerPage); // Reload data from API
+  };
 
   return (
     <div className="p-6 bg-gray-950 text-white">
@@ -615,7 +381,7 @@ const handleReset = () => {
         <ProjectEdit
           project={selectedProject}
           onBack={() => setShowProjectEdit(false)}
-          isNew={selectedProject === null} // Thêm prop isNew
+          isNew={selectedProject === null}
         />
       ) : (
         <>
@@ -627,8 +393,8 @@ const handleReset = () => {
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 rounded-md"
                 onClick={() => {
-                  setSelectedProject(null); // Set null vì đây là project mới
-                  setShowProjectEdit(true); // Hiển thị form edit
+                  setSelectedProject(null);
+                  setShowProjectEdit(true);
                 }}
               >
                 <Plus size={18} />
@@ -713,6 +479,12 @@ const handleReset = () => {
                       Loading...
                     </td>
                   </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan="9" className="p-4 text-center text-red-500">
+                      {error}
+                    </td>
+                  </tr>
                 ) : currentProjects.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="p-4 text-center">
@@ -740,7 +512,7 @@ const handleReset = () => {
                         {getAssignedUsers(project.users)}
                       </td>
                       <td className="p-4 border-b border-gray-800">
-                        {project.totalCompletedTask}/{project.totalTask}
+                        {project.totalCompletedTasks}/{project.totalTasks}
                       </td>
                       <td className="p-4 border-b border-gray-800">
                         <ProgressBar progress={project.progress} />
@@ -771,7 +543,7 @@ const handleReset = () => {
             totalPages={totalPages}
             onPageChange={handlePageChange}
             itemsPerPage={itemsPerPage}
-            totalItems={filteredProjects.length}
+            totalItems={activeFilter !== "all" || search !== "" ? filteredProjects.length : apiData.totalElements}
             onItemsPerPageChange={handleItemsPerPageChange}
           />
         </>

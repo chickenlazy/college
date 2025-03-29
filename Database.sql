@@ -1,193 +1,206 @@
--- Drop existing database if it exists
-DROP DATABASE IF EXISTS College;
-
--- Create new database
-CREATE DATABASE College;
-
--- Use the newly created database
-USE College;
+-- Xóa và tạo lại cơ sở dữ liệu
+DROP DATABASE IF EXISTS project_management;
+CREATE DATABASE project_management;
+USE project_management;
 
 -- Start creating Admin user
-DROP USER IF EXISTS 'Admin'@'localhost';
-CREATE USER 'Admin'@'localhost' IDENTIFIED BY 'Admin';
-GRANT ALL PRIVILEGES ON ProjectManagement.* TO 'Admin'@'localhost';
+DROP USER IF EXISTS 'admin'@'localhost';
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin';
+GRANT ALL PRIVILEGES ON project_management.* TO 'admin'@'localhost';
 FLUSH PRIVILEGES;
-SHOW GRANTS FOR 'Admin'@'localhost';
+SHOW GRANTS FOR 'admin'@'localhost';
 -- End creating Admin user
 
--- Disable foreign key checks before dropping tables
-SET FOREIGN_KEY_CHECKS = 0;
-
--- Drop existing tables if they exist
-DROP TABLE IF EXISTS Users;
-DROP TABLE IF EXISTS Projects;
-DROP TABLE IF EXISTS ProjectMembers;
-DROP TABLE IF EXISTS Tasks;
-DROP TABLE IF EXISTS Subtasks;
-DROP TABLE IF EXISTS TaskDependencies;
-DROP TABLE IF EXISTS Comments;
-DROP TABLE IF EXISTS Documents;
-DROP TABLE IF EXISTS ActivityLogs;
-DROP TABLE IF EXISTS Notifications;
-DROP TABLE IF EXISTS Tags;
-DROP TABLE IF EXISTS TaskTags;
-DROP TABLE IF EXISTS ProjectTags;
-
--- Re-enable foreign key checks after dropping tables
-SET FOREIGN_KEY_CHECKS = 1;
-
-CREATE TABLE Users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    firstName VARCHAR(50) NOT NULL,
-    lastName VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('ADMIN', 'PROJECT_MANAGER', 'TEAM_MEMBER') NOT NULL,
-    avatar VARCHAR(255),
-    position VARCHAR(100),
-    department VARCHAR(100),
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+-- Xóa và tạo lại bảng `users`
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  full_name VARCHAR(255),
+  email VARCHAR(255) UNIQUE,
+  phone_number VARCHAR(20),
+  role ENUM('ADMIN', 'MANAGER', 'USER'),
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE Projects (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    startDate DATETIME NOT NULL,
-    dueDate DATETIME NOT NULL,
-    status ENUM('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD') NOT NULL DEFAULT 'NOT_STARTED',
-    managerId INT NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (managerId) REFERENCES Users(id)
+-- Xóa và tạo lại bảng `projects`
+DROP TABLE IF EXISTS projects;
+CREATE TABLE projects (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255),
+  description TEXT,
+  start_date DATETIME,
+  due_date DATETIME,
+  status ENUM('IN_PROGRESS', 'NOT_STARTED', 'ON_HOLD', 'COMPLETED', 'OVER_DUE'),
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  manager_id INT,
+  FOREIGN KEY (manager_id) REFERENCES users(id)
 );
 
-CREATE TABLE ProjectMembers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    projectId INT NOT NULL,
-    userId INT NOT NULL,
-    role VARCHAR(100),
-    joinedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (userId) REFERENCES Users(id),
-    UNIQUE KEY uniqueProjectUser (projectId, userId)
+-- Xóa và tạo lại bảng `tasks`
+DROP TABLE IF EXISTS tasks;
+CREATE TABLE tasks (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255),
+  description TEXT,
+  start_date DATETIME,
+  due_date DATETIME,
+  status ENUM('COMPLETED', 'IN_PROGRESS', 'NOT_STARTED', 'OVER_DUE', 'ON_HOLD'),
+  priority ENUM('HIGH', 'MEDIUM', 'LOW'),
+  project_id INT,
+  assignee_id INT,
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id),
+  FOREIGN KEY (assignee_id) REFERENCES users(id)
 );
 
-CREATE TABLE Tasks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    projectId INT NOT NULL,
-    assigneeId INT,
-    creatorId INT NOT NULL,
-    startDate DATETIME NOT NULL,
-    dueDate DATETIME NOT NULL,
-    completedDate DATETIME,
-    status ENUM('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD') NOT NULL DEFAULT 'NOT_STARTED',
-    priority ENUM('LOW', 'MEDIUM', 'HIGH') NOT NULL DEFAULT 'MEDIUM',
-    progress INT DEFAULT 0,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (assigneeId) REFERENCES Users(id),
-    FOREIGN KEY (creatorId) REFERENCES Users(id)
+-- Xóa và tạo lại bảng `subtasks`
+DROP TABLE IF EXISTS subtasks;
+CREATE TABLE subtasks (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255),
+  task_id INT,
+  completed BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (task_id) REFERENCES tasks(id)
 );
 
-CREATE TABLE Subtasks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    taskId INT NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    completed BOOLEAN DEFAULT FALSE,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE
+DROP TABLE IF EXISTS comments;
+CREATE TABLE comments (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  text TEXT,
+  author_id INT,
+  task_id INT,
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (author_id) REFERENCES users(id),
+  FOREIGN KEY (task_id) REFERENCES tasks(id)
 );
 
-CREATE TABLE TaskDependencies (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    taskId INT NOT NULL,
-    dependencyTaskId INT NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (dependencyTaskId) REFERENCES Tasks(id) ON DELETE CASCADE,
-    UNIQUE KEY uniqueDependency (taskId, dependencyTaskId)
+
+-- Xóa và tạo lại bảng `project_users`
+DROP TABLE IF EXISTS project_users;
+CREATE TABLE project_users (
+  project_id INT,
+  user_id INT,
+  PRIMARY KEY (project_id, user_id),
+  FOREIGN KEY (project_id) REFERENCES projects(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE TABLE Comments (
+CREATE TABLE tags (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    content TEXT NOT NULL,
-    userId INT NOT NULL,
-    taskId INT,
-    projectId INT,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (userId) REFERENCES Users(id),
-    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
-    CHECK (taskId IS NOT NULL OR projectId IS NOT NULL)
+    name VARCHAR(255) UNIQUE NOT NULL,
+    color VARCHAR(20)  
 );
 
-CREATE TABLE Documents (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    filePath VARCHAR(255) NOT NULL,
-    fileType VARCHAR(100) NOT NULL,
-    fileSize INT NOT NULL,
-    uploadedBy INT NOT NULL,
-    taskId INT,
-    projectId INT,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (uploadedBy) REFERENCES Users(id),
-    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
-    CHECK (taskId IS NOT NULL OR projectId IS NOT NULL)
+CREATE TABLE project_tags (
+    project_id INT,                     
+    tag_id INT,                     
+    PRIMARY KEY (project_id, tag_id),      
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE, -- Hay ne
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE        
 );
 
-CREATE TABLE ActivityLogs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    userId INT NOT NULL,
-    actionType ENUM('CREATED', 'UPDATED', 'DELETED', 'COMPLETED', 'ASSIGNED', 'COMMENT_ADDED', 'ATTACHMENT_ADDED', 'STATUS_CHANGE', 'MEMBER_ADDED', 'MEMBER_REMOVED') NOT NULL,
-    entityType ENUM('PROJECT', 'TASK', 'SUBTASK', 'COMMENT', 'DOCUMENT') NOT NULL,
-    entityId INT NOT NULL,
-    details TEXT,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (userId) REFERENCES Users(id)
-);
+INSERT INTO users (full_name, email, phone_number, role)
+VALUES
+  ('Admin User', 'admin@example.com', '1234567890', 'ADMIN'),
+  ('Manager 1', 'manager1@example.com', '1234567891', 'MANAGER'),
+  ('Manager 2', 'manager2@example.com', '1234567892', 'MANAGER'),
+  ('User 1', 'user1@example.com', '1234567893', 'USER'),
+  ('User 2', 'user2@example.com', '1234567894', 'USER'),
+  ('User 3', 'user3@example.com', '1234567895', 'USER'),
+  ('User 4', 'user4@example.com', '1234567896', 'USER'),
+  ('User 5', 'user5@example.com', '1234567897', 'USER'),
+  ('User 6', 'user6@example.com', '1234567898', 'USER'),
+  ('User 7', 'user7@example.com', '1234567899', 'USER');
 
-CREATE TABLE Notifications (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    userId INT NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    message TEXT NOT NULL,
-    link VARCHAR(255),
-    isRead BOOLEAN DEFAULT FALSE,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (userId) REFERENCES Users(id)
-);
+INSERT INTO projects (name, description, start_date, due_date, status, manager_id)
+VALUES
+  ('Project 1', 'Description of Project 1', '2025-01-01 10:00:00', '2025-01-10 10:00:00', 'IN_PROGRESS', 2),
+  ('Project 2', 'Description of Project 2', '2025-02-01 10:00:00', '2025-02-10 10:00:00', 'NOT_STARTED', 3),
+  ('Project 3', 'Description of Project 3', '2025-03-01 10:00:00', '2025-03-10 10:00:00', 'ON_HOLD', 2),
+  ('Project 4', 'Description of Project 4', '2025-04-01 10:00:00', '2025-04-10 10:00:00', 'COMPLETED', 3),
+  ('Project 5', 'Description of Project 5', '2025-05-01 10:00:00', '2025-05-10 10:00:00', 'OVER_DUE', 3),
+  ('Project 6', 'Description of Project 6', '2025-06-01 10:00:00', '2025-06-10 10:00:00', 'IN_PROGRESS', 2),
+  ('Project 7', 'Description of Project 7', '2025-07-01 10:00:00', '2025-07-10 10:00:00', 'IN_PROGRESS', 3),
+  ('Project 8', 'Description of Project 8', '2025-08-01 10:00:00', '2025-08-10 10:00:00', 'NOT_STARTED', 2),
+  ('Project 9', 'Description of Project 9', '2025-09-01 10:00:00', '2025-09-10 10:00:00', 'COMPLETED', 3),
+  ('Project 10', 'Description of Project 10', '2025-10-01 10:00:00', '2025-10-10 10:00:00', 'ON_HOLD', 2);
 
-CREATE TABLE Tags (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    color VARCHAR(20) NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+INSERT INTO tasks (name, description, start_date, due_date, status, priority, project_id, assignee_id)
+VALUES
+  ('Task 1', 'Task description 1', '2025-01-01 10:00:00', '2025-01-02 10:00:00', 'IN_PROGRESS', 'HIGH', 1, 4),
+  ('Task 2', 'Task description 2', '2025-02-01 10:00:00', '2025-02-02 10:00:00', 'NOT_STARTED', 'MEDIUM', 2, 5),
+  ('Task 3', 'Task description 3', '2025-03-01 10:00:00', '2025-03-02 10:00:00', 'COMPLETED', 'LOW', 3, 6),
+  ('Task 4', 'Task description 4', '2025-04-01 10:00:00', '2025-04-02 10:00:00', 'OVER_DUE', 'HIGH', 4, 7),
+  ('Task 5', 'Task description 5', '2025-05-01 10:00:00', '2025-05-02 10:00:00', 'IN_PROGRESS', 'MEDIUM', 5, 8),
+  ('Task 6', 'Task description 6', '2025-06-01 10:00:00', '2025-06-02 10:00:00', 'IN_PROGRESS', 'LOW', 6, 9),
+  ('Task 7', 'Task description 7', '2025-07-01 10:00:00', '2025-07-02 10:00:00', 'NOT_STARTED', 'HIGH', 7, 10),
+  ('Task 8', 'Task description 8', '2025-08-01 10:00:00', '2025-08-02 10:00:00', 'COMPLETED', 'MEDIUM', 8, 4),
+  ('Task 9', 'Task description 9', '2025-09-01 10:00:00', '2025-09-02 10:00:00', 'IN_PROGRESS', 'HIGH', 9, 5),
+  ('Task 10', 'Task description 10', '2025-10-01 10:00:00', '2025-10-02 10:00:00', 'ON_HOLD', 'LOW', 10, 6);
 
-CREATE TABLE TaskTags (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    taskId INT NOT NULL,
-    tagId INT NOT NULL,
-    FOREIGN KEY (taskId) REFERENCES Tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (tagId) REFERENCES Tags(id) ON DELETE CASCADE,
-    UNIQUE KEY uniqueTaskTag (taskId, tagId)
-);
+INSERT INTO subtasks (name, task_id, completed)
+VALUES
+  ('Subtask 1', 1, TRUE),
+  ('Subtask 2', 2, FALSE),
+  ('Subtask 3', 3, TRUE),
+  ('Subtask 4', 4, FALSE),
+  ('Subtask 5', 5, TRUE),
+  ('Subtask 6', 6, TRUE),
+  ('Subtask 7', 7, FALSE),
+  ('Subtask 8', 8, TRUE),
+  ('Subtask 9', 9, FALSE),
+  ('Subtask 10', 10, TRUE);
 
-CREATE TABLE ProjectTags (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    projectId INT NOT NULL,
-    tagId INT NOT NULL,
-    FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (tagId) REFERENCES Tags(id) ON DELETE CASCADE,
-    UNIQUE KEY uniqueProjectTag (projectId, tagId)
-);
+INSERT INTO comments (text, author_id, task_id)
+VALUES
+  ('Comment for Task 1', 1, 1),
+  ('Comment for Task 2', 2, 2),
+  ('Comment for Task 3', 3, 3),
+  ('Comment for Task 4', 4, 4),
+  ('Comment for Task 5', 5, 5),
+  ('Comment for Task 6', 6, 6),
+  ('Comment for Task 7', 7, 7),
+  ('Comment for Task 8', 8, 8),
+  ('Comment for Task 9', 9, 9),
+  ('Comment for Task 10', 10, 10);
+
+INSERT INTO project_users (project_id, user_id)
+VALUES
+  (1, 1),
+  (1, 2),
+  (2, 3),
+  (2, 4),
+  (3, 5),
+  (3, 6),
+  (4, 7),
+  (4, 8),
+  (5, 9),
+  (5, 10);
+
+INSERT INTO tags (name, color) VALUES
+  ('Development', '#3B82F6'),
+  ('Research', '#8B5CF6'),
+  ('Design', '#EC4899'),
+  ('Marketing', '#F59E0B'),
+  ('Testing', '#10B981'),
+  ('Documentation', '#6B7280');
+  
+INSERT INTO project_tags (project_id, tag_id) VALUES
+  (1, 1),  -- Project 1 với Tag 1 (Development)
+  (1, 2),  -- Project 1 với Tag 2 (Research)
+  (2, 3),  -- Project 2 với Tag 3 (Design)
+  (2, 4),  -- Project 2 với Tag 4 (Marketing)
+  (3, 5),  -- Project 3 với Tag 5 (Testing)
+  (4, 6);  -- Project 4 với Tag 6 (Documentation)
+
+
+
+
+
+
+
+
+

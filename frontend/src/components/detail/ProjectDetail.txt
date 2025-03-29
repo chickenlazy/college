@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { 
   ChevronLeft, 
   Edit, 
@@ -22,12 +21,199 @@ import {
   ChevronDown,
   ChevronUp,
   CheckCircle2,
-  Download,
-  Tag
+  Download
 } from 'lucide-react';
 
 import ProjectEdit from '../edit/ProjectEdit';
 import TaskEdit from '../edit/TaskEdit';
+
+// Mock Project Data
+const projectData = {
+  id: 31,
+  name: "Đồ án tốt nghiệp updated",
+  description: "A comprehensive final graduation project focused on developing an innovative solution for enterprise resource planning with AI integration for predictive analytics.",
+  startDate: "2025-03-17T23:53:00",
+  dueDate: "2025-05-17T23:53:00",
+  status: "IN_PROGRESS",
+  managerId: 1,
+  managerName: "John Doe",
+  users: [
+    {
+      id: 1,
+      firstName: "John",
+      lastName: "Doe",
+      email: "john.doe@example.com",
+      avatar: null,
+      role: "Project Manager"
+    },
+    {
+      id: 2,
+      firstName: "Jane",
+      lastName: "Smith",
+      email: "jane.smith@example.com",
+      avatar: null,
+      role: "UI/UX Designer"
+    },
+    {
+      id: 3,
+      firstName: "Michael",
+      lastName: "Johnson",
+      email: "michael.johnson@example.com",
+      avatar: null,
+      role: "Frontend Developer"
+    },
+    {
+      id: 4,
+      firstName: "Emily",
+      lastName: "Davis",
+      email: "emily.davis@example.com",
+      avatar: null,
+      role: "Backend Developer"
+    }
+  ],
+  tasks: [
+    {
+      id: 1,
+      name: "Project Planning and Requirements Gathering",
+      description: "Define project scope, objectives, and collect requirements from stakeholders",
+      assigneeId: 1,
+      assigneeName: "John Doe",
+      startDate: "2025-03-17T23:53:00",
+      dueDate: "2025-03-24T23:53:00",
+      status: "COMPLETED",
+      priority: "HIGH",
+      comments: 3,
+      attachments: 2
+    },
+    {
+      id: 2,
+      name: "UI/UX Design",
+      description: "Create wireframes, mockups, and design system for the application",
+      assigneeId: 2,
+      assigneeName: "Jane Smith",
+      startDate: "2025-03-25T10:00:00",
+      dueDate: "2025-04-05T17:00:00",
+      status: "IN_PROGRESS",
+      priority: "HIGH",
+      comments: 5,
+      attachments: 8
+    },
+    {
+      id: 3,
+      name: "Database Design",
+      description: "Design database schema and relationships",
+      assigneeId: 4,
+      assigneeName: "Emily Davis",
+      startDate: "2025-03-25T10:00:00",
+      dueDate: "2025-04-01T17:00:00",
+      status: "IN_PROGRESS",
+      priority: "MEDIUM",
+      comments: 2,
+      attachments: 1
+    },
+    {
+      id: 4,
+      name: "Frontend Development",
+      description: "Implement user interface components and pages",
+      assigneeId: 3,
+      assigneeName: "Michael Johnson",
+      startDate: "2025-04-06T09:00:00",
+      dueDate: "2025-04-20T17:00:00",
+      status: "NOT_STARTED",
+      priority: "HIGH",
+      comments: 0,
+      attachments: 0
+    },
+    {
+      id: 5,
+      name: "Backend Development",
+      description: "Implement server-side logic and API endpoints",
+      assigneeId: 4,
+      assigneeName: "Emily Davis",
+      startDate: "2025-04-06T09:00:00",
+      dueDate: "2025-04-25T17:00:00",
+      status: "NOT_STARTED",
+      priority: "HIGH",
+      comments: 0,
+      attachments: 0
+    },
+    {
+      id: 6,
+      name: "Integration and Testing",
+      description: "Integrate frontend and backend, perform testing",
+      assigneeId: null,
+      assigneeName: null,
+      startDate: "2025-04-26T09:00:00",
+      dueDate: "2025-05-10T17:00:00",
+      status: "NOT_STARTED",
+      priority: "MEDIUM",
+      comments: 0,
+      attachments: 0
+    },
+    {
+      id: 7,
+      name: "Deployment and Documentation",
+      description: "Deploy application and prepare documentation",
+      assigneeId: null,
+      assigneeName: null,
+      startDate: "2025-05-11T09:00:00",
+      dueDate: "2025-05-17T17:00:00",
+      status: "NOT_STARTED",
+      priority: "LOW",
+      comments: 0,
+      attachments: 0
+    }
+  ],
+  totalTasks: 7,
+  completedTasks: 1,
+  progress: 14.3,
+  documents: [
+    {
+      id: 1,
+      name: "Project Requirements Document.pdf",
+      size: "2.4 MB",
+      uploadedBy: "John Doe",
+      uploadedDate: "2025-03-18T10:30:00"
+    },
+    {
+      id: 2,
+      name: "UI Design Mockups.zip",
+      size: "15.7 MB",
+      uploadedBy: "Jane Smith",
+      uploadedDate: "2025-03-26T14:15:00"
+    },
+    {
+      id: 3,
+      name: "Database Schema.png",
+      size: "1.2 MB",
+      uploadedBy: "Emily Davis",
+      uploadedDate: "2025-03-27T11:20:00"
+    }
+  ],
+  comments: [
+    {
+      id: 1,
+      text: "Initial requirements have been gathered and documented. Please review the attached document.",
+      author: "John Doe",
+      timestamp: "2025-03-18T16:45:00",
+      attachments: ["Project Requirements Document.pdf"]
+    },
+    {
+      id: 2,
+      text: "UI design work has started. Will share the first mockups by the end of the week.",
+      author: "Jane Smith",
+      timestamp: "2025-03-25T11:30:00",
+      attachments: []
+    },
+    {
+      id: 3,
+      text: "Database schema initial draft is ready for review.",
+      author: "Emily Davis",
+      timestamp: "2025-03-27T11:20:00",
+      attachments: ["Database Schema.png"]
+    }
+  ]
+};
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -84,13 +270,6 @@ const getStatusInfo = (status) => {
         textColor: 'text-yellow-500',
         icon: <AlertCircle size={16} />,
         text: 'On Hold'
-      };
-    case 'OVER_DUE':
-      return { 
-        color: 'bg-red-500', 
-        textColor: 'text-red-500',
-        icon: <AlertTriangle size={16} />,
-        text: 'Over Due'
       };
     default:
       return { 
@@ -223,6 +402,19 @@ const TaskItem = ({ task, index }) => {
                 <span>{formatDate(task.dueDate)}</span>
               </div>
             </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Activity</p>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center">
+                  <MessageSquare size={14} className="mr-1 text-gray-400" />
+                  <span>{task.comments}</span>
+                </div>
+                <div className="flex items-center">
+                  <Paperclip size={14} className="mr-1 text-gray-400" />
+                  <span>{task.attachments}</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="flex justify-end space-x-2 mt-2">
@@ -245,23 +437,67 @@ const TaskItem = ({ task, index }) => {
 const TeamMember = ({ user }) => (
   <div className="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded">
     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-      {user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+      {user.firstName[0]}{user.lastName[0]}
     </div>
     <div>
-      <h4 className="font-medium">{user.fullName}</h4>
+      <h4 className="font-medium">{user.firstName} {user.lastName}</h4>
       <p className="text-sm text-gray-400">{user.role}</p>
     </div>
   </div>
 );
 
-// Tag Component
-const TagItem = ({ tag }) => (
-  <div 
-    className="inline-flex items-center px-3 py-1 rounded-full text-sm mr-2 mb-2" 
-    style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
-  >
-    <Tag size={12} className="mr-1" />
-    {tag.name}
+// Document Item Component
+const DocumentItem = ({ document }) => (
+  <div className="flex items-center justify-between hover:bg-gray-800 p-3 rounded">
+    <div className="flex items-center space-x-3">
+      <FileText size={20} className="text-gray-400" />
+      <div>
+        <p className="font-medium">{document.name}</p>
+        <p className="text-xs text-gray-400">
+          {document.size} • Uploaded by {document.uploadedBy} on {formatDate(document.uploadedDate)}
+        </p>
+      </div>
+    </div>
+    <div className="flex space-x-2">
+      <button className="p-1 hover:bg-gray-700 rounded">
+        <Download size={18} />
+      </button>
+      <button className="p-1 hover:bg-gray-700 rounded">
+        <Link2 size={18} />
+      </button>
+      <button className="p-1 hover:bg-gray-700 rounded">
+        <MoreVertical size={18} />
+      </button>
+    </div>
+  </div>
+);
+
+// Comment Item Component
+const CommentItem = ({ comment }) => (
+  <div className="mb-4">
+    <div className="flex items-start space-x-3">
+      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
+        {comment.author.split(' ')[0][0]}{comment.author.split(' ')[1][0]}
+      </div>
+      <div className="flex-1">
+        <div className="flex justify-between items-center mb-1">
+          <h4 className="font-medium">{comment.author}</h4>
+          <span className="text-xs text-gray-400">{new Date(comment.timestamp).toLocaleString()}</span>
+        </div>
+        <p className="text-sm">{comment.text}</p>
+        
+        {comment.attachments.length > 0 && (
+          <div className="mt-2 bg-gray-800 p-2 rounded">
+            {comment.attachments.map((attachment, index) => (
+              <div key={index} className="flex items-center text-xs text-blue-400 hover:underline cursor-pointer">
+                <Paperclip size={12} className="mr-1" />
+                {attachment}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   </div>
 );
 
@@ -280,29 +516,26 @@ const Tab = ({ icon, label, active, onClick }) => (
   </button>
 );
 
-const ProjectDetail = ({ project: initialProject, onBack }) => {
+const ProjectDetail = ({ onBack }) => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
-  const [showProjectEdit, setShowProjectEdit] = useState(false);
-  const [showTaskEdit, setShowTaskEdit] = useState(false);
+  const [showAddComment, setShowAddComment] = useState(false);
+  const [commentText, setCommentText] = useState('');
 
+  // Thêm vào trong component ProjectDetail
+const [showProjectEdit, setShowProjectEdit] = useState(false);
+const [showTaskEdit, setShowTaskEdit] = useState(false);
+
+  
   // Load project data
   useEffect(() => {
-    if (initialProject) {
-      // If project is passed as prop
-      setProject(initialProject);
+    // Simulate API call
+    setTimeout(() => {
+      setProject(projectData);
       setLoading(false);
-    } else {
-      // If we need to fetch project (for development/testing)
-      setLoading(true);
-      // Fetch from API here if needed
-      setTimeout(() => {
-        setProject(initialProject);
-        setLoading(false);
-      }, 500);
-    }
-  }, [initialProject]);
+    }, 500);
+  }, []);
   
   if (loading) {
     return (
@@ -318,10 +551,7 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
         <h2 className="text-xl font-bold mb-2">Project Not Found</h2>
         <p className="text-gray-400">The requested project could not be found.</p>
-        <button 
-          className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
-          onClick={onBack}
-        >
+        <button className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700">
           Back to Projects
         </button>
       </div>
@@ -349,13 +579,13 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
         </button>
         
         <div className="flex space-x-2">
-          <button 
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
-            onClick={() => setShowProjectEdit(true)}
-          >
-            <Edit size={16} className="mr-2" />
-            Edit Project
-          </button>
+        <button 
+  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
+  onClick={() => setShowProjectEdit(true)}
+>
+  <Edit size={16} className="mr-2" />
+  Edit Project
+</button>
           <button className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center">
             <Trash2 size={16} className="mr-2" />
             Delete
@@ -372,15 +602,6 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
           </div>
         </div>
         <p className="text-gray-300">{project.description}</p>
-        
-        {/* Tags */}
-        {project.tags && project.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap">
-            {project.tags.map(tag => (
-              <TagItem key={tag.id} tag={tag} />
-            ))}
-          </div>
-        )}
       </div>
       
       {/* Project Overview Cards */}
@@ -428,7 +649,7 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm text-gray-400 mb-1">Tasks Progress</p>
-              <p className="font-medium">{project.totalCompletedTasks}/{project.totalTasks} completed</p>
+              <p className="font-medium">{project.completedTasks}/{project.totalTasks} completed</p>
             </div>
             <ListChecks size={20} className="text-purple-500" />
           </div>
@@ -456,14 +677,18 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
             active={activeTab === 'team'} 
             onClick={() => setActiveTab('team')} 
           />
-          {project.tags && project.tags.length > 0 && (
-            <Tab 
-              icon={<Tag size={18} />} 
-              label="Tags" 
-              active={activeTab === 'tags'} 
-              onClick={() => setActiveTab('tags')} 
-            />
-          )}
+          <Tab 
+            icon={<FileText size={18} />} 
+            label="Documents" 
+            active={activeTab === 'documents'} 
+            onClick={() => setActiveTab('documents')} 
+          />
+          <Tab 
+            icon={<MessageSquare size={18} />} 
+            label="Comments" 
+            active={activeTab === 'comments'} 
+            onClick={() => setActiveTab('comments')} 
+          />
           <Tab 
             icon={<PieChart size={18} />} 
             label="Analytics" 
@@ -480,12 +705,12 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Project Tasks</h2>
               <button 
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                onClick={() => setShowTaskEdit(true)}
-              >
-                <Plus size={16} className="mr-2" />
-                Add Task
-              </button>
+  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+  onClick={() => setShowTaskEdit(true)}
+>
+  <Plus size={16} className="mr-2" />
+  Add Task
+</button>
             </div>
             
             <div className="mb-4">
@@ -516,22 +741,9 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
             </div>
             
             <div>
-              {project.tasks.length === 0 ? (
-                <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
-                  <ListChecks size={48} className="mx-auto mb-3 opacity-50" />
-                  <p>No tasks found for this project.</p>
-                  <button 
-                    className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
-                    onClick={() => setShowTaskEdit(true)}
-                  >
-                    Add your first task
-                  </button>
-                </div>
-              ) : (
-                project.tasks.map((task, index) => (
-                  <TaskItem key={task.id} task={task} index={index} />
-                ))
-              )}
+              {project.tasks.map((task, index) => (
+                <TaskItem key={task.id} task={task} index={index} />
+              ))}
             </div>
           </div>
         )}
@@ -546,71 +758,98 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
               </button>
             </div>
             
-            {project.users.length === 0 ? (
-              <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
-                <Users size={48} className="mx-auto mb-3 opacity-50" />
-                <p>No team members assigned to this project yet.</p>
-                <button className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700">
-                  Add team members
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {project.users.map((user) => (
-                  <TeamMember key={user.id} user={user} />
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {project.users.map((user) => (
+                <TeamMember key={user.id} user={user} />
+              ))}
+            </div>
           </div>
         )}
         
-        {activeTab === 'tags' && project.tags && (
+        {activeTab === 'documents' && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Project Tags</h2>
+              <h2 className="text-xl font-semibold">Project Documents</h2>
               <button className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center">
                 <Plus size={16} className="mr-2" />
-                Add Tag
+                Upload Document
               </button>
             </div>
             
-            {project.tags.length === 0 ? (
-              <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
-                <Tag size={48} className="mx-auto mb-3 opacity-50" />
-                <p>No tags assigned to this project yet.</p>
-                <button className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700">
-                  Add your first tag
-                </button>
-              </div>
-            ) : (
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="flex flex-wrap">
-                  {project.tags.map(tag => (
-                    <div 
-                      key={tag.id}
-                      className="flex items-center justify-between bg-gray-700 rounded-lg p-3 mr-4 mb-4"
-                      style={{ borderLeft: `4px solid ${tag.color}` }}
-                    >
-                      <div className="flex items-center">
-                        <div 
-                          className="w-4 h-4 rounded-full mr-2"
-                          style={{ backgroundColor: tag.color }}
-                        ></div>
-                        <span>{tag.name}</span>
-                      </div>
-                      <div className="flex space-x-2 ml-4">
-                        <button className="p-1 hover:bg-gray-600 rounded">
-                          <Edit size={14} />
-                        </button>
-                        <button className="p-1 hover:bg-gray-600 rounded">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
+            <div className="bg-gray-800 rounded-lg p-4">
+              {project.documents.length === 0 ? (
+                <div className="text-center py-6 text-gray-400">
+                  <FileText size={48} className="mx-auto mb-3 opacity-50" />
+                  <p>No documents uploaded yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {project.documents.map((doc) => (
+                    <DocumentItem key={doc.id} document={doc} />
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'comments' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Comments</h2>
+              <button 
+                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                onClick={() => setShowAddComment(!showAddComment)}
+              >
+                <Plus size={16} className="mr-2" />
+                Add Comment
+              </button>
+            </div>
+            
+            {showAddComment && (
+              <div className="bg-gray-800 rounded-lg p-4 mb-6">
+                <textarea
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md p-3 text-white resize-none mb-3"
+                  rows="4"
+                  placeholder="Type your comment here..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                ></textarea>
+                <div className="flex items-center justify-between">
+                  <button className="flex items-center text-gray-400 hover:text-white">
+                    <Paperclip size={16} className="mr-1" />
+                    Attach File
+                  </button>
+                  <div className="flex space-x-2">
+                    <button 
+                      className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded"
+                      onClick={() => {
+                        setCommentText('');
+                        setShowAddComment(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded">
+                      Post Comment
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
+            
+            <div className="space-y-4">
+              {project.comments.length === 0 ? (
+                <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
+                  <MessageSquare size={48} className="mx-auto mb-3 opacity-50" />
+                  <p>No comments yet. Be the first to comment!</p>
+                </div>
+              ) : (
+                project.comments.map((comment) => (
+                  <CommentItem key={comment.id} comment={comment} />
+                ))
+              )}
+            </div>
           </div>
         )}
         
@@ -630,7 +869,7 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span className="text-sm">Completed ({project.totalCompletedTasks})</span>
+                    <span className="text-sm">Completed ({project.completedTasks})</span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
@@ -643,34 +882,6 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
                     <span className="text-sm">On Hold ({project.tasks.filter(t => t.status === 'ON_HOLD').length})</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span className="text-sm">Over Due ({project.tasks.filter(t => t.status === 'OVER_DUE').length})</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="font-medium mb-4">Priority Distribution</h3>
-                <div className="flex items-center h-60 justify-center text-center">
-                  <div className="text-gray-400">
-                    <PieChart size={100} className="mx-auto mb-3 opacity-50" />
-                    <p>Priority distribution chart would appear here</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span className="text-sm">High ({project.tasks.filter(t => t.priority === 'HIGH').length})</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    <span className="text-sm">Medium ({project.tasks.filter(t => t.priority === 'MEDIUM').length})</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span className="text-sm">Low ({project.tasks.filter(t => t.priority === 'LOW').length})</span>
                   </div>
                 </div>
               </div>
@@ -691,61 +902,59 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                   Distribution of tasks among team members
                 </div>
                 
-                {project.users.length === 0 ? (
-                  <div className="text-center py-6 text-gray-400">
-                    <Users size={32} className="mx-auto mb-3 opacity-50" />
-                    <p>No team members assigned yet</p>
-                  </div>
-                ) : (
-                  project.users.map((user) => {
-                    // This would need real task assignment data,
-                    // currently mocking up for visualization
-                    const userTasks = [];
-                    const completedTasks = [];
-                    const percentage = 0;
-                    
-                    return (
-                      <div key={user.id} className="mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center">
-                            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
-                              {user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                            </div>
-                            <span>{user.fullName}</span>
+                {project.users.map((user) => {
+                  const userTasks = project.tasks.filter(t => t.assigneeId === user.id);
+                  const completedTasks = userTasks.filter(t => t.status === 'COMPLETED');
+                  const percentage = userTasks.length ? (completedTasks.length / userTasks.length) * 100 : 0;
+                  
+                  return (
+                    <div key={user.id} className="mb-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center">
+                          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
+                            {user.firstName[0]}{user.lastName[0]}
                           </div>
-                          <span className="text-sm">0/0 tasks</span>
+                          <span>{user.firstName} {user.lastName}</span>
                         </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="bg-purple-600 h-2 rounded-full" 
-                            style={{ width: `0%` }}
-                          ></div>
-                        </div>
+                        <span className="text-sm">{completedTasks.length}/{userTasks.length} tasks</span>
                       </div>
-                    );
-                  })
-                )}
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-purple-600 h-2 rounded-full" 
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h3 className="font-medium mb-4">Priority Distribution</h3>
+                <div className="flex items-center h-40 justify-center text-center">
+                  <div className="text-gray-400">
+                    <PieChart size={100} className="mx-auto mb-3 opacity-50" />
+                    <p>Priority distribution chart would appear here</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    <span className="text-sm">High ({project.tasks.filter(t => t.priority === 'HIGH').length})</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                    <span className="text-sm">Medium ({project.tasks.filter(t => t.priority === 'MEDIUM').length})</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span className="text-sm">Low ({project.tasks.filter(t => t.priority === 'LOW').length})</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
-      </div>
-      
-      {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-gray-700">
-        <div className="flex justify-between text-sm text-gray-400">
-          
-          <div className="flex space-x-2">
-            <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded flex items-center">
-              <Download size={14} className="mr-1" />
-              Export
-            </button>
-            <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded flex items-center">
-              <FileText size={14} className="mr-1" />
-              Report
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
