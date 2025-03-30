@@ -240,18 +240,36 @@ const Project = () => {
     pageSize: 10,
     totalElements: 0,
     totalPages: 1,
-    last: true
+    last: true,
   });
 
   // Load data from API
-  const fetchProjects = async (page = currentPage, size = itemsPerPage) => {
+  // 1. Cập nhật hàm fetchProjects để gửi các tham số tìm kiếm và lọc
+  const fetchProjects = async (
+    page = currentPage,
+    size = itemsPerPage,
+    searchTerm = search,
+    filterStatus = activeFilter
+  ) => {
     setLoading(true);
     try {
+      const params = {
+        pageNo: page,
+        pageSize: size,
+      };
+
+      // Thêm tham số tìm kiếm nếu có
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      // Thêm tham số lọc status nếu không phải "all"
+      if (filterStatus !== "all") {
+        params.status = filterStatus;
+      }
+
       const response = await axios.get(`http://localhost:8080/api/projects`, {
-        params: {
-          pageNo: page,
-          pageSize: size
-        }
+        params: params,
       });
       setApiData(response.data);
       setProjects(response.data.content);
@@ -263,15 +281,15 @@ const Project = () => {
     }
   };
 
-  // Load data initially
+  // 2. Cập nhật useEffect để phản ứng với sự thay đổi của search và activeFilter
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    fetchProjects(currentPage, itemsPerPage, search, activeFilter);
+  }, [currentPage, itemsPerPage, search, activeFilter]);
 
   // Reload data when page or items per page changes
-  useEffect(() => {
-    fetchProjects(currentPage, itemsPerPage);
-  }, [currentPage, itemsPerPage]);
+  // useEffect(() => {
+  //   fetchProjects(currentPage, itemsPerPage);
+  // }, [currentPage, itemsPerPage]);
 
   // Handle checkbox selection
   const handleSelectProject = (id) => {
@@ -294,55 +312,27 @@ const Project = () => {
     setSelectAll(!selectAll);
   };
 
+  const refreshData = () => {
+    fetchProjects(currentPage, itemsPerPage, search, activeFilter);
+  };
+  
+
   // Filter projects based on active filter and search
-  const filteredProjects = projects.filter((project) => {
-    // Apply status filter
-    if (activeFilter !== "all" && project.status !== activeFilter) {
-      return false;
-    }
+  const filteredProjects = projects;
 
-    // Apply search filter
-    if (search && !project.name.toLowerCase().includes(search.toLowerCase())) {
-      return false;
-    }
+  const currentProjects = filteredProjects;
 
-    return true;
-  });
-
-  // Calculate pagination for client-side filtering
-  const indexOfLastProject = currentPage * itemsPerPage;
-  const indexOfFirstProject = indexOfLastProject - itemsPerPage;
-  let currentProjects = filteredProjects;
-  
-  // Only do client-side pagination if we're filtering or searching
-  if (activeFilter !== "all" || search !== "") {
-    currentProjects = filteredProjects.slice(
-      indexOfFirstProject,
-      indexOfLastProject
-    );
-  }
-  
-  const totalPages = activeFilter !== "all" || search !== "" 
-    ? Math.ceil(filteredProjects.length / itemsPerPage)
-    : apiData.totalPages;
+  const totalPages = apiData.totalPages;
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Only fetch from API if we're not filtering
-    if (activeFilter === "all" && search === "") {
-      fetchProjects(pageNumber, itemsPerPage);
-    }
   };
 
   // Handle items per page change
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page
-    // Only fetch from API if we're not filtering
-    if (activeFilter === "all" && search === "") {
-      fetchProjects(1, newItemsPerPage);
-    }
+    setCurrentPage(1);
   };
 
   const [showProjectDetail, setShowProjectDetail] = useState(false);
@@ -379,10 +369,13 @@ const Project = () => {
         />
       ) : showProjectEdit ? (
         <ProjectEdit
-          project={selectedProject}
-          onBack={() => setShowProjectEdit(false)}
-          isNew={selectedProject === null}
-        />
+        project={selectedProject}
+        onBack={() => {
+          setShowProjectEdit(false);
+          refreshData(); 
+        }}
+        isNew={selectedProject === null}
+      />
       ) : (
         <>
           <h1 className="text-2xl font-bold mb-4">PROJECT MANAGEMENT</h1>
@@ -404,7 +397,10 @@ const Project = () => {
                 <Edit size={18} />
                 <span>Edit</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md" onClick={handleReset}>
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"
+                onClick={handleReset}
+              >
                 <RotateCcw size={18} />
                 <span>Reset</span>
               </button>
@@ -419,7 +415,7 @@ const Project = () => {
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
-                    setCurrentPage(1); // Reset to first page when searching
+                    setCurrentPage(1);
                   }}
                 />
                 <Search
@@ -445,7 +441,7 @@ const Project = () => {
             activeFilter={activeFilter}
             onFilterChange={(filter) => {
               setActiveFilter(filter);
-              setCurrentPage(1); // Reset to first page when changing filter
+              setCurrentPage(1);
             }}
           />
 
@@ -543,7 +539,7 @@ const Project = () => {
             totalPages={totalPages}
             onPageChange={handlePageChange}
             itemsPerPage={itemsPerPage}
-            totalItems={activeFilter !== "all" || search !== "" ? filteredProjects.length : apiData.totalElements}
+            totalItems={apiData.totalElements}
             onItemsPerPageChange={handleItemsPerPageChange}
           />
         </>

@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  ChevronLeft, 
-  Edit, 
-  Trash2, 
-  Clock, 
-  Calendar, 
-  Users, 
-  ListChecks, 
-  PieChart, 
-  MessageSquare, 
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  ChevronLeft,
+  Edit,
+  Trash2,
+  Clock,
+  Calendar,
+  Users,
+  ListChecks,
+  PieChart,
+  MessageSquare,
   Plus,
   User,
   CheckCircle,
@@ -23,19 +23,20 @@ import {
   ChevronUp,
   CheckCircle2,
   Download,
-  Tag
-} from 'lucide-react';
+  Tag,
+  X,
+} from "lucide-react";
 
-import ProjectEdit from '../edit/ProjectEdit';
-import TaskEdit from '../edit/TaskEdit';
+import ProjectEdit from "../edit/ProjectEdit";
+import TaskEdit from "../edit/TaskEdit";
 
 // Format date for display
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 };
 
@@ -43,61 +44,61 @@ const formatDate = (dateString) => {
 const getDaysRemaining = (endDateString) => {
   const endDate = new Date(endDateString);
   const today = new Date();
-  
+
   // Set time to beginning of day for accurate day calculation
   endDate.setHours(0, 0, 0, 0);
   today.setHours(0, 0, 0, 0);
-  
+
   const diffTime = endDate - today;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   return diffDays;
 };
 
 // Get status color and icon
 const getStatusInfo = (status) => {
   switch (status) {
-    case 'NOT_STARTED':
-      return { 
-        color: 'bg-gray-500', 
-        textColor: 'text-gray-500',
+    case "NOT_STARTED":
+      return {
+        color: "bg-gray-500",
+        textColor: "text-gray-500",
         icon: <Clock size={16} />,
-        text: 'Not Started'
+        text: "Not Started",
       };
-    case 'IN_PROGRESS':
-      return { 
-        color: 'bg-blue-500', 
-        textColor: 'text-blue-500',
+    case "IN_PROGRESS":
+      return {
+        color: "bg-blue-500",
+        textColor: "text-blue-500",
         icon: <Clock size={16} />,
-        text: 'In Progress'
+        text: "In Progress",
       };
-    case 'COMPLETED':
-      return { 
-        color: 'bg-green-500', 
-        textColor: 'text-green-500',
+    case "COMPLETED":
+      return {
+        color: "bg-green-500",
+        textColor: "text-green-500",
         icon: <CheckCircle size={16} />,
-        text: 'Completed'
+        text: "Completed",
       };
-    case 'ON_HOLD':
-      return { 
-        color: 'bg-yellow-500', 
-        textColor: 'text-yellow-500',
+    case "ON_HOLD":
+      return {
+        color: "bg-yellow-500",
+        textColor: "text-yellow-500",
         icon: <AlertCircle size={16} />,
-        text: 'On Hold'
+        text: "On Hold",
       };
-    case 'OVER_DUE':
-      return { 
-        color: 'bg-red-500', 
-        textColor: 'text-red-500',
+    case "OVER_DUE":
+      return {
+        color: "bg-red-500",
+        textColor: "text-red-500",
         icon: <AlertTriangle size={16} />,
-        text: 'Over Due'
+        text: "Over Due",
       };
     default:
-      return { 
-        color: 'bg-gray-500', 
-        textColor: 'text-gray-500',
+      return {
+        color: "bg-gray-500",
+        textColor: "text-gray-500",
         icon: <Clock size={16} />,
-        text: status
+        text: status,
       };
   }
 };
@@ -105,31 +106,88 @@ const getStatusInfo = (status) => {
 // Get priority color and text
 const getPriorityInfo = (priority) => {
   switch (priority) {
-    case 'HIGH':
-      return { 
-        color: 'bg-red-500', 
-        textColor: 'text-red-500',
-        text: 'High'
+    case "HIGH":
+      return {
+        color: "bg-red-500",
+        textColor: "text-red-500",
+        text: "High",
       };
-    case 'MEDIUM':
-      return { 
-        color: 'bg-yellow-500', 
-        textColor: 'text-yellow-500',
-        text: 'Medium'
+    case "MEDIUM":
+      return {
+        color: "bg-yellow-500",
+        textColor: "text-yellow-500",
+        text: "Medium",
       };
-    case 'LOW':
-      return { 
-        color: 'bg-green-500', 
-        textColor: 'text-green-500',
-        text: 'Low'
+    case "LOW":
+      return {
+        color: "bg-green-500",
+        textColor: "text-green-500",
+        text: "Low",
       };
     default:
-      return { 
-        color: 'bg-gray-500', 
-        textColor: 'text-gray-500',
-        text: priority
+      return {
+        color: "bg-gray-500",
+        textColor: "text-gray-500",
+        text: priority,
       };
   }
+};
+
+// Member Dropdown Menu Component
+const MemberDropdownMenu = ({
+  isOpen,
+  onClose,
+  users,
+  onSelect,
+  usedUserIds,
+}) => {
+  if (!isOpen) return null;
+
+  // Lọc ra những user chưa được thêm vào project
+  const availableUsers = users.filter((user) => !usedUserIds.includes(user.id));
+
+  return (
+    <div className="absolute right-0 top-full mt-2 w-64 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700">
+      <div className="flex justify-between items-center p-3 border-b border-gray-700">
+        <h3 className="font-medium">Select Team Member</h3>
+        <button
+          className="p-1 hover:bg-gray-700 rounded-full"
+          onClick={onClose}
+        >
+          <X size={18} />
+        </button>
+      </div>
+      <div className="p-3 max-h-96 overflow-y-auto">
+        {availableUsers.length === 0 ? (
+          <div className="text-center py-4 text-gray-400">
+            <p>No more users available</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {availableUsers.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center space-x-3 p-2 hover:bg-gray-700 rounded cursor-pointer"
+                onClick={() => onSelect(user.id)}
+              >
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
+                  {user.fullName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .substring(0, 2)}
+                </div>
+                <div>
+                  <h4 className="font-medium">{user.fullName}</h4>
+                  <p className="text-sm text-gray-400">{user.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 // Task Item Component
@@ -137,10 +195,10 @@ const TaskItem = ({ task, index }) => {
   const [expanded, setExpanded] = useState(false);
   const statusInfo = getStatusInfo(task.status);
   const priorityInfo = getPriorityInfo(task.priority);
-  
+
   return (
     <div className="border border-gray-700 rounded-lg overflow-hidden mb-3">
-      <div 
+      <div
         className="flex items-center justify-between p-4 bg-gray-800 cursor-pointer hover:bg-gray-750"
         onClick={() => setExpanded(!expanded)}
       >
@@ -171,11 +229,11 @@ const TaskItem = ({ task, index }) => {
           </button>
         </div>
       </div>
-      
+
       {expanded && (
         <div className="p-4 bg-gray-900 border-t border-gray-700">
           <div className="text-sm text-gray-300 mb-3">{task.description}</div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-xs text-gray-400 mb-1">Status</p>
@@ -197,7 +255,10 @@ const TaskItem = ({ task, index }) => {
                 {task.assigneeName ? (
                   <>
                     <div className="h-6 w-6 rounded-full bg-gray-600 flex items-center justify-center text-xs mr-2">
-                      {task.assigneeName.split(' ').map(n => n[0]).join('')}
+                      {task.assigneeName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </div>
                     <span>{task.assigneeName}</span>
                   </>
@@ -207,7 +268,7 @@ const TaskItem = ({ task, index }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-xs text-gray-400 mb-1">Start Date</p>
@@ -224,16 +285,14 @@ const TaskItem = ({ task, index }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-end space-x-2 mt-2">
-            <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">Edit</button>
-            {task.status !== 'COMPLETED' && (
-              <button className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm flex items-center">
-                <CheckCircle2 size={14} className="mr-1" />
-                Complete
-              </button>
-            )}
-            <button className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">Delete</button>
+            <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
+              View
+            </button>
+            <button className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+              Delete
+            </button>
           </div>
         </div>
       )}
@@ -245,7 +304,11 @@ const TaskItem = ({ task, index }) => {
 const TeamMember = ({ user }) => (
   <div className="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded">
     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-      {user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+      {user.fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)}
     </div>
     <div>
       <h4 className="font-medium">{user.fullName}</h4>
@@ -256,8 +319,8 @@ const TeamMember = ({ user }) => (
 
 // Tag Component
 const TagItem = ({ tag }) => (
-  <div 
-    className="inline-flex items-center px-3 py-1 rounded-full text-sm mr-2 mb-2" 
+  <div
+    className="inline-flex items-center px-3 py-1 rounded-full text-sm mr-2 mb-2"
     style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
   >
     <Tag size={12} className="mr-1" />
@@ -269,9 +332,9 @@ const TagItem = ({ tag }) => (
 const Tab = ({ icon, label, active, onClick }) => (
   <button
     className={`flex items-center space-x-2 px-4 py-3 border-b-2 ${
-      active 
-        ? 'border-purple-500 text-purple-500' 
-        : 'border-transparent text-gray-400 hover:text-white hover:border-gray-600'
+      active
+        ? "border-purple-500 text-purple-500"
+        : "border-transparent text-gray-400 hover:text-white hover:border-gray-600"
     }`}
     onClick={onClick}
   >
@@ -280,12 +343,180 @@ const Tab = ({ icon, label, active, onClick }) => (
   </button>
 );
 
+// Thêm component này vào trước hoặc sau component chính
+const TagDropdownMenu = ({ isOpen, onClose, tags, onSelect, usedTagIds }) => {
+  if (!isOpen) return null;
+
+  // Lọc ra những tag chưa được sử dụng
+  const availableTags = tags.filter((tag) => !usedTagIds.includes(tag.id));
+
+  return (
+    <div className="absolute right-0 top-full mt-2 w-64 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700">
+      <div className="flex justify-between items-center p-3 border-b border-gray-700">
+        <h3 className="font-medium">Select Tag</h3>
+        <button
+          className="p-1 hover:bg-gray-700 rounded-full"
+          onClick={onClose}
+        >
+          <X size={18} />
+        </button>
+      </div>
+      <div className="p-3 max-h-96 overflow-y-auto">
+        {availableTags.length === 0 ? (
+          <div className="text-center py-4 text-gray-400">
+            <p>No more tags available</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {availableTags.map((tag) => (
+              <div
+                key={tag.id}
+                className="cursor-pointer flex items-center px-3 py-2 rounded-md hover:bg-gray-700"
+                style={{ borderLeft: `4px solid ${tag.color}` }}
+                onClick={() => onSelect(tag.id)}
+              >
+                <div
+                  className="w-4 h-4 rounded-full mr-2"
+                  style={{ backgroundColor: tag.color }}
+                ></div>
+                <span>{tag.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ProjectDetail = ({ project: initialProject, onBack }) => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTab] = useState("tasks");
   const [showProjectEdit, setShowProjectEdit] = useState(false);
   const [showTaskEdit, setShowTaskEdit] = useState(false);
+  const [allTags, setAllTags] = useState([]);
+  const [tagsMenuOpen, setTagsMenuOpen] = useState(false);
+  const [loadingTag, setLoadingTag] = useState(false);
+  const [tagError, setTagError] = useState(null);
+  // Thêm state để quản lý member
+  const [allUsers, setAllUsers] = useState([]);
+  const [membersMenuOpen, setMembersMenuOpen] = useState(false);
+  const [loadingMember, setLoadingMember] = useState(false);
+  const [memberError, setMemberError] = useState(null);
+
+  // Thêm useEffect để load danh sách tất cả users
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/users");
+        setAllUsers(response.data.content || []);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchAllUsers();
+  }, []);
+
+  // Hàm thêm member vào project
+  const handleAddMember = async (userId) => {
+    if (!project || !userId) return;
+
+    setLoadingMember(true);
+    setMemberError(null);
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/api/projects/${project.id}/members/${userId}`
+      );
+      // Cập nhật lại project với member mới
+      setProject(response.data);
+      setMembersMenuOpen(false);
+    } catch (error) {
+      console.error("Error adding member:", error);
+      setMemberError("Failed to add member. Please try again.");
+    } finally {
+      setLoadingMember(false);
+    }
+  };
+
+  // Hàm xóa member khỏi project
+  const handleRemoveMember = async (userId) => {
+    if (!project || !userId) return;
+
+    setLoadingMember(true);
+    setMemberError(null);
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:8080/api/projects/${project.id}/members/${userId}`
+      );
+      // Cập nhật lại project sau khi xóa member
+      setProject(response.data);
+    } catch (error) {
+      console.error("Error removing member:", error);
+      setMemberError("Failed to remove member. Please try again.");
+    } finally {
+      setLoadingMember(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchAllTags = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/tags");
+        setAllTags(response.data.content || []);
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+      }
+    };
+
+    fetchAllTags();
+  }, []);
+
+  // Thêm hàm xử lý thêm tag
+  const handleAddTag = async (tagId) => {
+    if (!project || !tagId) return;
+
+    setLoadingTag(true);
+    setTagError(null);
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`
+      );
+      // Cập nhật lại project với tag mới
+      setProject(response.data);
+      setTagsMenuOpen(false);
+    } catch (error) {
+      console.error("Error adding tag:", error);
+      setTagError("Failed to add tag. Please try again.");
+    } finally {
+      setLoadingTag(false);
+    }
+  };
+
+  // Thêm hàm xử lý xóa tag
+  const handleRemoveTag = async (tagId) => {
+    if (!project || !tagId) return;
+
+    setLoadingTag(true);
+    setTagError(null);
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`
+      );
+      // Cập nhật lại project sau khi xóa tag
+      setProject(response.data);
+    } catch (error) {
+      console.error("Error removing tag:", error);
+      setTagError("Failed to remove tag. Please try again.");
+    } finally {
+      setLoadingTag(false);
+    }
+  };
 
   // Load project data
   useEffect(() => {
@@ -303,7 +534,7 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
       }, 500);
     }
   }, [initialProject]);
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -311,14 +542,16 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
       </div>
     );
   }
-  
+
   if (!project) {
     return (
       <div className="p-6 text-center">
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
         <h2 className="text-xl font-bold mb-2">Project Not Found</h2>
-        <p className="text-gray-400">The requested project could not be found.</p>
-        <button 
+        <p className="text-gray-400">
+          The requested project could not be found.
+        </p>
+        <button
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
           onClick={onBack}
         >
@@ -327,29 +560,41 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
       </div>
     );
   }
-  
+
   const statusInfo = getStatusInfo(project.status);
   const daysRemaining = getDaysRemaining(project.dueDate);
 
   if (showProjectEdit) {
-    return <ProjectEdit project={project} onBack={() => setShowProjectEdit(false)} />;
+    return (
+      <ProjectEdit project={project} onBack={() => setShowProjectEdit(false)} />
+    );
   }
-  
+
   if (showTaskEdit) {
-    return <TaskEdit isNew={true} projectId={project.id} projectName={project.name} onBack={() => setShowTaskEdit(false)} />;
+    return (
+      <TaskEdit
+        isNew={true}
+        projectId={project.id}
+        projectName={project.name}
+        onBack={() => setShowTaskEdit(false)}
+      />
+    );
   }
-  
+
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <button className="flex items-center text-gray-400 hover:text-white" onClick={onBack}>
+        <button
+          className="flex items-center text-gray-400 hover:text-white"
+          onClick={onBack}
+        >
           <ChevronLeft size={20} className="mr-1" />
           <span>Back to Projects</span>
         </button>
-        
+
         <div className="flex space-x-2">
-          <button 
+          <button
             className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
             onClick={() => setShowProjectEdit(true)}
           >
@@ -362,27 +607,29 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
           </button>
         </div>
       </div>
-      
+
       {/* Project Title and Status */}
       <div className="mb-6">
         <div className="flex items-center mb-2">
           <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} bg-opacity-20 ${statusInfo.textColor}`}>
+          <div
+            className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} bg-opacity-20 ${statusInfo.textColor}`}
+          >
             {statusInfo.text}
           </div>
         </div>
         <p className="text-gray-300">{project.description}</p>
-        
+
         {/* Tags */}
         {project.tags && project.tags.length > 0 && (
           <div className="mt-3 flex flex-wrap">
-            {project.tags.map(tag => (
+            {project.tags.map((tag) => (
               <TagItem key={tag.id} tag={tag} />
             ))}
           </div>
         )}
       </div>
-      
+
       {/* Project Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-800 p-4 rounded-lg">
@@ -396,24 +643,26 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
             <Calendar size={20} className="text-purple-500" />
           </div>
         </div>
-        
+
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
               <p className="font-medium">
-                {daysRemaining > 0 
-                  ? `${daysRemaining} days left` 
-                  : daysRemaining === 0 
-                    ? "Due today" 
-                    : `${Math.abs(daysRemaining)} days overdue`
-                }
+                {daysRemaining > 0
+                  ? `${daysRemaining} days left`
+                  : daysRemaining === 0
+                  ? "Due today"
+                  : `${Math.abs(daysRemaining)} days overdue`}
               </p>
             </div>
-            <Clock size={20} className={daysRemaining < 0 ? "text-red-500" : "text-purple-500"} />
+            <Clock
+              size={20}
+              className={daysRemaining < 0 ? "text-red-500" : "text-purple-500"}
+            />
           </div>
         </div>
-        
+
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
@@ -423,63 +672,65 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
             <Users size={20} className="text-purple-500" />
           </div>
         </div>
-        
+
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm text-gray-400 mb-1">Tasks Progress</p>
-              <p className="font-medium">{project.totalCompletedTasks}/{project.totalTasks} completed</p>
+              <p className="font-medium">
+                {project.totalCompletedTasks}/{project.totalTasks} completed
+              </p>
             </div>
             <ListChecks size={20} className="text-purple-500" />
           </div>
           <div className="mt-2 w-full bg-gray-700 rounded-full h-2.5">
-            <div 
-              className="bg-purple-600 h-2.5 rounded-full" 
+            <div
+              className="bg-purple-600 h-2.5 rounded-full"
               style={{ width: `${project.progress}%` }}
             ></div>
           </div>
         </div>
       </div>
-      
+
       {/* Tabs */}
       <div className="border-b border-gray-700 mb-6">
         <div className="flex overflow-x-auto hide-scrollbar">
-          <Tab 
-            icon={<ListChecks size={18} />} 
-            label="Tasks" 
-            active={activeTab === 'tasks'} 
-            onClick={() => setActiveTab('tasks')} 
+          <Tab
+            icon={<ListChecks size={18} />}
+            label="Tasks"
+            active={activeTab === "tasks"}
+            onClick={() => setActiveTab("tasks")}
           />
-          <Tab 
-            icon={<Users size={18} />} 
-            label="Team" 
-            active={activeTab === 'team'} 
-            onClick={() => setActiveTab('team')} 
+          <Tab
+            icon={<Users size={18} />}
+            label="Team"
+            active={activeTab === "team"}
+            onClick={() => setActiveTab("team")}
           />
           {project.tags && project.tags.length > 0 && (
-            <Tab 
-              icon={<Tag size={18} />} 
-              label="Tags" 
-              active={activeTab === 'tags'} 
-              onClick={() => setActiveTab('tags')} 
+            <Tab
+              icon={<Tag size={18} />}
+              label="Tags"
+              active={activeTab === "tags"}
+              onClick={() => setActiveTab("tags")}
             />
           )}
-          <Tab 
-            icon={<PieChart size={18} />} 
-            label="Analytics" 
-            active={activeTab === 'analytics'} 
-            onClick={() => setActiveTab('analytics')} 
+          <Tab
+            icon={<PieChart size={18} />}
+            label="Analytics"
+            active={activeTab === "analytics"}
+            onClick={() => setActiveTab("analytics")}
           />
         </div>
       </div>
-      
+
       {/* Tab Content */}
       <div className="mb-6">
-        {activeTab === 'tasks' && (
+        {activeTab === "tasks" && (
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Project Tasks</h2>
-              <button 
+              <button
                 className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
                 onClick={() => setShowTaskEdit(true)}
               >
@@ -487,7 +738,7 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                 Add Task
               </button>
             </div>
-            
+
             <div className="mb-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
                 <div className="bg-gray-800 p-3 rounded-lg">
@@ -497,30 +748,39 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                 <div className="bg-gray-800 p-3 rounded-lg">
                   <div className="text-sm text-gray-400 mb-1">In Progress</div>
                   <div className="text-2xl font-bold text-blue-500">
-                    {project.tasks.filter(t => t.status === 'IN_PROGRESS').length}
+                    {
+                      project.tasks.filter((t) => t.status === "IN_PROGRESS")
+                        .length
+                    }
                   </div>
                 </div>
                 <div className="bg-gray-800 p-3 rounded-lg">
                   <div className="text-sm text-gray-400 mb-1">Completed</div>
                   <div className="text-2xl font-bold text-green-500">
-                    {project.tasks.filter(t => t.status === 'COMPLETED').length}
+                    {
+                      project.tasks.filter((t) => t.status === "COMPLETED")
+                        .length
+                    }
                   </div>
                 </div>
                 <div className="bg-gray-800 p-3 rounded-lg">
                   <div className="text-sm text-gray-400 mb-1">Not Started</div>
                   <div className="text-2xl font-bold text-gray-500">
-                    {project.tasks.filter(t => t.status === 'NOT_STARTED').length}
+                    {
+                      project.tasks.filter((t) => t.status === "NOT_STARTED")
+                        .length
+                    }
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <div>
               {project.tasks.length === 0 ? (
                 <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                   <ListChecks size={48} className="mx-auto mb-3 opacity-50" />
                   <p>No tasks found for this project.</p>
-                  <button 
+                  <button
                     className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
                     onClick={() => setShowTaskEdit(true)}
                   >
@@ -535,74 +795,151 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
             </div>
           </div>
         )}
-        
-        {activeTab === 'team' && (
+
+        {activeTab === "team" && (
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Team Members</h2>
-              <button className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center">
-                <Plus size={16} className="mr-2" />
-                Add Member
-              </button>
+              <div className="relative">
+                <button
+                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                  onClick={() => setMembersMenuOpen(!membersMenuOpen)}
+                  disabled={loadingMember}
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Member
+                  {loadingMember && (
+                    <span className="ml-2 animate-spin">⟳</span>
+                  )}
+                </button>
+
+                {/* Member Dropdown Menu */}
+                <MemberDropdownMenu
+                  isOpen={membersMenuOpen}
+                  onClose={() => setMembersMenuOpen(false)}
+                  users={allUsers}
+                  onSelect={handleAddMember}
+                  usedUserIds={project.users.map((user) => user.id)}
+                />
+              </div>
             </div>
-            
+
+            {memberError && (
+              <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
+                {memberError}
+              </div>
+            )}
+
             {project.users.length === 0 ? (
               <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                 <Users size={48} className="mx-auto mb-3 opacity-50" />
                 <p>No team members assigned to this project yet.</p>
-                <button className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700">
+                <button
+                  className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
+                  onClick={() => setMembersMenuOpen(true)}
+                >
                   Add team members
                 </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {project.users.map((user) => (
-                  <TeamMember key={user.id} user={user} />
+                  <div
+                    key={user.id}
+                    className="bg-gray-800 rounded-lg p-3 flex justify-between items-center"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
+                        {user.fullName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .substring(0, 2)}
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{user.fullName}</h4>
+                        <p className="text-sm text-gray-400">{user.role}</p>
+                      </div>
+                    </div>
+                    <button
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-700 rounded-full"
+                      onClick={() => handleRemoveMember(user.id)}
+                      disabled={loadingMember}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
           </div>
         )}
-        
-        {activeTab === 'tags' && project.tags && (
+
+        {activeTab === "tags" && project.tags && (
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Project Tags</h2>
-              <button className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center">
-                <Plus size={16} className="mr-2" />
-                Add Tag
-              </button>
+              <div className="relative">
+                <button
+                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                  onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
+                  disabled={loadingTag}
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Tag
+                  {loadingTag && <span className="ml-2 animate-spin">⟳</span>}
+                </button>
+
+                {/* Tag Dropdown Menu */}
+                <TagDropdownMenu
+                  isOpen={tagsMenuOpen}
+                  onClose={() => setTagsMenuOpen(false)}
+                  tags={allTags}
+                  onSelect={handleAddTag}
+                  usedTagIds={project.tags.map((tag) => tag.id)}
+                />
+              </div>
             </div>
-            
+
+            {tagError && (
+              <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
+                {tagError}
+              </div>
+            )}
+
             {project.tags.length === 0 ? (
               <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                 <Tag size={48} className="mx-auto mb-3 opacity-50" />
                 <p>No tags assigned to this project yet.</p>
-                <button className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700">
+                <button
+                  className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
+                  onClick={() => setTagsMenuOpen(true)}
+                >
                   Add your first tag
                 </button>
               </div>
             ) : (
               <div className="bg-gray-800 p-4 rounded-lg">
                 <div className="flex flex-wrap">
-                  {project.tags.map(tag => (
-                    <div 
+                  {project.tags.map((tag) => (
+                    <div
                       key={tag.id}
                       className="flex items-center justify-between bg-gray-700 rounded-lg p-3 mr-4 mb-4"
                       style={{ borderLeft: `4px solid ${tag.color}` }}
                     >
                       <div className="flex items-center">
-                        <div 
+                        <div
                           className="w-4 h-4 rounded-full mr-2"
                           style={{ backgroundColor: tag.color }}
                         ></div>
                         <span>{tag.name}</span>
                       </div>
                       <div className="flex space-x-2 ml-4">
-                        <button className="p-1 hover:bg-gray-600 rounded">
-                          <Edit size={14} />
-                        </button>
-                        <button className="p-1 hover:bg-gray-600 rounded">
+                        <button
+                          className="p-1 hover:bg-gray-600 rounded"
+                          onClick={() => handleRemoveTag(tag.id)}
+                          disabled={loadingTag}
+                        >
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -613,11 +950,11 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
             )}
           </div>
         )}
-        
-        {activeTab === 'analytics' && (
+
+        {activeTab === "analytics" && (
           <div>
             <h2 className="text-xl font-semibold mb-4">Project Analytics</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gray-800 p-4 rounded-lg">
                 <h3 className="font-medium mb-4">Task Status Distribution</h3>
@@ -630,27 +967,57 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span className="text-sm">Completed ({project.totalCompletedTasks})</span>
+                    <span className="text-sm">
+                      Completed ({project.totalCompletedTasks})
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                    <span className="text-sm">In Progress ({project.tasks.filter(t => t.status === 'IN_PROGRESS').length})</span>
+                    <span className="text-sm">
+                      In Progress (
+                      {
+                        project.tasks.filter((t) => t.status === "IN_PROGRESS")
+                          .length
+                      }
+                      )
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-gray-500 mr-2"></div>
-                    <span className="text-sm">Not Started ({project.tasks.filter(t => t.status === 'NOT_STARTED').length})</span>
+                    <span className="text-sm">
+                      Not Started (
+                      {
+                        project.tasks.filter((t) => t.status === "NOT_STARTED")
+                          .length
+                      }
+                      )
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    <span className="text-sm">On Hold ({project.tasks.filter(t => t.status === 'ON_HOLD').length})</span>
+                    <span className="text-sm">
+                      On Hold (
+                      {
+                        project.tasks.filter((t) => t.status === "ON_HOLD")
+                          .length
+                      }
+                      )
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span className="text-sm">Over Due ({project.tasks.filter(t => t.status === 'OVER_DUE').length})</span>
+                    <span className="text-sm">
+                      Over Due (
+                      {
+                        project.tasks.filter((t) => t.status === "OVER_DUE")
+                          .length
+                      }
+                      )
+                    </span>
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-gray-800 p-4 rounded-lg">
                 <h3 className="font-medium mb-4">Priority Distribution</h3>
                 <div className="flex items-center h-60 justify-center text-center">
@@ -662,19 +1029,37 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span className="text-sm">High ({project.tasks.filter(t => t.priority === 'HIGH').length})</span>
+                    <span className="text-sm">
+                      High (
+                      {
+                        project.tasks.filter((t) => t.priority === "HIGH")
+                          .length
+                      }
+                      )
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    <span className="text-sm">Medium ({project.tasks.filter(t => t.priority === 'MEDIUM').length})</span>
+                    <span className="text-sm">
+                      Medium (
+                      {
+                        project.tasks.filter((t) => t.priority === "MEDIUM")
+                          .length
+                      }
+                      )
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span className="text-sm">Low ({project.tasks.filter(t => t.priority === 'LOW').length})</span>
+                    <span className="text-sm">
+                      Low (
+                      {project.tasks.filter((t) => t.priority === "LOW").length}
+                      )
+                    </span>
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-gray-800 p-4 rounded-lg">
                 <h3 className="font-medium mb-4">Project Timeline</h3>
                 <div className="flex items-center h-60 justify-center text-center">
@@ -684,13 +1069,13 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-gray-800 p-4 rounded-lg">
                 <h3 className="font-medium mb-2">Task Ownership</h3>
                 <div className="text-sm text-gray-400 mb-4">
                   Distribution of tasks among team members
                 </div>
-                
+
                 {project.users.length === 0 ? (
                   <div className="text-center py-6 text-gray-400">
                     <Users size={32} className="mx-auto mb-3 opacity-50" />
@@ -703,21 +1088,25 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
                     const userTasks = [];
                     const completedTasks = [];
                     const percentage = 0;
-                    
+
                     return (
                       <div key={user.id} className="mb-3">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center">
                             <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
-                              {user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                              {user.fullName
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .substring(0, 2)}
                             </div>
                             <span>{user.fullName}</span>
                           </div>
                           <span className="text-sm">0/0 tasks</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="bg-purple-600 h-2 rounded-full" 
+                          <div
+                            className="bg-purple-600 h-2 rounded-full"
                             style={{ width: `0%` }}
                           ></div>
                         </div>
@@ -730,11 +1119,10 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
           </div>
         )}
       </div>
-      
+
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-gray-700">
         <div className="flex justify-between text-sm text-gray-400">
-          
           <div className="flex space-x-2">
             <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded flex items-center">
               <Download size={14} className="mr-1" />

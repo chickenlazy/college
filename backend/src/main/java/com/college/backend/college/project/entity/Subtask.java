@@ -28,4 +28,8 @@ public class Subtask {
     @ManyToOne
     @JoinColumn(name = "task_id")
     private Task task;
+
+    @OneToOne
+    @JoinColumn(name = "assignee_id")
+    private User assignee;
 }

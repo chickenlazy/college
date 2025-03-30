@@ -58,16 +58,11 @@ public class Task {
     @JoinColumn(name = "project_id")
     private Project project;
 
-    // Mối quan hệ với User (assignee)
-    @ManyToOne
-    @JoinColumn(name = "assignee_id")
-    private User assignee;
-
-    // Mối quan hệ với Subtask
-    @OneToMany(mappedBy = "task")
+    // Mối quan hệ với Subtask - thêm cascade
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Subtask> subtasks;
 
-    // Mối quan hệ với Comment
-    @OneToMany(mappedBy = "task")
+    // Mối quan hệ với Comment - thêm cascade
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments;
 }

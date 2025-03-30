@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Save,
   X,
@@ -10,118 +11,6 @@ import {
   ChevronLeft
 } from 'lucide-react';
 
-// Mock project data for editing example
-const mockProject = {
-  id: 31,
-  name: "Đồ án tốt nghiệp updated",
-  description: "A comprehensive final graduation project focused on developing an innovative solution for enterprise resource planning with AI integration for predictive analytics.",
-  startDate: "2025-03-17T23:53:00",
-  dueDate: "2025-05-17T23:53:00",
-  status: "IN_PROGRESS",
-  managerId: 1,
-  managerName: "John Doe",
-  users: [
-    {
-      id: 1,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@example.com",
-      avatar: null,
-      role: "Project Manager"
-    },
-    {
-      id: 2,
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane.smith@example.com",
-      avatar: null,
-      role: "UI/UX Designer"
-    },
-    {
-      id: 3,
-      firstName: "Michael",
-      lastName: "Johnson",
-      email: "michael.johnson@example.com",
-      avatar: null,
-      role: "Frontend Developer"
-    },
-    {
-      id: 4,
-      firstName: "Emily",
-      lastName: "Davis",
-      email: "emily.davis@example.com",
-      avatar: null,
-      role: "Backend Developer"
-    }
-  ],
-  tags: [
-    { id: 1, name: "Development", color: "#3B82F6" },
-    { id: 2, name: "Research", color: "#8B5CF6" }
-  ]
-};
-
-// Mock user data for team member selection
-const mockAllUsers = [
-  {
-    id: 1,
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    avatar: null,
-    role: "Project Manager"
-  },
-  {
-    id: 2,
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@example.com",
-    avatar: null,
-    role: "UI/UX Designer"
-  },
-  {
-    id: 3,
-    firstName: "Michael",
-    lastName: "Johnson",
-    email: "michael.johnson@example.com",
-    avatar: null,
-    role: "Frontend Developer"
-  },
-  {
-    id: 4,
-    firstName: "Emily",
-    lastName: "Davis",
-    email: "emily.davis@example.com",
-    avatar: null,
-    role: "Backend Developer"
-  },
-  {
-    id: 5,
-    firstName: "William",
-    lastName: "Martinez",
-    email: "william.martinez@example.com",
-    avatar: null,
-    role: "QA Engineer"
-  },
-  {
-    id: 6,
-    firstName: "Olivia",
-    lastName: "Hernandez",
-    email: "olivia.hernandez@example.com",
-    avatar: null,
-    role: "Business Analyst"
-  }
-];
-
-// Mock tags data for tag selection
-const mockAllTags = [
-  { id: 1, name: "Development", color: "#3B82F6" },
-  { id: 2, name: "Research", color: "#8B5CF6" },
-  { id: 3, name: "Design", color: "#EC4899" },
-  { id: 4, name: "Marketing", color: "#F59E0B" },
-  { id: 5, name: "Testing", color: "#10B981" },
-  { id: 6, name: "Documentation", color: "#6B7280" }
-];
-
 // User Card Component for Team Members
 const UserCard = ({ user, onRemove, isSelectable = false, onSelect }) => {
   return (
@@ -129,10 +18,10 @@ const UserCard = ({ user, onRemove, isSelectable = false, onSelect }) => {
          onClick={isSelectable ? () => onSelect(user) : undefined}>
       <div className="flex items-center">
         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-          {user.firstName[0]}{user.lastName[0]}
+          {user.fullName ? user.fullName.charAt(0) : '?'}
         </div>
         <div className="ml-3">
-          <div className="font-medium">{user.firstName} {user.lastName}</div>
+          <div className="font-medium">{user.fullName}</div>
           <div className="text-sm text-gray-400">{user.role}</div>
         </div>
       </div>
@@ -234,7 +123,7 @@ const DropdownMenu = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-const ProjectEdit = ({ onBack, isNew = false }) => {
+const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
   const [project, setProject] = useState(isNew ? {
     name: "",
     description: "",
@@ -242,28 +131,72 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
     dueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
     status: "NOT_STARTED",
     managerId: null,
-    managerName: "",
-    users: [],
-    tags: []
+    userIds: [],
+    tagIds: []
   } : null);
   
   const [loading, setLoading] = useState(!isNew);
+  const [savingData, setSavingData] = useState(false);
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [tagsMenuOpen, setTagsMenuOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [allTags, setAllTags] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [apiError, setApiError] = useState(null);
   
   // Load project data when editing existing project
   useEffect(() => {
-    if (!isNew) {
-      // Simulate API call
-      setTimeout(() => {
-        setProject(mockProject);
-        setLoading(false);
-      }, 500);
+    if (!isNew && initialProject?.id) {
+      fetchProjectData(initialProject.id);
+    } else {
+      setLoading(false);
     }
-  }, [isNew]);
+    
+    // Fetch available users and tags
+    fetchUsers();
+    fetchTags();
+  }, [isNew, initialProject]);
+  
+  const fetchProjectData = async (projectId) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/projects/${projectId}`);
+      const projectData = response.data;
+      
+      // Convert userIds and tagIds arrays for editing
+      const formattedProject = {
+        ...projectData,
+        userIds: projectData.users ? projectData.users.map(user => user.id) : [],
+        tagIds: projectData.tags ? projectData.tags.map(tag => tag.id) : []
+      };
+      
+      setProject(formattedProject);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching project data:", error);
+      setApiError("Failed to load project data. Please try again later.");
+      setLoading(false);
+    }
+  };
+  
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/users');
+      setAllUsers(response.data.content);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+  
+  const fetchTags = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/tags');
+      setAllTags(response.data.content);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+    }
+  };
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -283,10 +216,10 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
   
   const handleAddMember = (user) => {
     // Check if user is already in the project
-    if (!project.users.find(u => u.id === user.id)) {
+    if (!project.userIds.includes(user.id)) {
       setProject({
         ...project,
-        users: [...project.users, user]
+        userIds: [...project.userIds, user.id]
       });
     }
     setMembersMenuOpen(false);
@@ -295,16 +228,16 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
   const handleRemoveMember = (userId) => {
     setProject({
       ...project,
-      users: project.users.filter(user => user.id !== userId)
+      userIds: project.userIds.filter(id => id !== userId)
     });
   };
   
   const handleAddTag = (tag) => {
     // Check if tag is already in the project
-    if (!project.tags.find(t => t.id === tag.id)) {
+    if (!project.tagIds.includes(tag.id)) {
       setProject({
         ...project,
-        tags: [...project.tags, tag]
+        tagIds: [...project.tagIds, tag.id]
       });
     }
     setTagsMenuOpen(false);
@@ -313,7 +246,7 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
   const handleRemoveTag = (tagId) => {
     setProject({
       ...project,
-      tags: project.tags.filter(tag => tag.id !== tagId)
+      tagIds: project.tagIds.filter(id => id !== tagId)
     });
   };
   
@@ -338,28 +271,68 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
     return Object.keys(errors).length === 0;
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
-    // Simulate saving project
-    console.log("Saving project:", project);
-    alert(`Project ${isNew ? 'created' : 'updated'} successfully!`);
+    // Format the dates for API
+    const formattedProject = {
+      ...project,
+      startDate: new Date(project.startDate).toISOString(),
+      dueDate: new Date(project.dueDate).toISOString()
+    };
     
-    // In a real application, you would make an API call here
-    // and redirect to the project detail page after successful save
+    // Remove fields that shouldn't be sent to create/update API
+    const { id, users, tags, managerName, progress, totalTasks, totalCompletedTasks, ...apiProject } = formattedProject;
+    
+    setSavingData(true);
+    setApiError(null);
+    
+    try {
+      if (isNew) {
+        // Create new project
+        const response = await axios.post('http://localhost:8080/api/projects', apiProject);
+        console.log("Project created:", response.data);
+        alert("Project created successfully!");
+      } else {
+        // Update existing project
+        const response = await axios.put(`http://localhost:8080/api/projects/${id}`, apiProject);
+        console.log("Project updated:", response.data);
+        alert("Project updated successfully!");
+      }
+      
+      // Gọi onBack để quay lại và refresh dữ liệu
+      onBack();
+      
+    } catch (error) {
+      console.error("Error saving project:", error);
+      setApiError(`Failed to ${isNew ? 'create' : 'update'} project. ${error.response?.data?.message || 'Please check your input and try again.'}`);
+    } finally {
+      setSavingData(false);
+    }
   };
-  
-  const handleDelete = () => {
-    // Simulate deleting project
-    console.log("Deleting project:", project.id);
-    alert(`Project deleted successfully!`);
+
+  // Cập nhật hàm handleDelete
+  const handleDelete = async () => {
+    if (!project.id) return;
     
-    // In a real application, you would make an API call here
-    // and redirect to the projects list page after successful delete
+    setSavingData(true);
+    setApiError(null);
+    
+    try {
+      await axios.delete(`http://localhost:8080/api/projects/${project.id}`);
+      alert("Project deleted successfully!");
+      onBack(); // Gọi onBack để quay lại và refresh dữ liệu
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      setApiError(`Failed to delete project. ${error.response?.data?.message || 'Please try again later.'}`);
+      setShowDeleteConfirm(false);
+    } finally {
+      setSavingData(false);
+    }
   };
   
   if (loading) {
@@ -370,10 +343,16 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
     );
   }
   
+  // Get selected users' full details for display
+  const selectedUsersDetails = allUsers.filter(user => project.userIds.includes(user.id));
+  
+  // Get selected tags' full details for display
+  const selectedTagsDetails = allTags.filter(tag => project.tagIds.includes(tag.id));
+  
   return (
     <div className="bg-gray-900 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <button className="flex items-center text-gray-400 hover:text-white"  onClick={onBack}>
+        <button className="flex items-center text-gray-400 hover:text-white" onClick={onBack}>
           <ChevronLeft size={20} className="mr-1" />
           <span>Back</span>
         </button>
@@ -382,11 +361,12 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
         
         <div className="flex space-x-2">
           <button 
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center"
+            className={`px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center ${savingData ? 'opacity-70 cursor-not-allowed' : ''}`}
             onClick={handleSubmit}
+            disabled={savingData}
           >
             <Save size={18} className="mr-2" />
-            Save
+            {savingData ? 'Saving...' : 'Save'}
           </button>
           {!isNew && (
             <button 
@@ -399,6 +379,12 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
           )}
         </div>
       </div>
+      
+      {apiError && (
+        <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md mb-6">
+          {apiError}
+        </div>
+      )}
       
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -441,7 +427,7 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
                       <input
                         type="date"
                         name="startDate"
-                        value={project.startDate}
+                        value={project.startDate.substring(0, 10)}
                         onChange={handleChange}
                         className={`w-full bg-gray-700 border ${formErrors.startDate ? 'border-red-500' : 'border-gray-600'} rounded-md py-2 px-3 text-white`}
                       />
@@ -458,7 +444,7 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
                       <input
                         type="date"
                         name="dueDate"
-                        value={project.dueDate}
+                        value={project.dueDate.substring(0, 10)}
                         onChange={handleChange}
                         className={`w-full bg-gray-700 border ${formErrors.dueDate ? 'border-red-500' : 'border-gray-600'} rounded-md py-2 px-3 text-white`}
                       />
@@ -482,6 +468,24 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
                     <option value="IN_PROGRESS">In Progress</option>
                     <option value="ON_HOLD">On Hold</option>
                     <option value="COMPLETED">Completed</option>
+                    <option value="OVER_DUE">Over Due</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-400 mb-1">Manager</label>
+                  <select
+                    name="managerId"
+                    value={project.managerId || ""}
+                    onChange={handleChange}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                  >
+                    <option value="">Select a manager</option>
+                    {allUsers.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.fullName}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -507,8 +511,8 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
                     title="Select Tags"
                   >
                     <div className="space-y-2">
-                      {mockAllTags
-                        .filter(tag => !project.tags.find(t => t.id === tag.id))
+                      {allTags
+                        .filter(tag => !project.tagIds.includes(tag.id))
                         .map(tag => (
                           <TagBadge
                             key={tag.id}
@@ -523,10 +527,10 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                {project.tags.length === 0 ? (
+                {selectedTagsDetails.length === 0 ? (
                   <p className="text-gray-400 text-sm">No tags added yet.</p>
                 ) : (
-                  project.tags.map(tag => (
+                  selectedTagsDetails.map(tag => (
                     <TagBadge
                       key={tag.id}
                       tag={tag}
@@ -559,8 +563,8 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
                     title="Select Team Members"
                   >
                     <div className="space-y-2">
-                      {mockAllUsers
-                        .filter(user => !project.users.find(u => u.id === user.id))
+                      {allUsers
+                        .filter(user => !project.userIds.includes(user.id))
                         .map(user => (
                           <UserCard
                             key={user.id}
@@ -575,13 +579,13 @@ const ProjectEdit = ({ onBack, isNew = false }) => {
               </div>
               
               <div className="space-y-2">
-                {project.users.length === 0 ? (
+                {selectedUsersDetails.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Users size={48} className="mx-auto mb-3 opacity-50" />
                     <p>No team members added yet.</p>
                   </div>
                 ) : (
-                  project.users.map(user => (
+                  selectedUsersDetails.map(user => (
                     <UserCard
                       key={user.id}
                       user={user}

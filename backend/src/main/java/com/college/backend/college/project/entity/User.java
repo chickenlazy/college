@@ -47,11 +47,10 @@ public class User {
     @ManyToMany(mappedBy = "users")
     private Set<Project> projects;
 
-    // Mối quan hệ với Task (assignee)
-    @OneToMany(mappedBy = "assignee")
-    private Set<Task> tasks;
+    @OneToOne(mappedBy = "assignee", cascade = CascadeType.ALL)
+    private Subtask assignedSubtask;
 
     // Mối quan hệ với Comment (author)
-    @OneToMany(mappedBy = "author")
+    @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<Comment> comments;
 }

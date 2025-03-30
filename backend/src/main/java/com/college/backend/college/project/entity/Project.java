@@ -48,8 +48,8 @@ public class Project {
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastModifiedDate;
 
-    // Mối quan hệ với Task
-    @OneToMany(mappedBy = "project")
+    // Mối quan hệ với Task - thêm cascade và orphanRemoval
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Task> tasks;
 
     // Mối quan hệ với User (manager)
@@ -57,8 +57,8 @@ public class Project {
     @JoinColumn(name = "manager_id")
     private User manager;
 
-    // Mối quan hệ với User qua bảng project_users (được tự động tạo)
-    @ManyToMany
+    // Mối quan hệ với User qua bảng project_users - thêm cascade cho persist và merge
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "project_users",
             joinColumns = @JoinColumn(name = "project_id"),
@@ -66,11 +66,12 @@ public class Project {
     )
     private Set<User> users;
 
-    @ManyToMany
+    // Mối quan hệ với Tag - thêm cascade cho persist và merge
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-            name = "project_tags",  // Bảng liên kết giữa Project và Tag
+            name = "project_tags",
             joinColumns = @JoinColumn(name = "project_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
-    private Set<Tag> tags; // Quan hệ với Tag
+    private Set<Tag> tags;
 }

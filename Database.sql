@@ -34,8 +34,8 @@ CREATE TABLE projects (
   status ENUM('IN_PROGRESS', 'NOT_STARTED', 'ON_HOLD', 'COMPLETED', 'OVER_DUE'),
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  manager_id INT,
-  FOREIGN KEY (manager_id) REFERENCES users(id)
+  manager_id INT
+  -- Đã xóa FOREIGN KEY (manager_id) REFERENCES users(id)
 );
 
 -- Xóa và tạo lại bảng `tasks`
@@ -49,11 +49,10 @@ CREATE TABLE tasks (
   status ENUM('COMPLETED', 'IN_PROGRESS', 'NOT_STARTED', 'OVER_DUE', 'ON_HOLD'),
   priority ENUM('HIGH', 'MEDIUM', 'LOW'),
   project_id INT,
-  assignee_id INT,
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (project_id) REFERENCES projects(id),
-  FOREIGN KEY (assignee_id) REFERENCES users(id)
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  -- Đã xóa FOREIGN KEY (project_id) REFERENCES projects(id)
+  -- Đã xóa FOREIGN KEY (assignee_id) REFERENCES users(id)
 );
 
 -- Xóa và tạo lại bảng `subtasks`
@@ -62,8 +61,9 @@ CREATE TABLE subtasks (
   id INT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(255),
   task_id INT,
-  completed BOOLEAN DEFAULT FALSE,
-  FOREIGN KEY (task_id) REFERENCES tasks(id)
+  assignee_id INT,
+  completed BOOLEAN DEFAULT FALSE
+  -- Đã xóa FOREIGN KEY (task_id) REFERENCES tasks(id)
 );
 
 DROP TABLE IF EXISTS comments;
@@ -72,20 +72,19 @@ CREATE TABLE comments (
   text TEXT,
   author_id INT,
   task_id INT,
-  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (author_id) REFERENCES users(id),
-  FOREIGN KEY (task_id) REFERENCES tasks(id)
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP
+  -- Đã xóa FOREIGN KEY (author_id) REFERENCES users(id)
+  -- Đã xóa FOREIGN KEY (task_id) REFERENCES tasks(id)
 );
-
 
 -- Xóa và tạo lại bảng `project_users`
 DROP TABLE IF EXISTS project_users;
 CREATE TABLE project_users (
   project_id INT,
   user_id INT,
-  PRIMARY KEY (project_id, user_id),
-  FOREIGN KEY (project_id) REFERENCES projects(id),
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  PRIMARY KEY (project_id, user_id)
+  -- Đã xóa FOREIGN KEY (project_id) REFERENCES projects(id)
+  -- Đã xóa FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE tags (
@@ -97,9 +96,9 @@ CREATE TABLE tags (
 CREATE TABLE project_tags (
     project_id INT,                     
     tag_id INT,                     
-    PRIMARY KEY (project_id, tag_id),      
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE, -- Hay ne
-    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE        
+    PRIMARY KEY (project_id, tag_id)
+    -- Đã xóa FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    -- Đã xóa FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
 INSERT INTO users (full_name, email, phone_number, role)
@@ -128,32 +127,31 @@ VALUES
   ('Project 9', 'Description of Project 9', '2025-09-01 10:00:00', '2025-09-10 10:00:00', 'COMPLETED', 3),
   ('Project 10', 'Description of Project 10', '2025-10-01 10:00:00', '2025-10-10 10:00:00', 'ON_HOLD', 2);
 
-INSERT INTO tasks (name, description, start_date, due_date, status, priority, project_id, assignee_id)
+INSERT INTO tasks (name, description, start_date, due_date, status, priority, project_id)
 VALUES
-  ('Task 1', 'Task description 1', '2025-01-01 10:00:00', '2025-01-02 10:00:00', 'IN_PROGRESS', 'HIGH', 1, 4),
-  ('Task 2', 'Task description 2', '2025-02-01 10:00:00', '2025-02-02 10:00:00', 'NOT_STARTED', 'MEDIUM', 2, 5),
-  ('Task 3', 'Task description 3', '2025-03-01 10:00:00', '2025-03-02 10:00:00', 'COMPLETED', 'LOW', 3, 6),
-  ('Task 4', 'Task description 4', '2025-04-01 10:00:00', '2025-04-02 10:00:00', 'OVER_DUE', 'HIGH', 4, 7),
-  ('Task 5', 'Task description 5', '2025-05-01 10:00:00', '2025-05-02 10:00:00', 'IN_PROGRESS', 'MEDIUM', 5, 8),
-  ('Task 6', 'Task description 6', '2025-06-01 10:00:00', '2025-06-02 10:00:00', 'IN_PROGRESS', 'LOW', 6, 9),
-  ('Task 7', 'Task description 7', '2025-07-01 10:00:00', '2025-07-02 10:00:00', 'NOT_STARTED', 'HIGH', 7, 10),
-  ('Task 8', 'Task description 8', '2025-08-01 10:00:00', '2025-08-02 10:00:00', 'COMPLETED', 'MEDIUM', 8, 4),
-  ('Task 9', 'Task description 9', '2025-09-01 10:00:00', '2025-09-02 10:00:00', 'IN_PROGRESS', 'HIGH', 9, 5),
-  ('Task 10', 'Task description 10', '2025-10-01 10:00:00', '2025-10-02 10:00:00', 'ON_HOLD', 'LOW', 10, 6);
+  ('Task 1', 'Task description 1', '2025-01-01 10:00:00', '2025-01-02 10:00:00', 'IN_PROGRESS', 'HIGH', 1),
+  ('Task 2', 'Task description 2', '2025-02-01 10:00:00', '2025-02-02 10:00:00', 'NOT_STARTED', 'MEDIUM', 2),
+  ('Task 3', 'Task description 3', '2025-03-01 10:00:00', '2025-03-02 10:00:00', 'COMPLETED', 'LOW', 3),
+  ('Task 4', 'Task description 4', '2025-04-01 10:00:00', '2025-04-02 10:00:00', 'OVER_DUE', 'HIGH', 4),
+  ('Task 5', 'Task description 5', '2025-05-01 10:00:00', '2025-05-02 10:00:00', 'IN_PROGRESS', 'MEDIUM', 5),
+  ('Task 6', 'Task description 6', '2025-06-01 10:00:00', '2025-06-02 10:00:00', 'IN_PROGRESS', 'LOW', 6),
+  ('Task 7', 'Task description 7', '2025-07-01 10:00:00', '2025-07-02 10:00:00', 'NOT_STARTED', 'HIGH', 7),
+  ('Task 8', 'Task description 8', '2025-08-01 10:00:00', '2025-08-02 10:00:00', 'COMPLETED', 'MEDIUM', 8),
+  ('Task 9', 'Task description 9', '2025-09-01 10:00:00', '2025-09-02 10:00:00', 'IN_PROGRESS', 'HIGH', 9),
+  ('Task 10', 'Task description 10', '2025-10-01 10:00:00', '2025-10-02 10:00:00', 'ON_HOLD', 'LOW', 10);
 
-INSERT INTO subtasks (name, task_id, completed)
+INSERT INTO subtasks (name, task_id, completed, assignee_id)
 VALUES
-  ('Subtask 1', 1, TRUE),
-  ('Subtask 2', 2, FALSE),
-  ('Subtask 3', 3, TRUE),
-  ('Subtask 4', 4, FALSE),
-  ('Subtask 5', 5, TRUE),
-  ('Subtask 6', 6, TRUE),
-  ('Subtask 7', 7, FALSE),
-  ('Subtask 8', 8, TRUE),
-  ('Subtask 9', 9, FALSE),
-  ('Subtask 10', 10, TRUE);
-
+  ('Subtask 1', 1, TRUE, 4),
+  ('Subtask 2', 2, FALSE, 5),
+  ('Subtask 3', 3, TRUE, 6),
+  ('Subtask 4', 4, FALSE, 7),
+  ('Subtask 5', 5, TRUE, 8),
+  ('Subtask 6', 6, TRUE, 9),
+  ('Subtask 7', 7, FALSE, 10),
+  ('Subtask 8', 8, TRUE, 4),
+  ('Subtask 9', 9, FALSE, 5),
+  ('Subtask 10', 10, TRUE, 6);
 INSERT INTO comments (text, author_id, task_id)
 VALUES
   ('Comment for Task 1', 1, 1),
@@ -195,12 +193,3 @@ INSERT INTO project_tags (project_id, tag_id) VALUES
   (2, 4),  -- Project 2 với Tag 4 (Marketing)
   (3, 5),  -- Project 3 với Tag 5 (Testing)
   (4, 6);  -- Project 4 với Tag 6 (Documentation)
-
-
-
-
-
-
-
-
-
