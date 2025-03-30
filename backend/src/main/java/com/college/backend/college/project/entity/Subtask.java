@@ -25,11 +25,11 @@ public class Subtask {
     private Boolean completed = false;
 
     // Mối quan hệ với Task
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id")
     private Task task;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
     private User assignee;
 }

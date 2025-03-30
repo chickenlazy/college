@@ -1,7 +1,9 @@
 package com.college.backend.college.project.controller;
 
+import com.college.backend.college.project.enums.TaskStatus;
 import com.college.backend.college.project.request.TaskRequest;
 import com.college.backend.college.project.response.ApiResponse;
+import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.TaskResponse;
 import com.college.backend.college.project.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,29 @@ public class TaskController {
     public ResponseEntity<TaskResponse> createTaskForProject(@RequestBody TaskRequest taskRequest) {
         TaskResponse taskResponse = taskService.createTaskForProject(taskRequest);
         return new ResponseEntity<>(taskResponse, HttpStatus.CREATED);
+    }
+
+    /**
+     * API để lấy danh sách tất cả các task với phân trang, tìm kiếm và lọc
+     */
+    @GetMapping
+    public ResponseEntity<PagedResponse<TaskResponse>> getAllTasks(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "status", required = false) TaskStatus status) {
+
+        PagedResponse<TaskResponse> taskResponse = taskService.getAllTasks(page, size, search, status);
+        return ResponseEntity.ok(taskResponse);
+    }
+
+    /**
+     * API để lấy chi tiết task theo ID
+     */
+    @GetMapping("/{taskId}")
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Integer taskId) {
+        TaskResponse taskResponse = taskService.getTaskById(taskId);
+        return ResponseEntity.ok(taskResponse);
     }
 
 }

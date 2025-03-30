@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
   Eye,
+  Pause,
   Calendar,
   CheckCircle,
   Clock,
@@ -13,8 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
-} from 'lucide-react';
+  RotateCcw,
+  ChevronsRight,
+} from "lucide-react";
+import axios from "axios";
+import TaskEdit from "../edit/TaskEdit";
 
 // Mock data for self tasks
 const mockTasks = [
@@ -26,7 +30,7 @@ const mockTasks = [
     priority: "HIGH",
     status: "IN_PROGRESS",
     project: "Project A",
-    createdAt: "2025-03-15T09:30:00"
+    createdAt: "2025-03-15T09:30:00",
   },
   {
     id: 2,
@@ -36,7 +40,7 @@ const mockTasks = [
     priority: "MEDIUM",
     status: "NOT_STARTED",
     project: "Market Analysis",
-    createdAt: "2025-03-10T14:20:00"
+    createdAt: "2025-03-10T14:20:00",
   },
   {
     id: 3,
@@ -46,7 +50,7 @@ const mockTasks = [
     priority: "HIGH",
     status: "NOT_STARTED",
     project: "Client Presentation",
-    createdAt: "2025-03-18T11:45:00"
+    createdAt: "2025-03-18T11:45:00",
   },
   {
     id: 4,
@@ -56,7 +60,7 @@ const mockTasks = [
     priority: "MEDIUM",
     status: "IN_PROGRESS",
     project: "Development",
-    createdAt: "2025-03-20T08:15:00"
+    createdAt: "2025-03-20T08:15:00",
   },
   {
     id: 5,
@@ -66,7 +70,7 @@ const mockTasks = [
     priority: "LOW",
     status: "NOT_STARTED",
     project: "Documentation",
-    createdAt: "2025-03-19T13:40:00"
+    createdAt: "2025-03-19T13:40:00",
   },
   {
     id: 6,
@@ -76,7 +80,7 @@ const mockTasks = [
     priority: "HIGH",
     status: "IN_PROGRESS",
     project: "Bug Fixes",
-    createdAt: "2025-03-21T10:20:00"
+    createdAt: "2025-03-21T10:20:00",
   },
   {
     id: 7,
@@ -86,7 +90,7 @@ const mockTasks = [
     priority: "MEDIUM",
     status: "NOT_STARTED",
     project: "Client Relations",
-    createdAt: "2025-03-17T16:30:00"
+    createdAt: "2025-03-17T16:30:00",
   },
   {
     id: 8,
@@ -96,7 +100,7 @@ const mockTasks = [
     priority: "MEDIUM",
     status: "NOT_STARTED",
     project: "Project Management",
-    createdAt: "2025-03-22T09:10:00"
+    createdAt: "2025-03-22T09:10:00",
   },
   {
     id: 9,
@@ -106,7 +110,7 @@ const mockTasks = [
     priority: "LOW",
     status: "COMPLETED",
     project: "Team Collaboration",
-    createdAt: "2025-03-21T17:00:00"
+    createdAt: "2025-03-21T17:00:00",
   },
   {
     id: 10,
@@ -116,46 +120,59 @@ const mockTasks = [
     priority: "HIGH",
     status: "NOT_STARTED",
     project: "Reporting",
-    createdAt: "2025-03-20T14:30:00"
-  }
+    createdAt: "2025-03-20T14:30:00",
+  },
 ];
 
 // Format date for display
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return `${date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  return `${date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })}, ${date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 };
 
 // Status Badge Component
 const StatusBadge = ({ status }) => {
   let color;
   let icon;
-  let displayText = status.replace(/_/g, ' ');
-  
+  let displayText = status.replace(/_/g, " ");
+
   switch (status) {
-    case 'NOT_STARTED':
-      color = 'bg-gray-200 text-gray-800';
+    case "NOT_STARTED":
+      color = "bg-gray-200 text-gray-800";
       icon = <Clock size={14} />;
       break;
-    case 'IN_PROGRESS':
-      color = 'bg-blue-200 text-blue-800';
+    case "IN_PROGRESS":
+      color = "bg-blue-200 text-blue-800";
       icon = <Clock size={14} />;
       break;
-    case 'COMPLETED':
-      color = 'bg-green-200 text-green-800';
+    case "COMPLETED":
+      color = "bg-green-200 text-green-800";
       icon = <CheckCircle size={14} />;
       break;
-    case 'OVERDUE':
-      color = 'bg-red-200 text-red-800';
+    case "OVER_DUE":
+      color = "bg-red-200 text-red-800";
       icon = <AlertTriangle size={14} />;
       break;
+    case "ON_HOLD":
+      color = "bg-yellow-200 text-yellow-800";
+      icon = <Pause size={14} />;
+      break;
     default:
-      color = 'bg-gray-200 text-gray-800';
+      color = "bg-gray-200 text-gray-800";
       icon = <Clock size={14} />;
   }
-  
+
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${color}`}
+    >
       {icon}
       {displayText}
     </span>
@@ -165,23 +182,25 @@ const StatusBadge = ({ status }) => {
 // Priority Badge Component
 const PriorityBadge = ({ priority }) => {
   let color;
-  
+
   switch (priority) {
-    case 'HIGH':
-      color = 'bg-red-200 text-red-800';
+    case "HIGH":
+      color = "bg-red-200 text-red-800";
       break;
-    case 'MEDIUM':
-      color = 'bg-yellow-200 text-yellow-800';
+    case "MEDIUM":
+      color = "bg-yellow-200 text-yellow-800";
       break;
-    case 'LOW':
-      color = 'bg-green-200 text-green-800';
+    case "LOW":
+      color = "bg-green-200 text-green-800";
       break;
     default:
-      color = 'bg-gray-200 text-gray-800';
+      color = "bg-gray-200 text-gray-800";
   }
-  
+
   return (
-    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+    <span
+      className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${color}`}
+    >
       {priority}
     </span>
   );
@@ -190,19 +209,24 @@ const PriorityBadge = ({ priority }) => {
 // Filter Tabs Component
 const FilterTabs = ({ activeFilter, onFilterChange }) => {
   const filters = [
-    { id: 'all', label: 'All Tasks' },
-    { id: 'NOT_STARTED', label: 'Not Started' },
-    { id: 'IN_PROGRESS', label: 'In Progress' },
-    { id: 'COMPLETED', label: 'Completed' },
-    { id: 'OVERDUE', label: 'Overdue' }
+    { id: "all", label: "All Tasks" },
+    { id: "NOT_STARTED", label: "Not Started" },
+    { id: "IN_PROGRESS", label: "In Progress" },
+    { id: "COMPLETED", label: "Completed" },
+    { id: "ON_HOLD", label: "On Hold" },
+    { id: "OVER_DUE", label: "Over Due" },
   ];
 
   return (
     <div className="flex flex-wrap gap-2 mt-2">
-      {filters.map(filter => (
+      {filters.map((filter) => (
         <button
           key={filter.id}
-          className={`px-4 py-2 rounded-md ${activeFilter === filter.id ? 'bg-purple-600 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+          className={`px-4 py-2 rounded-md ${
+            activeFilter === filter.id
+              ? "bg-purple-600 text-white"
+              : "bg-gray-700 hover:bg-gray-600"
+          }`}
           onClick={() => onFilterChange(filter.id)}
         >
           {filter.label}
@@ -213,12 +237,19 @@ const FilterTabs = ({ activeFilter, onFilterChange }) => {
 };
 
 // Pagination Component
-const Pagination = ({ currentPage, totalPages, onPageChange, itemsPerPage, totalItems, onItemsPerPageChange }) => {
+const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+  itemsPerPage,
+  totalItems,
+  onItemsPerPageChange,
+}) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 gap-4">
       <div className="flex items-center gap-2">
         <span>Show</span>
-        <select 
+        <select
           className="bg-gray-800 border border-gray-700 rounded-md p-1"
           value={itemsPerPage}
           onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
@@ -230,40 +261,42 @@ const Pagination = ({ currentPage, totalPages, onPageChange, itemsPerPage, total
         </select>
         <span>entries</span>
       </div>
-      
+
       <div className="text-sm">
         Showing page {currentPage} of {totalPages}
       </div>
-      
+
       <div className="flex items-center gap-2">
-        <button 
-          onClick={() => onPageChange(1)} 
+        <button
+          onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
           className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
         >
           <ChevronsLeft size={18} />
         </button>
-        <button 
-          onClick={() => onPageChange(currentPage - 1)} 
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
         >
           <ChevronLeft size={18} />
         </button>
-        
+
         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
           // Show pages around current page
           let pageNum = i + 1;
           if (currentPage > 3 && totalPages > 5) {
             pageNum = i + currentPage - 2;
           }
-          
+
           if (pageNum <= totalPages) {
             return (
-              <button 
+              <button
                 key={pageNum}
                 onClick={() => onPageChange(pageNum)}
-                className={`w-8 h-8 rounded-md ${pageNum === currentPage ? 'bg-purple-600' : 'bg-gray-800'}`}
+                className={`w-8 h-8 rounded-md ${
+                  pageNum === currentPage ? "bg-purple-600" : "bg-gray-800"
+                }`}
               >
                 {pageNum}
               </button>
@@ -271,16 +304,16 @@ const Pagination = ({ currentPage, totalPages, onPageChange, itemsPerPage, total
           }
           return null;
         })}
-        
-        <button 
-          onClick={() => onPageChange(currentPage + 1)} 
+
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
         >
           <ChevronRight size={18} />
         </button>
-        <button 
-          onClick={() => onPageChange(totalPages)} 
+        <button
+          onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
           className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
         >
@@ -292,16 +325,27 @@ const Pagination = ({ currentPage, totalPages, onPageChange, itemsPerPage, total
 };
 
 // Action Buttons Component
-const ActionButtons = ({ task }) => {
+const ActionButtons = ({ task, onDelete, onEdit }) => {
   return (
     <div className="flex gap-2">
-      <button className="p-2 rounded-full bg-green-600 text-white" title="View Details">
+      <button
+        className="p-2 rounded-full bg-green-600 text-white"
+        title="View Details"
+      >
         <Eye size={16} />
       </button>
-      <button className="p-2 rounded-full bg-blue-600 text-white" title="Edit Task">
+      <button
+        className="p-2 rounded-full bg-blue-600 text-white"
+        title="Edit Task"
+        onClick={() => onEdit(task)} // Thêm hàm onEdit khi nhấp vào nút Edit
+      >
         <Edit size={16} />
       </button>
-      <button className="p-2 rounded-full bg-red-600 text-white" title="Delete Task">
+      <button
+        className="p-2 rounded-full bg-red-600 text-white"
+        title="Delete Task"
+        onClick={() => onDelete(task.id)}
+      >
         <Trash2 size={16} />
       </button>
     </div>
@@ -315,66 +359,86 @@ const TeamTask = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [showTaskEdit, setShowTaskEdit] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
-  // Load data initially
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setTasks(mockTasks);
+  const handleEditTask = (task) => {
+    setSelectedTask(task);
+    setShowTaskEdit(true);
+  };
+
+  const [apiData, setApiData] = useState({
+    content: [],
+    pageNo: 1,
+    pageSize: 10,
+    totalElements: 0,
+    totalPages: 1,
+    last: false,
+  });
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await axios.delete(`http://localhost:8080/api/tasks/${taskId}`);
+      // Refresh data after deletion
+      refreshData();
+    } catch (err) {
+      console.error("Error deleting task:", err);
+    }
+  };
+
+  const fetchTasks = async (
+    page = currentPage,
+    size = itemsPerPage,
+    searchTerm = search,
+    filterStatus = activeFilter
+  ) => {
+    setLoading(true);
+    try {
+      const params = {
+        pageNo: page, // Thay page thành pageNo
+        pageSize: size, // Thay size thành pageSize
+      };
+
+      // Thêm tham số tìm kiếm nếu có
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      // Thêm tham số lọc status nếu không phải "all"
+      if (filterStatus !== "all") {
+        params.status = filterStatus;
+      }
+
+      const response = await axios.get(`http://localhost:8080/api/tasks`, {
+        params: params,
+      });
+      setApiData(response.data);
+      setTasks(response.data.content);
       setLoading(false);
-    }, 500);
-  }, []);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks(currentPage, itemsPerPage, search, activeFilter);
+  }, [currentPage, itemsPerPage, search, activeFilter]);
 
   // Handle checkbox selection
   const handleSelectTask = (id) => {
     if (selectedTasks.includes(id)) {
-      setSelectedTasks(selectedTasks.filter(taskId => taskId !== id));
+      setSelectedTasks(selectedTasks.filter((taskId) => taskId !== id));
     } else {
       setSelectedTasks([...selectedTasks, id]);
     }
   };
 
-  // Handle select all
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedTasks([]);
-    } else {
-      setSelectedTasks(filteredTasks.map(task => task.id));
-    }
-    setSelectAll(!selectAll);
-  };
-
-  // Check if a task is overdue
-  const isOverdue = (task) => {
-    const dueDate = new Date(task.dueDate);
-    const today = new Date();
-    return dueDate < today && task.status !== 'COMPLETED';
-  };
-
-  // Filter tasks based on active filter and search
-  const filteredTasks = tasks.filter(task => {
-    // Apply status filter
-    if (activeFilter === 'OVERDUE') {
-      if (!isOverdue(task)) return false;
-    } else if (activeFilter !== 'all' && task.status !== activeFilter) {
-      return false;
-    }
-    
-    // Apply search filter
-    if (search && !task.name.toLowerCase().includes(search.toLowerCase())) {
-      return false;
-    }
-    
-    return true;
-  });
-
   // Calculate pagination
-  const indexOfLastTask = currentPage * itemsPerPage;
-  const indexOfFirstTask = indexOfLastTask - itemsPerPage;
-  const currentTasks = filteredTasks.slice(indexOfFirstTask, indexOfLastTask);
-  const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+  const currentTasks = tasks;
+  const totalPages = apiData.totalPages;
 
   // Handle page change
   const handlePageChange = (pageNumber) => {
@@ -387,148 +451,222 @@ const TeamTask = () => {
     setCurrentPage(1); // Reset to first page
   };
 
+  const handleReset = () => {
+    setSearch(""); // Reset search query
+    setActiveFilter("all"); // Reset active filter to 'all'
+    setCurrentPage(1); // Reset to the first page
+    setSelectAll(false); // Unselect 'select all' checkbox
+    setSelectedTasks([]); // Deselect all tasks
+    fetchTasks(1, itemsPerPage); // Reload data from API
+  };
+
+  const refreshData = () => {
+    fetchTasks(currentPage, itemsPerPage, search, activeFilter);
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedTasks([]);
+    } else {
+      setSelectedTasks(currentTasks.map((task) => task.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">TEAM TASKS</h1>
-        
-        <div className="flex gap-2">
-          <button className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center gap-2">
-            <Plus size={18} />
-            <span>New Task</span>
-          </button>
-        </div>
-      </div>
-      
-      {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
-        <FilterTabs 
-          activeFilter={activeFilter} 
-          onFilterChange={(filter) => {
-            setActiveFilter(filter);
-            setCurrentPage(1); // Reset to first page when changing filter
-          }} 
+      {showTaskEdit ? (
+        <TaskEdit
+          isNew={selectedTask === null}
+          taskId={selectedTask?.id}
+          onBack={() => {
+            setShowTaskEdit(false);
+            refreshData();
+          }}
         />
-        
-        <div className="relative w-full md:w-64">
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-full"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1); // Reset to first page when searching
-            }}
-          />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-        </div>
-      </div>
-      
-      {/* Tasks Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="text-left">
-              <th className="p-3 border-b border-gray-700">
-                <input
-                  type="checkbox"
-                  checked={selectAll}
-                  onChange={handleSelectAll}
-                  className="w-4 h-4"
-                />
-              </th>
-              <th className="p-3 border-b border-gray-700">
-                <div className="flex items-center gap-2">
-                  Task
-                  <button><ArrowUpDown size={14} /></button>
-                </div>
-              </th>
-              <th className="p-3 border-b border-gray-700">
-                <div className="flex items-center gap-2">
-                  Project
-                  <button><ArrowUpDown size={14} /></button>
-                </div>
-              </th>
-              <th className="p-3 border-b border-gray-700">
-                <div className="flex items-center gap-2">
-                  Due Date
-                  <button><ArrowUpDown size={14} /></button>
-                </div>
-              </th>
-              <th className="p-3 border-b border-gray-700">
-                <div className="flex items-center gap-2">
-                  Priority
-                  <button><ArrowUpDown size={14} /></button>
-                </div>
-              </th>
-              <th className="p-3 border-b border-gray-700">
-                <div className="flex items-center gap-2">
-                  Status
-                  <button><ArrowUpDown size={14} /></button>
-                </div>
-              </th>
-              <th className="p-3 border-b border-gray-700">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="7" className="p-4 text-center">Loading...</td>
-              </tr>
-            ) : currentTasks.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="p-4 text-center">No tasks found</td>
-              </tr>
-            ) : (
-              currentTasks.map(task => (
-                <tr key={task.id} className="hover:bg-gray-800">
-                  <td className="p-3 border-b border-gray-700">
+      ) : (
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold">TEAM TASKS</h1>
+
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center gap-2"
+                  onClick={() => {
+                    setSelectedTask(null); // Không có task nào được chọn để tạo mới
+                    setShowTaskEdit(true); // Hiển thị TaskEdit component
+                  }}
+                >
+                  <Plus size={18} />
+                  <span>New Task</span>
+                </button>
+                <button
+                  className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-md flex items-center gap-2"
+                  onClick={handleReset}
+                >
+                  <RotateCcw size={18} />
+                  <span>Reset</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Search and Filter */}
+          <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+            <FilterTabs
+              activeFilter={activeFilter}
+              onFilterChange={(filter) => {
+                setActiveFilter(filter);
+                setCurrentPage(1); // Reset to first page when changing filter
+              }}
+            />
+
+            <div className="relative w-full md:w-64">
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-full"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1); // Reset to first page when searching
+                }}
+              />
+              <Search
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
+            </div>
+          </div>
+
+          {/* Tasks Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-3 border-b border-gray-700">
                     <input
                       type="checkbox"
-                      checked={selectedTasks.includes(task.id)}
-                      onChange={() => handleSelectTask(task.id)}
+                      checked={selectAll}
+                      onChange={handleSelectAll}
                       className="w-4 h-4"
                     />
-                  </td>
-                  <td className="p-3 border-b border-gray-700">
-                    <div>
-                      <div className="font-medium">{task.name}</div>
-                      <div className="text-sm text-gray-400">{task.description}</div>
-                    </div>
-                  </td>
-                  <td className="p-3 border-b border-gray-700">{task.project}</td>
-                  <td className="p-3 border-b border-gray-700">
+                  </th>
+                  <th className="p-3 border-b border-gray-700">
                     <div className="flex items-center gap-2">
-                      <Calendar size={16} className="text-gray-400" />
-                      {formatDate(task.dueDate)}
+                      Task
+                      <button>
+                        <ArrowUpDown size={14} />
+                      </button>
                     </div>
-                  </td>
-                  <td className="p-3 border-b border-gray-700">
-                    <PriorityBadge priority={task.priority} />
-                  </td>
-                  <td className="p-3 border-b border-gray-700">
-                    <StatusBadge status={isOverdue(task) ? 'OVERDUE' : task.status} />
-                  </td>
-                  <td className="p-3 border-b border-gray-700">
-                    <ActionButtons task={task} />
-                  </td>
+                  </th>
+                  <th className="p-3 border-b border-gray-700">
+                    <div className="flex items-center gap-2">
+                      Project
+                      <button>
+                        <ArrowUpDown size={14} />
+                      </button>
+                    </div>
+                  </th>
+                  <th className="p-3 border-b border-gray-700">
+                    <div className="flex items-center gap-2">
+                      Due Date
+                      <button>
+                        <ArrowUpDown size={14} />
+                      </button>
+                    </div>
+                  </th>
+                  <th className="p-3 border-b border-gray-700">
+                    <div className="flex items-center gap-2">
+                      Priority
+                      <button>
+                        <ArrowUpDown size={14} />
+                      </button>
+                    </div>
+                  </th>
+                  <th className="p-3 border-b border-gray-700">
+                    <div className="flex items-center gap-2">
+                      Status
+                      <button>
+                        <ArrowUpDown size={14} />
+                      </button>
+                    </div>
+                  </th>
+                  <th className="p-3 border-b border-gray-700">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-        itemsPerPage={itemsPerPage}
-        totalItems={filteredTasks.length}
-        onItemsPerPageChange={handleItemsPerPageChange}
-      />
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="7" className="p-4 text-center">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : currentTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="p-4 text-center">
+                      No tasks found
+                    </td>
+                  </tr>
+                ) : (
+                  currentTasks.map((task) => (
+                    <tr key={task.id} className="hover:bg-gray-800">
+                      <td className="p-3 border-b border-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={selectedTasks.includes(task.id)}
+                          onChange={() => handleSelectTask(task.id)}
+                          className="w-4 h-4"
+                        />
+                      </td>
+                      <td className="p-3 border-b border-gray-700">
+                        <div>
+                          <div className="font-medium">{task.name}</div>
+                          <div className="text-sm text-gray-400">
+                            {task.description}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3 border-b border-gray-700">
+                        {task.projectName}
+                      </td>
+                      <td className="p-3 border-b border-gray-700">
+                        <div className="flex items-center gap-2">
+                          <Calendar size={16} className="text-gray-400" />
+                          {formatDate(task.dueDate)}
+                        </div>
+                      </td>
+                      <td className="p-3 border-b border-gray-700">
+                        <PriorityBadge priority={task.priority} />
+                      </td>
+                      <td className="p-3 border-b border-gray-700">
+                        <StatusBadge status={task.status} />
+                      </td>
+                      <td className="p-3 border-b border-gray-700">
+                        <ActionButtons
+                          task={task}
+                          onDelete={handleDeleteTask}
+                          onEdit={handleEditTask}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={apiData.totalElements}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </>
+      )}
     </div>
   );
 };

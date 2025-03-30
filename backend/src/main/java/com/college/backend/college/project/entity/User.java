@@ -44,14 +44,14 @@ public class User {
     private Date lastModifiedDate;
 
     // Mối quan hệ với Project qua bảng project_users
-    @ManyToMany(mappedBy = "users")
+    @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
     private Set<Project> projects;
 
-    @OneToOne(mappedBy = "assignee", cascade = CascadeType.ALL)
-    private Subtask assignedSubtask;
+    @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Subtask> subtasks;
 
     // Mối quan hệ với Comment (author)
-    @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private Set<Comment> comments;
 
 }

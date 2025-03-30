@@ -15,17 +15,20 @@ import com.college.backend.college.project.repository.UserRepository;
 import com.college.backend.college.project.request.SubtaskRequest;
 import com.college.backend.college.project.request.TaskRequest;
 import com.college.backend.college.project.response.ApiResponse;
+import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.SubtaskResponse;
 import com.college.backend.college.project.response.TaskResponse;
 import com.college.backend.college.project.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -87,6 +90,8 @@ public class TaskServiceImpl implements TaskService {
         return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
     }
 
+    @Override
+    @Transactional
     public TaskResponse createTaskForProject(TaskRequest taskRequest) {
         // Validate project existence
         Project project = projectRepository.findById(taskRequest.getProjectId())
@@ -193,6 +198,149 @@ public class TaskServiceImpl implements TaskService {
                 taskResponse.getComments() != null ?
                         taskResponse.getComments() : new HashSet<>()
         );
+
+        return taskResponse;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<TaskResponse> getAllTasks(int pageNo, int pageSize, String search, TaskStatus status) {
+        // Tạo Pageable để phân trang
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
+
+        // Tạo Specification để tìm kiếm và lọc
+        Specification<Task> spec = Specification.where(null);
+
+        // Thêm điều kiện tìm kiếm theo tên nếu có
+        if (StringUtils.hasText(search)) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("name")),
+                            "%" + search.toLowerCase() + "%"
+                    )
+            );
+        }
+
+        // Thêm điều kiện lọc theo status nếu có
+        if (status != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("status"), status)
+            );
+        }
+
+        // Truy vấn các task từ repository với điều kiện tìm kiếm và lọc
+        Page<Task> taskPage = taskRepository.findAll(spec, pageable);
+
+        // Chuyển đổi các Task thành TaskResponse
+        List<TaskResponse> taskResponses = taskPage.getContent().stream()
+                .map(task -> {
+                    TaskResponse taskResponse = TaskMapper.INSTANCE.taskToTaskResponse(task);
+
+                    // Thiết lập thông tin project
+                    Project project = task.getProject();
+                    if (project != null) {
+                        taskResponse.setProjectId(project.getId());
+                        taskResponse.setProjectName(project.getName());
+                    }
+
+                    // Tính toán số lượng subtask và tiến độ
+                    Set<Subtask> subtasks = task.getSubtasks();
+                    int totalSubtasks = subtasks != null ? subtasks.size() : 0;
+                    int completedSubtasks = subtasks != null ?
+                            (int) subtasks.stream()
+                                    .filter(Subtask::getCompleted)
+                                    .count() : 0;
+
+                    taskResponse.setTotalSubtasks(totalSubtasks);
+                    taskResponse.setTotalCompletedSubtasks(completedSubtasks);
+
+                    // Tính và thiết lập tiến độ
+                    double progress = totalSubtasks > 0 ?
+                            ((double) completedSubtasks / totalSubtasks) * 100.0 : 0.0;
+                    taskResponse.setProgress(progress);
+
+                    // Map subtasks to responses with user information
+                    if (subtasks != null) {
+                        Set<SubtaskResponse> subtaskResponses = subtasks.stream()
+                                .map(subtask -> {
+                                    SubtaskResponse subtaskResponse = SubtaskMapper.INSTANCE.subtaskToSubtaskRes(subtask);
+
+                                    // Set assignee details if exists
+                                    if (subtask.getAssignee() != null) {
+                                        subtaskResponse.setAssigneeId(subtask.getAssignee().getId());
+                                        subtaskResponse.setAssigneeName(subtask.getAssignee().getFullName());
+                                        subtaskResponse.setAssigneeEmail(subtask.getAssignee().getEmail());
+                                    }
+
+                                    return subtaskResponse;
+                                })
+                                .collect(Collectors.toSet());
+                        taskResponse.setSubTasks(subtaskResponses);
+                    } else {
+                        taskResponse.setSubTasks(new HashSet<>());
+                    }
+
+                    return taskResponse;
+                })
+                .collect(Collectors.toList());
+
+        // Tạo và trả về PagedResponse
+        return new PagedResponse<>(taskResponses, pageNo, pageSize,
+                taskPage.getTotalElements(), taskPage.getTotalPages(),
+                taskPage.isLast());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TaskResponse getTaskById(Integer taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        TaskResponse taskResponse = TaskMapper.INSTANCE.taskToTaskResponse(task);
+
+        // Thiết lập thông tin project
+        Project project = task.getProject();
+        if (project != null) {
+            taskResponse.setProjectId(project.getId());
+            taskResponse.setProjectName(project.getName());
+        }
+
+        // Tính toán số lượng subtask và tiến độ
+        Set<Subtask> subtasks = task.getSubtasks();
+        int totalSubtasks = subtasks != null ? subtasks.size() : 0;
+        int completedSubtasks = subtasks != null ?
+                (int) subtasks.stream()
+                        .filter(Subtask::getCompleted)
+                        .count() : 0;
+
+        taskResponse.setTotalSubtasks(totalSubtasks);
+        taskResponse.setTotalCompletedSubtasks(completedSubtasks);
+
+        // Tính và thiết lập tiến độ
+        double progress = totalSubtasks > 0 ?
+                ((double) completedSubtasks / totalSubtasks) * 100.0 : 0.0;
+        taskResponse.setProgress(progress);
+
+        // Map subtasks to responses with user information
+        if (subtasks != null) {
+            Set<SubtaskResponse> subtaskResponses = subtasks.stream()
+                    .map(subtask -> {
+                        SubtaskResponse subtaskResponse = SubtaskMapper.INSTANCE.subtaskToSubtaskRes(subtask);
+
+                        // Set assignee details if exists
+                        if (subtask.getAssignee() != null) {
+                            subtaskResponse.setAssigneeId(subtask.getAssignee().getId());
+                            subtaskResponse.setAssigneeName(subtask.getAssignee().getFullName());
+                            subtaskResponse.setAssigneeEmail(subtask.getAssignee().getEmail());
+                        }
+
+                        return subtaskResponse;
+                    })
+                    .collect(Collectors.toSet());
+            taskResponse.setSubTasks(subtaskResponses);
+        } else {
+            taskResponse.setSubTasks(new HashSet<>());
+        }
 
         return taskResponse;
     }

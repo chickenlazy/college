@@ -305,6 +305,7 @@ const ProjectOption = ({ project, isSelected, onSelect }) => (
 );
 
 // User Option Component
+// Sửa đoạn code từ dòng 285-304
 const UserOption = ({ user, isSelected, onSelect }) => (
   <div
     className={`flex items-center p-2 rounded-md ${
@@ -313,17 +314,16 @@ const UserOption = ({ user, isSelected, onSelect }) => (
     onClick={() => onSelect(user)}
   >
     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-3">
-      {user.firstName[0]}
-      {user.lastName[0]}
+      {user.fullName ? user.fullName.charAt(0) : "?"}
     </div>
     <div className="flex-1">
-      <div className="font-medium">
-        {user.firstName} {user.lastName}
-      </div>
+      <div className="font-medium">{user.fullName}</div>
       <div className="text-xs text-gray-400">{user.role}</div>
     </div>
   </div>
 );
+
+
 
 // Task Dependency Component
 const TaskDependency = ({ task, onRemove }) => (
@@ -358,33 +358,76 @@ const TaskOption = ({ task, onSelect }) => (
   </div>
 );
 
-// Subtask Component
-const Subtask = ({ subtask, onChange, onRemove }) => (
-  <div className="flex items-center mb-2">
-    <div className="flex-1 flex items-center">
-      <input
-        type="checkbox"
-        checked={subtask.completed}
-        onChange={() => onChange(subtask.id, !subtask.completed)}
-        className="mr-3 h-4 w-4"
-      />
-      <span className={subtask.completed ? "line-through text-gray-400" : ""}>
-        {subtask.name}
-      </span>
-    </div>
-    <button
-      className="p-1 hover:bg-gray-700 rounded-full"
-      onClick={() => onRemove(subtask.id)}
-    >
-      <X size={16} />
-    </button>
-  </div>
-);
+// Thay thế Subtask component từ dòng 360-375 bằng phiên bản mới
+const Subtask = ({ subtask, onChange, onRemove, users }) => {
+  const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
+  
+  const handleAssigneeSelect = (user) => {
+    subtask.assigneeId = user.id;
+    setAssigneeMenuOpen(false);
+  };
 
-const TaskEdit = ({ // task
+  return (
+    <div className="flex items-center mb-3 gap-2">
+      <div className="flex-1 flex items-center">
+        <input
+          type="checkbox"
+          checked={subtask.completed}
+          onChange={() => onChange(subtask.id, !subtask.completed)}
+          className="mr-3 h-4 w-4"
+        />
+        <span className={subtask.completed ? "line-through text-gray-400" : ""}>
+          {subtask.name}
+        </span>
+      </div>
+      
+      <div className="relative">
+        <div
+          className="bg-gray-700 border border-gray-600 rounded-md py-1 px-2 text-white cursor-pointer flex items-center"
+          onClick={() => setAssigneeMenuOpen(!assigneeMenuOpen)}
+        >
+          <User size={14} className="mr-1 text-gray-400" />
+          <span className="text-xs">
+            {subtask.assigneeId 
+              ? users.find(u => u.id === subtask.assigneeId)?.fullName || 'Select'
+              : 'Assign'}
+          </span>
+        </div>
+
+        <DropdownMenu
+          isOpen={assigneeMenuOpen}
+          onClose={() => setAssigneeMenuOpen(false)}
+          title="Select Assignee"
+        >
+          <div className="space-y-1">
+            {users.map((user) => (
+              <UserOption
+                key={user.id}
+                user={user}
+                isSelected={user.id === subtask.assigneeId}
+                onSelect={handleAssigneeSelect}
+              />
+            ))}
+          </div>
+        </DropdownMenu>
+      </div>
+
+      <button
+        className="p-1 hover:bg-gray-700 rounded-full"
+        onClick={() => onRemove(subtask.id)}
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+};
+
+const TaskEdit = ({
+  // task
   isNew = false,
   projectId = null,
   projectName = "",
+  taskId = null,
   onBack,
 }) => {
   const [task, setTask] = useState(
@@ -418,17 +461,65 @@ const TaskEdit = ({ // task
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [newSubtask, setNewSubtask] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
 
   // Load task data when editing existing task
   useEffect(() => {
-    if (!isNew) {
-      // Simulate API call
-      setTimeout(() => {
-        setTask(mockTask);
+    const fetchData = async () => {
+      try {
+        // Fetch projects
+        const projectsResponse = await fetch(
+          "http://localhost:8080/api/projects"
+        );
+        if (!projectsResponse.ok) {
+          throw new Error("Failed to fetch projects");
+        }
+        const projectsData = await projectsResponse.json();
+        setProjects(projectsData.content);
+
+        // Fetch users
+        const usersResponse = await fetch("http://localhost:8080/api/users");
+        if (!usersResponse.ok) {
+          throw new Error("Failed to fetch users");
+        }
+        const usersData = await usersResponse.json();
+        setUsers(usersData.content);
+
+        // If editing existing task, fetch task data
+        if (!isNew && taskId) {
+          const taskResponse = await fetch(
+            `http://localhost:8080/api/tasks/${taskId}`
+          );
+          if (!taskResponse.ok) {
+            throw new Error("Failed to fetch task");
+          }
+          const taskData = await taskResponse.json();
+          setTask(taskData);
+        }
+
+        // If we have a projectId from props, set it in the task
+        if (projectId && isNew) {
+          const project = projectsData.content.find((p) => p.id === projectId);
+          if (project) {
+            setTask((prev) => ({
+              ...prev,
+              projectId,
+              projectName: project.name,
+            }));
+          }
+        }
+
         setLoading(false);
-      }, 500);
-    }
-  }, [isNew]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [isNew, projectId, taskId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -463,11 +554,12 @@ const TaskEdit = ({ // task
     }
   };
 
+  // Sửa đoạn code từ dòng 422-429
   const handleAssigneeSelect = (user) => {
     setTask({
       ...task,
       assigneeId: user.id,
-      assigneeName: `${user.firstName} ${user.lastName}`,
+      assigneeName: user.fullName,
       assigneeRole: user.role,
     });
     setAssigneeMenuOpen(false);
@@ -509,21 +601,23 @@ const TaskEdit = ({ // task
     });
   };
 
-  const handleAddSubtask = () => {
-    if (newSubtask.trim() !== "") {
-      const newSubtaskObj = {
-        id: Date.now(), // Temporary ID
-        name: newSubtask.trim(),
-        completed: false,
-      };
+// Sửa đoạn code từ dòng 470-482
+const handleAddSubtask = () => {
+  if (newSubtask.trim() !== "") {
+    const newSubtaskObj = {
+      id: Date.now(), // Temporary ID
+      name: newSubtask.trim(),
+      completed: false,
+      assigneeId: null
+    };
 
-      setTask({
-        ...task,
-        subtasks: [...task.subtasks, newSubtaskObj],
-      });
-      setNewSubtask("");
-    }
-  };
+    setTask({
+      ...task,
+      subtasks: [...task.subtasks, newSubtaskObj],
+    });
+    setNewSubtask("");
+  }
+};
 
   const handleSubtaskChange = (subtaskId, completed) => {
     setTask({
@@ -576,38 +670,96 @@ const TaskEdit = ({ // task
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    // Calculate progress based on subtasks
-    const calculatedProgress = calculateProgress();
+    try {
+      setSubmitting(true);
 
-    // Update task with calculated progress
-    const updatedTask = {
-      ...task,
-      progress: calculatedProgress,
-    };
+      // Prepare subtask requests
+      const subtaskRequests = task.subtasks.map((subtask) => ({
+        name: subtask.name,
+        completed: subtask.completed,
+        assigneeId: subtask.assigneeId || null,
+      }));
 
-    // Simulate saving task
-    console.log("Saving task:", updatedTask);
-    alert(`Task ${isNew ? "created" : "updated"} successfully!`);
+      // Prepare request payload
+      const payload = {
+        name: task.name,
+        description: task.description,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+        status: task.status,
+        priority: task.priority,
+        projectId: task.projectId,
+        subtaskRequests,
+      };
 
-    // In a real application, you would make an API call here
-    // and redirect to the task detail page after successful save
+      // If task has an assignee, add it to the payload
+      if (task.assigneeId) {
+        payload.assigneeId = task.assigneeId;
+      }
+
+      // API endpoint and method based on whether creating or editing
+      const url = isNew
+        ? "http://localhost:8080/api/tasks"
+        : `http://localhost:8080/api/tasks/${task.id}`;
+
+      const method = isNew ? "POST" : "PUT";
+
+      // Send request to API
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${isNew ? "create" : "update"} task`);
+      }
+
+      const result = await response.json();
+      console.log(`Task ${isNew ? "created" : "updated"}:`, result);
+
+      // Show success message and go back
+      alert(`Task ${isNew ? "created" : "updated"} successfully!`);
+      onBack();
+    } catch (error) {
+      console.error(`Error ${isNew ? "creating" : "updating"} task:`, error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDelete = () => {
-    // Simulate deleting task
-    console.log("Deleting task:", task.id);
-    alert(`Task deleted successfully!`);
+  const handleDelete = async () => {
+    try {
+      setSubmitting(true);
+      const response = await fetch(
+        `http://localhost:8080/api/tasks/${task.id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
-    // In a real application, you would make an API call here
-    // and redirect to the tasks list page after successful delete
+      if (!response.ok) {
+        throw new Error("Failed to delete task");
+      }
+
+      alert("Task deleted successfully!");
+      onBack();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -709,14 +861,13 @@ const TaskEdit = ({ // task
                       <span>{task.projectName || "Select a project"}</span>
                       <FolderKanban size={18} className="text-gray-400" />
                     </div>
-
                     <DropdownMenu
                       isOpen={projectMenuOpen}
                       onClose={() => setProjectMenuOpen(false)}
                       title="Select Project"
                     >
                       <div className="space-y-1">
-                        {mockProjects.map((project) => (
+                        {projects.map((project) => (
                           <ProjectOption
                             key={project.id}
                             project={project}
@@ -845,14 +996,13 @@ const TaskEdit = ({ // task
                       )}
                       <User size={18} className="text-gray-400" />
                     </div>
-
                     <DropdownMenu
                       isOpen={assigneeMenuOpen}
                       onClose={() => setAssigneeMenuOpen(false)}
                       title="Select Assignee"
                     >
                       <div className="space-y-1">
-                        {mockUsers.map((user) => (
+                        {users.map((user) => (
                           <UserOption
                             key={user.id}
                             user={user}
@@ -906,6 +1056,7 @@ const TaskEdit = ({ // task
                       subtask={subtask}
                       onChange={handleSubtaskChange}
                       onRemove={handleRemoveSubtask}
+                      users={users}
                     />
                   ))
                 )}
@@ -930,119 +1081,10 @@ const TaskEdit = ({ // task
                 </div>
               </div>
             </div>
-
-            {/* Dependencies Section */}
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Dependencies</h2>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md flex items-center text-sm"
-                    onClick={() =>
-                      setDependenciesMenuOpen(!dependenciesMenuOpen)
-                    }
-                  >
-                    <Plus size={16} className="mr-1" />
-                    Add Dependency
-                  </button>
-
-                  <DropdownMenu
-                    isOpen={dependenciesMenuOpen}
-                    onClose={() => setDependenciesMenuOpen(false)}
-                    title="Select Dependencies"
-                  >
-                    <div className="space-y-2">
-                      {mockAllTasks
-                        .filter(
-                          (t) =>
-                            t.id !== task.id &&
-                            !task.dependencies.find((d) => d.id === t.id)
-                        )
-                        .map((task) => (
-                          <TaskOption
-                            key={task.id}
-                            task={task}
-                            onSelect={handleAddDependency}
-                          />
-                        ))}
-                    </div>
-                  </DropdownMenu>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {task.dependencies.length === 0 ? (
-                  <p className="text-gray-400 text-sm">
-                    No dependencies added yet.
-                  </p>
-                ) : (
-                  task.dependencies.map((dependency) => (
-                    <TaskDependency
-                      key={dependency.id}
-                      task={dependency}
-                      onRemove={handleRemoveDependency}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Right Column - Tags and Additional Info */}
           <div className="space-y-6">
-            {/* Tags Section */}
-            <div className="bg-gray-800 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Tags</h2>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md flex items-center text-sm"
-                    onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
-                  >
-                    <Plus size={16} className="mr-1" />
-                    Add Tag
-                  </button>
-
-                  <DropdownMenu
-                    isOpen={tagsMenuOpen}
-                    onClose={() => setTagsMenuOpen(false)}
-                    title="Select Tags"
-                  >
-                    <div className="space-y-2">
-                      {mockAllTags
-                        .filter(
-                          (tag) => !task.tags.find((t) => t.id === tag.id)
-                        )
-                        .map((tag) => (
-                          <TagBadge
-                            key={tag.id}
-                            tag={tag}
-                            isSelectable={true}
-                            onSelect={handleAddTag}
-                          />
-                        ))}
-                    </div>
-                  </DropdownMenu>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {task.tags.length === 0 ? (
-                  <p className="text-gray-400 text-sm">No tags added yet.</p>
-                ) : (
-                  task.tags.map((tag) => (
-                    <TagBadge
-                      key={tag.id}
-                      tag={tag}
-                      onRemove={handleRemoveTag}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-
             {/* Tips Section */}
             <div className="bg-gray-800 rounded-lg p-4">
               <h2 className="text-lg font-semibold mb-3">Quick Tips</h2>
