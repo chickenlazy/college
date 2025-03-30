@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,4 +22,5 @@ public class TaskRequest {
     private TaskStatus status;
     private TaskPriority priority;
     private Integer projectId;
+    private List<SubtaskRequest> subtaskRequests;
 }

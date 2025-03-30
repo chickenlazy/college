@@ -53,4 +53,5 @@ public class User {
     // Mối quan hệ với Comment (author)
     @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<Comment> comments;
+
 }

@@ -14,7 +14,7 @@ SHOW GRANTS FOR 'admin'@'localhost';
 -- Xóa và tạo lại bảng `users`
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
-  id INT PRIMARY KEY AUTO_INCREMENT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(255),
   email VARCHAR(255) UNIQUE,
   phone_number VARCHAR(20),
@@ -26,7 +26,7 @@ CREATE TABLE users (
 -- Xóa và tạo lại bảng `projects`
 DROP TABLE IF EXISTS projects;
 CREATE TABLE projects (
-  id INT PRIMARY KEY AUTO_INCREMENT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255),
   description TEXT,
   start_date DATETIME,
@@ -34,14 +34,14 @@ CREATE TABLE projects (
   status ENUM('IN_PROGRESS', 'NOT_STARTED', 'ON_HOLD', 'COMPLETED', 'OVER_DUE'),
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  manager_id INT
-  -- Đã xóa FOREIGN KEY (manager_id) REFERENCES users(id)
+  manager_id INT,
+  FOREIGN KEY (manager_id) REFERENCES users(id)
 );
 
 -- Xóa và tạo lại bảng `tasks`
 DROP TABLE IF EXISTS tasks;
 CREATE TABLE tasks (
-  id INT PRIMARY KEY AUTO_INCREMENT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255),
   description TEXT,
   start_date DATETIME,
@@ -50,31 +50,32 @@ CREATE TABLE tasks (
   priority ENUM('HIGH', 'MEDIUM', 'LOW'),
   project_id INT,
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-  -- Đã xóa FOREIGN KEY (project_id) REFERENCES projects(id)
-  -- Đã xóa FOREIGN KEY (assignee_id) REFERENCES users(id)
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id)
 );
 
 -- Xóa và tạo lại bảng `subtasks`
 DROP TABLE IF EXISTS subtasks;
 CREATE TABLE subtasks (
-  id INT PRIMARY KEY AUTO_INCREMENT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255),
   task_id INT,
   assignee_id INT,
-  completed BOOLEAN DEFAULT FALSE
-  -- Đã xóa FOREIGN KEY (task_id) REFERENCES tasks(id)
+  completed BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (task_id) REFERENCES tasks(id),
+  FOREIGN KEY (assignee_id) REFERENCES users(id)
 );
 
+-- Xóa và tạo lại bảng `comments`
 DROP TABLE IF EXISTS comments;
 CREATE TABLE comments (
-  id INT PRIMARY KEY AUTO_INCREMENT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   text TEXT,
   author_id INT,
   task_id INT,
-  created_date DATETIME DEFAULT CURRENT_TIMESTAMP
-  -- Đã xóa FOREIGN KEY (author_id) REFERENCES users(id)
-  -- Đã xóa FOREIGN KEY (task_id) REFERENCES tasks(id)
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (author_id) REFERENCES users(id),
+  FOREIGN KEY (task_id) REFERENCES tasks(id)
 );
 
 -- Xóa và tạo lại bảng `project_users`
@@ -82,25 +83,28 @@ DROP TABLE IF EXISTS project_users;
 CREATE TABLE project_users (
   project_id INT,
   user_id INT,
-  PRIMARY KEY (project_id, user_id)
-  -- Đã xóa FOREIGN KEY (project_id) REFERENCES projects(id)
-  -- Đã xóa FOREIGN KEY (user_id) REFERENCES users(id)
+  PRIMARY KEY (project_id, user_id),
+  FOREIGN KEY (project_id) REFERENCES projects(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Tạo bảng `tags`
 CREATE TABLE tags (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) UNIQUE NOT NULL,
-    color VARCHAR(20)  
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  color VARCHAR(20)
 );
 
+-- Tạo bảng `project_tags`
 CREATE TABLE project_tags (
-    project_id INT,                     
-    tag_id INT,                     
-    PRIMARY KEY (project_id, tag_id)
-    -- Đã xóa FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-    -- Đã xóa FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+  project_id INT,
+  tag_id INT,
+  PRIMARY KEY (project_id, tag_id),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
+-- Chèn dữ liệu vào bảng `users`
 INSERT INTO users (full_name, email, phone_number, role)
 VALUES
   ('Admin User', 'admin@example.com', '1234567890', 'ADMIN'),
@@ -114,6 +118,7 @@ VALUES
   ('User 6', 'user6@example.com', '1234567898', 'USER'),
   ('User 7', 'user7@example.com', '1234567899', 'USER');
 
+-- Chèn dữ liệu vào bảng `projects`
 INSERT INTO projects (name, description, start_date, due_date, status, manager_id)
 VALUES
   ('Project 1', 'Description of Project 1', '2025-01-01 10:00:00', '2025-01-10 10:00:00', 'IN_PROGRESS', 2),
@@ -127,9 +132,10 @@ VALUES
   ('Project 9', 'Description of Project 9', '2025-09-01 10:00:00', '2025-09-10 10:00:00', 'COMPLETED', 3),
   ('Project 10', 'Description of Project 10', '2025-10-01 10:00:00', '2025-10-10 10:00:00', 'ON_HOLD', 2);
 
+-- Chèn dữ liệu vào bảng `tasks`
 INSERT INTO tasks (name, description, start_date, due_date, status, priority, project_id)
 VALUES
-  ('Task 1', 'Task description 1', '2025-01-01 10:00:00', '2025-01-02 10:00:00', 'IN_PROGRESS', 'HIGH', 1),
+  ('Task 1', 'Task description 1', '2025-01-01 10:00:00', '2025-01-02 10:00:00', 'IN_PROGRESS', 'HIGH', 2),
   ('Task 2', 'Task description 2', '2025-02-01 10:00:00', '2025-02-02 10:00:00', 'NOT_STARTED', 'MEDIUM', 2),
   ('Task 3', 'Task description 3', '2025-03-01 10:00:00', '2025-03-02 10:00:00', 'COMPLETED', 'LOW', 3),
   ('Task 4', 'Task description 4', '2025-04-01 10:00:00', '2025-04-02 10:00:00', 'OVER_DUE', 'HIGH', 4),
@@ -140,6 +146,7 @@ VALUES
   ('Task 9', 'Task description 9', '2025-09-01 10:00:00', '2025-09-02 10:00:00', 'IN_PROGRESS', 'HIGH', 9),
   ('Task 10', 'Task description 10', '2025-10-01 10:00:00', '2025-10-02 10:00:00', 'ON_HOLD', 'LOW', 10);
 
+-- Chèn dữ liệu vào bảng `subtasks`
 INSERT INTO subtasks (name, task_id, completed, assignee_id)
 VALUES
   ('Subtask 1', 1, TRUE, 4),
@@ -152,6 +159,8 @@ VALUES
   ('Subtask 8', 8, TRUE, 4),
   ('Subtask 9', 9, FALSE, 5),
   ('Subtask 10', 10, TRUE, 6);
+
+-- Chèn dữ liệu vào bảng `comments`
 INSERT INTO comments (text, author_id, task_id)
 VALUES
   ('Comment for Task 1', 1, 1),
@@ -165,6 +174,7 @@ VALUES
   ('Comment for Task 9', 9, 9),
   ('Comment for Task 10', 10, 10);
 
+-- Chèn dữ liệu vào bảng `project_users`
 INSERT INTO project_users (project_id, user_id)
 VALUES
   (1, 1),
@@ -178,6 +188,7 @@ VALUES
   (5, 9),
   (5, 10);
 
+-- Chèn dữ liệu vào bảng `tags`
 INSERT INTO tags (name, color) VALUES
   ('Development', '#3B82F6'),
   ('Research', '#8B5CF6'),
@@ -185,7 +196,8 @@ INSERT INTO tags (name, color) VALUES
   ('Marketing', '#F59E0B'),
   ('Testing', '#10B981'),
   ('Documentation', '#6B7280');
-  
+
+-- Chèn dữ liệu vào bảng `project_tags`
 INSERT INTO project_tags (project_id, tag_id) VALUES
   (1, 1),  -- Project 1 với Tag 1 (Development)
   (1, 2),  -- Project 1 với Tag 2 (Research)
