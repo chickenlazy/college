@@ -65,4 +65,13 @@ public class TaskController {
         return ResponseEntity.ok(taskResponse);
     }
 
+
+    @PatchMapping("/{taskId}/status")
+    public ResponseEntity<?> updateTaskStatus(
+            @PathVariable Integer taskId,
+            @RequestParam TaskStatus status) {
+        TaskResponse taskResponse = taskService.updateTaskStatus(taskId, status);
+        return ResponseEntity.ok(taskResponse);
+    }
+
 }

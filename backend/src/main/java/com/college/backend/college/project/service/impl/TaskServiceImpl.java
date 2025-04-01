@@ -344,4 +344,23 @@ public class TaskServiceImpl implements TaskService {
 
         return taskResponse;
     }
+
+    @Override
+    @Transactional
+    public TaskResponse updateTaskStatus(Integer taskId, TaskStatus newStatus) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        // Cập nhật trạng thái mới
+        task.setStatus(newStatus);
+
+        // Cập nhật thời gian chỉnh sửa
+        task.setLastModifiedDate(new Date());
+
+        // Lưu task đã cập nhật
+        Task updatedTask = taskRepository.save(task);
+
+        // Chuyển đổi và trả về response
+        return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
+    }
 }

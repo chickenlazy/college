@@ -19,110 +19,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import TaskEdit from "../edit/TaskEdit";
-
-// Mock data for self tasks
-const mockTasks = [
-  {
-    id: 1,
-    name: "Complete project proposal",
-    description: "Draft and finalize project proposal for client review",
-    dueDate: "2025-04-01T10:00:00",
-    priority: "HIGH",
-    status: "IN_PROGRESS",
-    project: "Project A",
-    createdAt: "2025-03-15T09:30:00",
-  },
-  {
-    id: 2,
-    name: "Research market trends",
-    description: "Analyze current market trends for quarterly report",
-    dueDate: "2025-03-25T17:00:00",
-    priority: "MEDIUM",
-    status: "NOT_STARTED",
-    project: "Market Analysis",
-    createdAt: "2025-03-10T14:20:00",
-  },
-  {
-    id: 3,
-    name: "Prepare presentation slides",
-    description: "Create slides for next week's client meeting",
-    dueDate: "2025-03-28T09:00:00",
-    priority: "HIGH",
-    status: "NOT_STARTED",
-    project: "Client Presentation",
-    createdAt: "2025-03-18T11:45:00",
-  },
-  {
-    id: 4,
-    name: "Review code changes",
-    description: "Review pull requests and provide feedback",
-    dueDate: "2025-03-23T16:00:00",
-    priority: "MEDIUM",
-    status: "IN_PROGRESS",
-    project: "Development",
-    createdAt: "2025-03-20T08:15:00",
-  },
-  {
-    id: 5,
-    name: "Update documentation",
-    description: "Update user guide with new features",
-    dueDate: "2025-03-30T12:00:00",
-    priority: "LOW",
-    status: "NOT_STARTED",
-    project: "Documentation",
-    createdAt: "2025-03-19T13:40:00",
-  },
-  {
-    id: 6,
-    name: "Fix reported bugs",
-    description: "Address bugs reported in latest release",
-    dueDate: "2025-03-24T15:00:00",
-    priority: "HIGH",
-    status: "IN_PROGRESS",
-    project: "Bug Fixes",
-    createdAt: "2025-03-21T10:20:00",
-  },
-  {
-    id: 7,
-    name: "Client meeting",
-    description: "Weekly progress meeting with client",
-    dueDate: "2025-03-26T13:00:00",
-    priority: "MEDIUM",
-    status: "NOT_STARTED",
-    project: "Client Relations",
-    createdAt: "2025-03-17T16:30:00",
-  },
-  {
-    id: 8,
-    name: "Update project timeline",
-    description: "Revise project timeline based on current progress",
-    dueDate: "2025-03-27T11:00:00",
-    priority: "MEDIUM",
-    status: "NOT_STARTED",
-    project: "Project Management",
-    createdAt: "2025-03-22T09:10:00",
-  },
-  {
-    id: 9,
-    name: "Team sync-up",
-    description: "Daily team sync-up meeting",
-    dueDate: "2025-03-22T09:00:00",
-    priority: "LOW",
-    status: "COMPLETED",
-    project: "Team Collaboration",
-    createdAt: "2025-03-21T17:00:00",
-  },
-  {
-    id: 10,
-    name: "Prepare monthly report",
-    description: "Compile data and prepare monthly performance report",
-    dueDate: "2025-03-31T16:00:00",
-    priority: "HIGH",
-    status: "NOT_STARTED",
-    project: "Reporting",
-    createdAt: "2025-03-20T14:30:00",
-  },
-];
+import TaskDetail from "../detail/TaskDetail"
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -281,7 +178,6 @@ const Pagination = ({
         >
           <ChevronLeft size={18} />
         </button>
-
         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
           // Show pages around current page
           let pageNum = i + 1;
@@ -325,19 +221,20 @@ const Pagination = ({
 };
 
 // Action Buttons Component
-const ActionButtons = ({ task, onDelete, onEdit }) => {
+const ActionButtons = ({ task, onDelete, onEdit, onView  }) => {
   return (
     <div className="flex gap-2">
       <button
         className="p-2 rounded-full bg-green-600 text-white"
         title="View Details"
+        onClick={() => onView(task)}
       >
         <Eye size={16} />
       </button>
       <button
         className="p-2 rounded-full bg-blue-600 text-white"
         title="Edit Task"
-        onClick={() => onEdit(task)} // Thêm hàm onEdit khi nhấp vào nút Edit
+        onClick={() => onEdit(task)}
       >
         <Edit size={16} />
       </button>
@@ -363,10 +260,33 @@ const TeamTask = () => {
   const [search, setSearch] = useState("");
   const [showTaskEdit, setShowTaskEdit] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showTaskDetail, setShowTaskDetail] = useState(false);
+  const [taskDetail, setTaskDetail] = useState(null);
 
   const handleEditTask = (task) => {
     setSelectedTask(task);
     setShowTaskEdit(true);
+  };
+
+  const handleViewTask = async (task) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `http://localhost:8080/api/tasks/${task.id}`
+      );
+      setTaskDetail(response.data);
+      setShowTaskDetail(true);
+      setShowTaskEdit(false);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching task details:", err);
+      setLoading(false);
+    }
+  };
+
+  const handleBackFromTaskDetail = () => {
+    setShowTaskDetail(false);
+    refreshData();
   };
 
   const [apiData, setApiData] = useState({
@@ -397,8 +317,8 @@ const TeamTask = () => {
     setLoading(true);
     try {
       const params = {
-        pageNo: page, // Thay page thành pageNo
-        pageSize: size, // Thay size thành pageSize
+        page: page,
+        size: size,
       };
 
       // Thêm tham số tìm kiếm nếu có
@@ -448,7 +368,8 @@ const TeamTask = () => {
   // Handle items per page change
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1); // Reset về trang 1
+    fetchTasks(1, newItemsPerPage, search, activeFilter); // Gọi API với pageSize mới
   };
 
   const handleReset = () => {
@@ -484,6 +405,11 @@ const TeamTask = () => {
             setShowTaskEdit(false);
             refreshData();
           }}
+        />
+      ) : showTaskDetail ? (
+        <TaskDetail 
+          task={taskDetail} 
+          onBack={handleBackFromTaskDetail} 
         />
       ) : (
         <>
@@ -648,6 +574,7 @@ const TeamTask = () => {
                           task={task}
                           onDelete={handleDeleteTask}
                           onEdit={handleEditTask}
+                          onView={handleViewTask}
                         />
                       </td>
                     </tr>

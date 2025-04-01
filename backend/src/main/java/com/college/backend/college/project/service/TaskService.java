@@ -12,4 +12,5 @@ public interface TaskService {
     TaskResponse createTaskForProject(TaskRequest taskRequest);
     PagedResponse<TaskResponse> getAllTasks(int pageNo, int pageSize, String search, TaskStatus status);
     TaskResponse getTaskById(Integer taskId);
+    TaskResponse updateTaskStatus(Integer taskId, TaskStatus newStatus);
 }
