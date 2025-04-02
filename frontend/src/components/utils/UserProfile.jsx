@@ -13,19 +13,16 @@ import {
   Briefcase 
 } from 'lucide-react';
 
-const UserProfile = () => {
-  // Sample user data
-  const [user, setUser] = useState({
-    id: 1,
-    firstName: 'Alex',
-    lastName: 'Johnson',
-    email: 'alex.johnson@example.com',
-    role: 'PROJECT_MANAGER',
+const UserProfile = ({ user }) => {
+  const [userState, setUserState] = useState({
+    id: null,
+    firstName: user.fullName.split(' ').slice(0, -1).join(' '),
+    lastName: user.fullName.split(' ').slice(-1)[0],
+    email: user.email,
+    role: user.role,
     avatar: null,
-    position: 'Senior Project Manager',
-    department: 'Engineering',
-    phone: '+1 (555) 123-4567',
-    joinedDate: '2022-05-15'
+    phone: user.phoneNumber,
+    joinedDate: user.createdDate
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -36,7 +33,7 @@ const UserProfile = () => {
   const handleEditToggle = () => {
     if (isEditing) {
       // Save changes
-      setUser({...editedUser});
+      setUserState({...editedUser});
       setIsEditing(false);
     } else {
       setIsEditing(true);
@@ -80,7 +77,7 @@ const UserProfile = () => {
 
   // Generate avatar with initials if no avatar image
   const generateInitialsAvatar = () => {
-    const initials = `${user.firstName[0]}${user.lastName[0]}`;
+    const initials = `${userState.firstName[0]}${userState.lastName[0]}`;
     return (
       <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
         {initials}
@@ -173,9 +170,9 @@ const UserProfile = () => {
             {/* Left column - Avatar and basic info */}
             <div className="md:w-1/3 flex flex-col items-center">
               <div className="mb-4">
-                {user.avatar ? (
+                {userState.avatar ? (
                   <img 
-                    src={user.avatar} 
+                    src={userState.avatar} 
                     alt="User avatar" 
                     className="w-24 h-24 rounded-full object-cover border-2 border-purple-500"
                   />
@@ -202,7 +199,7 @@ const UserProfile = () => {
                       />
                     </div>
                   ) : (
-                    `${user.firstName} ${user.lastName}`
+                    `${userState.firstName} ${userState.lastName}`
                   )}
                 </h3>
                 <div className="mt-2 text-center">
@@ -219,7 +216,7 @@ const UserProfile = () => {
                         <option value="TEAM_MEMBER">Team Member</option>
                       </select>
                     ) : (
-                      user.role.replace('_', ' ')
+                      userState.role.replace('_', ' ')
                     )}
                   </span>
                 </div>
@@ -243,7 +240,7 @@ const UserProfile = () => {
                           className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm flex-1"
                         />
                       ) : (
-                        <span>{user.email}</span>
+                        <span>{userState.email}</span>
                       )}
                     </div>
                   </div>
@@ -261,7 +258,7 @@ const UserProfile = () => {
                           className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm flex-1"
                         />
                       ) : (
-                        <span>{user.phone}</span>
+                        <span>{userState.phone}</span>
                       )}
                     </div>
                   </div>
@@ -281,7 +278,7 @@ const UserProfile = () => {
                           className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm flex-1"
                         />
                       ) : (
-                        <span>{user.position}</span>
+                        <span>{userState.position}</span>
                       )}
                     </div>
                   </div>
@@ -299,7 +296,7 @@ const UserProfile = () => {
                           className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm flex-1"
                         />
                       ) : (
-                        <span>{user.department}</span>
+                        <span>{userState.department}</span>
                       )}
                     </div>
                   </div>
@@ -318,7 +315,7 @@ const UserProfile = () => {
                         className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm flex-1"
                       />
                     ) : (
-                      <span>{formatDate(user.joinedDate)}</span>
+                      <span>{formatDate(userState.joinedDate)}</span>
                     )}
                   </div>
                 </div>

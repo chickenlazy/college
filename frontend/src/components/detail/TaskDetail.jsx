@@ -351,7 +351,7 @@ const TaskDetail = ({ task, onBack }) => {
 
   const handleEdit = () => {
     setIsEditing(true);
-  };
+  };  
 
   useEffect(() => {
     const fetchAllUsers = async () => {

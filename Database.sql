@@ -16,9 +16,11 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(255),
+  username VARCHAR(255),
+  password VARCHAR(255),
   email VARCHAR(255) UNIQUE,
   phone_number VARCHAR(20),
-  role ENUM('ADMIN', 'MANAGER', 'USER'),
+  role ENUM('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_USER'),
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -107,16 +109,16 @@ CREATE TABLE project_tags (
 -- Chèn dữ liệu vào bảng `users`
 INSERT INTO users (full_name, email, phone_number, role)
 VALUES
-  ('Admin User', 'admin@example.com', '1234567890', 'ADMIN'),
-  ('Manager 1', 'manager1@example.com', '1234567891', 'MANAGER'),
-  ('Manager 2', 'manager2@example.com', '1234567892', 'MANAGER'),
-  ('User 1', 'user1@example.com', '1234567893', 'USER'),
-  ('User 2', 'user2@example.com', '1234567894', 'USER'),
-  ('User 3', 'user3@example.com', '1234567895', 'USER'),
-  ('User 4', 'user4@example.com', '1234567896', 'USER'),
-  ('User 5', 'user5@example.com', '1234567897', 'USER'),
-  ('User 6', 'user6@example.com', '1234567898', 'USER'),
-  ('User 7', 'user7@example.com', '1234567899', 'USER');
+  ('Admin User', 'admin@example.com', '1234567890', 'ROLE_ADMIN'),
+  ('Manager 1', 'manager1@example.com', '1234567891', 'ROLE_MANAGER'),
+  ('Manager 2', 'manager2@example.com', '1234567892', 'ROLE_MANAGER'),
+  ('User 1', 'user1@example.com', '1234567893', 'ROLE_USER'),
+  ('User 2', 'user2@example.com', '1234567894', 'ROLE_USER'),
+  ('User 3', 'user3@example.com', '1234567895', 'ROLE_USER'),
+  ('User 4', 'user4@example.com', '1234567896', 'ROLE_USER'),
+  ('User 5', 'user5@example.com', '1234567897', 'ROLE_USER'),
+  ('User 6', 'user6@example.com', '1234567898', 'ROLE_USER'),
+  ('User 7', 'user7@example.com', '1234567899', 'ROLE_USER');
 
 -- Chèn dữ liệu vào bảng `projects`
 INSERT INTO projects (name, description, start_date, due_date, status, manager_id)

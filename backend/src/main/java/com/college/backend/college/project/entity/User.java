@@ -9,6 +9,8 @@ import lombok.Setter;
 
 import java.util.Date;
 import java.util.Set;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "users")
@@ -25,6 +27,12 @@ public class User {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(length = 50, unique = true)
+    private String username;
+
+    @Column(length = 520)
+    private String password;
+
     @Column(name = "email", unique = true)
     private String email;
 
@@ -35,10 +43,12 @@ public class User {
     @Column(name = "role")
     private Role role;
 
+    @CreationTimestamp
     @Column(name = "created_date", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
+    @UpdateTimestamp
     @Column(name = "last_modified_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastModifiedDate;

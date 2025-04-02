@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Project from "./Project";
 import TeamTask from "./TeamTask";
 import TaskOverview from "./TaskOverview";
@@ -25,7 +25,19 @@ import {
 } from "lucide-react";
 import UserManagement from "./UserManagement";
 
-const DashboardUI = () => {
+const DashboardUI = ({ onLogout }) => {
+
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+console.log(user);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeComponent, setActiveComponent] = useState("dashboard");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -63,7 +75,7 @@ const DashboardUI = () => {
           </div>
         );
       case "userProfile":
-        return <UserProfile />;
+        return <UserProfile user={user} />;
       default:
         return (
           <div className="bg-gray-900 rounded-lg p-6">
@@ -81,9 +93,9 @@ const DashboardUI = () => {
   };
 
   const handleLogout = () => {
-    setIsSettingsOpen(false);
-    localStorage.removeItem("isAuthenticated");
-    window.location.href = "/login";
+    // Xóa thông tin người dùng khỏi localStorage khi đăng xuất
+    localStorage.removeItem('user');
+    onLogout(); // Gọi hàm onLogout để chuyển hướng về màn hình đăng nhập
   };
 
   return (
@@ -319,7 +331,7 @@ const DashboardUI = () => {
                 <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
                   <User size={20} />
                 </button>
-                <span className="hidden md:inline">Chicken Lazy</span>
+                <span className="hidden md:inline">{user ? user.fullName : ''}</span>
               </div>
               <button
                 className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white"

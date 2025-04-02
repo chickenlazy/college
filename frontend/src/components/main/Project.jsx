@@ -268,8 +268,18 @@ const Project = () => {
         params.status = filterStatus;
       }
 
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
       const response = await axios.get(`http://localhost:8080/api/projects`, {
         params: params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       setApiData(response.data);
       setProjects(response.data.content);
@@ -315,7 +325,6 @@ const Project = () => {
   const refreshData = () => {
     fetchProjects(currentPage, itemsPerPage, search, activeFilter);
   };
-  
 
   // Filter projects based on active filter and search
   const filteredProjects = projects;
@@ -369,13 +378,13 @@ const Project = () => {
         />
       ) : showProjectEdit ? (
         <ProjectEdit
-        project={selectedProject}
-        onBack={() => {
-          setShowProjectEdit(false);
-          refreshData(); 
-        }}
-        isNew={selectedProject === null}
-      />
+          project={selectedProject}
+          onBack={() => {
+            setShowProjectEdit(false);
+            refreshData();
+          }}
+          isNew={selectedProject === null}
+        />
       ) : (
         <>
           <h1 className="text-2xl font-bold mb-4">PROJECT MANAGEMENT</h1>

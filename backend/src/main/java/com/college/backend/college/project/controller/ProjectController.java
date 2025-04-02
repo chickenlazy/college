@@ -9,6 +9,7 @@ import com.college.backend.college.project.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -56,6 +57,7 @@ public class ProjectController {
     }
 
     // Phương thức GET để lấy tất cả các dự án với phân trang, tìm kiếm và lọc
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
     @GetMapping
     public ResponseEntity<PagedResponse<ProjectResponse>> getAllProjects(
             @RequestParam(defaultValue = "1") int pageNo,
