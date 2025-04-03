@@ -74,4 +74,15 @@ public class TaskController {
         return ResponseEntity.ok(taskResponse);
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<PagedResponse<TaskResponse>> getTasksByCreatedBy(
+            @PathVariable Integer userId,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "status", required = false) TaskStatus status) {
+
+        PagedResponse<TaskResponse> taskResponse = taskService.getTasksByCreatedBy(userId, page, size, status);
+        return ResponseEntity.ok(taskResponse);
+    }
+
 }

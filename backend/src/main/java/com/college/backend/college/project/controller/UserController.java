@@ -1,10 +1,13 @@
 package com.college.backend.college.project.controller;
 
+import com.college.backend.college.project.request.UserRequest;
+import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.UserResponse;
 import com.college.backend.college.project.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,6 +36,40 @@ public class UserController {
 
         // Trả về response dưới dạng HTTP Response Entity
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API để lấy thông tin người dùng theo ID
+     */
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Integer userId) {
+        UserResponse userResponse = userService.getUserById(userId);
+        return ResponseEntity.ok(userResponse);
+    }
+
+    /**
+     * API để cập nhật thông tin người dùng
+     * Người dùng chỉ có thể cập nhật thông tin của chính họ hoặc phải là ADMIN
+     */
+    @PutMapping("/{userId}")
+    @PreAuthorize("@userSecurity.isUserOrAdmin(#userId)")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Integer userId,
+            @RequestBody UserRequest userRequest) {
+
+        UserResponse updatedUser = userService.updateUser(userId, userRequest);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    /**
+     * API để xóa người dùng
+     * Chỉ ADMIN mới có quyền xóa người dùng
+     */
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable Integer userId) {
+        ApiResponse apiResponse = userService.deleteUser(userId);
+        return ResponseEntity.ok(apiResponse);
     }
 
 }

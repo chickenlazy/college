@@ -27,5 +27,7 @@ public interface ProjectService {
     // Xóa member khỏi project
     ProjectResponse removeMemberFromProject(Integer projectId, Integer userId);
 
+    PagedResponse<ProjectResponse> getProjectsByManagerId(Integer managerId, int pageNo, int pageSize, String search, ProjectStatus status);
+    PagedResponse<ProjectResponse> getProjectsByUserId(Integer userId, int pageNo, int pageSize, String search, ProjectStatus status);
 
 }

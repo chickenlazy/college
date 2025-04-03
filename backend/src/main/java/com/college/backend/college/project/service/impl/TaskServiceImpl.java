@@ -108,6 +108,13 @@ public class TaskServiceImpl implements TaskService {
         // Set the project for the task
         task.setProject(project);
 
+        // Set creator if provided
+        if (taskRequest.getCreatedBy() != null) {
+            User creator = userRepository.findById(taskRequest.getCreatedBy())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + taskRequest.getCreatedBy()));
+            task.setCreatedBy(creator);
+        }
+
         // Set default status if not provided
         if (task.getStatus() == null) {
             task.setStatus(TaskStatus.NOT_STARTED);
@@ -243,6 +250,8 @@ public class TaskServiceImpl implements TaskService {
                         taskResponse.setProjectName(project.getName());
                     }
 
+                    // Thông tin người tạo đã được thiết lập bởi mapper
+
                     // Tính toán số lượng subtask và tiến độ
                     Set<Subtask> subtasks = task.getSubtasks();
                     int totalSubtasks = subtasks != null ? subtasks.size() : 0;
@@ -305,6 +314,8 @@ public class TaskServiceImpl implements TaskService {
             taskResponse.setProjectName(project.getName());
         }
 
+        // Thông tin người tạo đã được thiết lập bởi mapper
+
         // Tính toán số lượng subtask và tiến độ
         Set<Subtask> subtasks = task.getSubtasks();
         int totalSubtasks = subtasks != null ? subtasks.size() : 0;
@@ -362,5 +373,88 @@ public class TaskServiceImpl implements TaskService {
 
         // Chuyển đổi và trả về response
         return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<TaskResponse> getTasksByCreatedBy(Integer userId, int pageNo, int pageSize, TaskStatus status) {
+        // Kiểm tra xem User có tồn tại hay không
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        // Tạo Pageable để phân trang
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+
+        // Tạo Specification để lọc theo người tạo và status (nếu có)
+        Specification<Task> spec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("createdBy").get("id"), userId);
+
+        // Thêm điều kiện lọc theo status nếu có
+        if (status != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("status"), status)
+            );
+        }
+
+        // Truy vấn các task từ repository
+        Page<Task> taskPage = taskRepository.findAll(spec, pageable);
+
+        // Chuyển đổi các Task thành TaskResponse
+        List<TaskResponse> taskResponses = taskPage.getContent().stream()
+                .map(task -> {
+                    TaskResponse taskResponse = TaskMapper.INSTANCE.taskToTaskResponse(task);
+
+                    // Thiết lập thông tin project
+                    Project project = task.getProject();
+                    if (project != null) {
+                        taskResponse.setProjectId(project.getId());
+                        taskResponse.setProjectName(project.getName());
+                    }
+
+                    // Tính toán số lượng subtask và tiến độ
+                    Set<Subtask> subtasks = task.getSubtasks();
+                    int totalSubtasks = subtasks != null ? subtasks.size() : 0;
+                    int completedSubtasks = subtasks != null ?
+                            (int) subtasks.stream()
+                                    .filter(Subtask::getCompleted)
+                                    .count() : 0;
+
+                    taskResponse.setTotalSubtasks(totalSubtasks);
+                    taskResponse.setTotalCompletedSubtasks(completedSubtasks);
+
+                    // Tính và thiết lập tiến độ
+                    double progress = totalSubtasks > 0 ?
+                            ((double) completedSubtasks / totalSubtasks) * 100.0 : 0.0;
+                    taskResponse.setProgress(progress);
+
+                    // Map subtasks to responses with user information
+                    if (subtasks != null) {
+                        Set<SubtaskResponse> subtaskResponses = subtasks.stream()
+                                .map(subtask -> {
+                                    SubtaskResponse subtaskResponse = SubtaskMapper.INSTANCE.subtaskToSubtaskRes(subtask);
+
+                                    // Set assignee details if exists
+                                    if (subtask.getAssignee() != null) {
+                                        subtaskResponse.setAssigneeId(subtask.getAssignee().getId());
+                                        subtaskResponse.setAssigneeName(subtask.getAssignee().getFullName());
+                                        subtaskResponse.setAssigneeEmail(subtask.getAssignee().getEmail());
+                                    }
+
+                                    return subtaskResponse;
+                                })
+                                .collect(Collectors.toSet());
+                        taskResponse.setSubTasks(subtaskResponses);
+                    } else {
+                        taskResponse.setSubTasks(new HashSet<>());
+                    }
+
+                    return taskResponse;
+                })
+                .collect(Collectors.toList());
+
+        // Tạo và trả về PagedResponse
+        return new PagedResponse<>(taskResponses, pageNo, pageSize,
+                taskPage.getTotalElements(), taskPage.getTotalPages(),
+                taskPage.isLast());
     }
 }

@@ -22,5 +22,6 @@ public class TaskRequest {
     private TaskStatus status;
     private TaskPriority priority;
     private Integer projectId;
+    private Integer createdBy;
     private List<SubtaskRequest> subtaskRequests;
 }

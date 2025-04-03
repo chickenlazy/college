@@ -15,6 +15,7 @@ import com.college.backend.college.project.request.ProjectRequest;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.ProjectResponse;
 import com.college.backend.college.project.service.ProjectService;
+import jakarta.persistence.criteria.Join;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -352,5 +353,98 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Chuyển đổi và trả về
         return mapProjectToProjectResponse(updatedProject);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<ProjectResponse> getProjectsByManagerId(Integer managerId, int pageNo, int pageSize, String search, ProjectStatus status) {
+        // Kiểm tra xem manager có tồn tại hay không
+        User manager = userRepository.findById(managerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + managerId));
+
+        // Tạo Pageable để phân trang
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+
+        // Tạo Specification để tìm kiếm và lọc
+        Specification<Project> spec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("manager").get("id"), managerId);
+
+        // Thêm điều kiện tìm kiếm theo tên nếu có
+        if (StringUtils.hasText(search)) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("name")),
+                            "%" + search.toLowerCase() + "%"
+                    )
+            );
+        }
+
+        // Thêm điều kiện lọc theo status nếu có
+        if (status != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("status"), status)
+            );
+        }
+
+        // Truy vấn các project từ repository với điều kiện tìm kiếm và lọc
+        Page<Project> projectPage = projectRepository.findAll(spec, pageable);
+
+        // Chuyển đổi các Project thành ProjectResponse
+        List<ProjectResponse> projectResponses = projectPage.getContent().stream()
+                .map(this::mapProjectToProjectResponse)
+                .collect(Collectors.toList());
+
+        // Tạo và trả về PagedResponse
+        return new PagedResponse<>(projectResponses, pageNo, pageSize,
+                projectPage.getTotalElements(), projectPage.getTotalPages(),
+                projectPage.isLast());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<ProjectResponse> getProjectsByUserId(Integer userId, int pageNo, int pageSize, String search, ProjectStatus status) {
+        // Kiểm tra xem user có tồn tại hay không
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        // Tạo Pageable để phân trang
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+
+        // Tạo Specification để tìm kiếm và lọc
+        Specification<Project> spec = (root, query, criteriaBuilder) -> {
+            // Join với bảng users
+            Join<Project, User> userJoin = root.join("users");
+            return criteriaBuilder.equal(userJoin.get("id"), userId);
+        };
+
+        // Thêm điều kiện tìm kiếm theo tên nếu có
+        if (StringUtils.hasText(search)) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("name")),
+                            "%" + search.toLowerCase() + "%"
+                    )
+            );
+        }
+
+        // Thêm điều kiện lọc theo status nếu có
+        if (status != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("status"), status)
+            );
+        }
+
+        // Truy vấn các project từ repository với điều kiện tìm kiếm và lọc
+        Page<Project> projectPage = projectRepository.findAll(spec, pageable);
+
+        // Chuyển đổi các Project thành ProjectResponse
+        List<ProjectResponse> projectResponses = projectPage.getContent().stream()
+                .map(this::mapProjectToProjectResponse)
+                .collect(Collectors.toList());
+
+        // Tạo và trả về PagedResponse
+        return new PagedResponse<>(projectResponses, pageNo, pageSize,
+                projectPage.getTotalElements(), projectPage.getTotalPages(),
+                projectPage.isLast());
     }
 }

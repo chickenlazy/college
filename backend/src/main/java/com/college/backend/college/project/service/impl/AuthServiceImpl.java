@@ -2,10 +2,13 @@ package com.college.backend.college.project.service.impl;
 
 import com.college.backend.college.project.entity.User;
 import com.college.backend.college.project.enums.Role;
+import com.college.backend.college.project.exception.ResourceNotFoundException;
 import com.college.backend.college.project.mapper.UserMapper;
 import com.college.backend.college.project.repository.UserRepository;
 import com.college.backend.college.project.request.LoginRequest;
+import com.college.backend.college.project.request.UpdateRoleRequest;
 import com.college.backend.college.project.request.UserRequest;
+import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.JwtAuthResponse;
 import com.college.backend.college.project.security.JwtTokenProvider;
 import com.college.backend.college.project.service.AuthService;
@@ -17,7 +20,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -53,7 +58,6 @@ public class AuthServiceImpl implements AuthService {
         User user = UserMapper.INSTANCE.userReqToUser(userRequest);
         user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
 
-        // Cập nhật để sử dụng Role enum thay vì Set<Role>
         user.setRole(Role.ROLE_USER);
 
         user = userRepository.save(user);
@@ -96,6 +100,28 @@ public class AuthServiceImpl implements AuthService {
         jwtAuthResponse.setAccessToken(token);
 
         return jwtAuthResponse;
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse updateUserRole(UpdateRoleRequest updateRoleRequest) {
+        // Tìm user theo ID
+        User user = userRepository.findById(updateRoleRequest.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + updateRoleRequest.getUserId()));
+
+        // Cập nhật role
+        user.setRole(updateRoleRequest.getRole());
+
+        // Cập nhật thời gian chỉnh sửa nếu có trường này
+        if (user.getLastModifiedDate() != null) {
+            user.setLastModifiedDate(new Date());
+        }
+
+        // Lưu thay đổi
+        userRepository.save(user);
+
+        // Trả về response
+        return new ApiResponse(Boolean.TRUE, "User role updated successfully to " + updateRoleRequest.getRole().name());
     }
 }
 

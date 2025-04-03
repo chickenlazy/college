@@ -30,4 +30,8 @@ public class TaskResponse {
     private Integer totalSubtasks;
     private Integer totalCompletedSubtasks;
     private Double progress;
+
+    // User detail
+    private Integer createdBy;
+    private String createdByName;
 }

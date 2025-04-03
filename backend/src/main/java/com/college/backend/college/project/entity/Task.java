@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.util.Date;
 import java.util.Set;
@@ -45,10 +47,12 @@ public class Task {
     @Column(name = "priority")
     private TaskPriority priority;
 
+    @CreationTimestamp
     @Column(name = "created_date", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
+    @UpdateTimestamp
     @Column(name = "last_modified_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastModifiedDate;
@@ -65,4 +69,8 @@ public class Task {
     // Mối quan hệ với Comment - thêm cascade
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments;
+
+    @ManyToOne
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 }

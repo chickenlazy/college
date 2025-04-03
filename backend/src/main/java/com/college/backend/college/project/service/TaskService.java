@@ -13,4 +13,5 @@ public interface TaskService {
     PagedResponse<TaskResponse> getAllTasks(int pageNo, int pageSize, String search, TaskStatus status);
     TaskResponse getTaskById(Integer taskId);
     TaskResponse updateTaskStatus(Integer taskId, TaskStatus newStatus);
+    PagedResponse<TaskResponse> getTasksByCreatedBy(Integer userId, int pageNo, int pageSize, TaskStatus status);
 }

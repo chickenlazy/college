@@ -126,4 +126,60 @@ public class ProjectController {
         ProjectResponse projectResponse = projectService.removeMemberFromProject(projectId, userId);
         return ResponseEntity.ok(projectResponse);
     }
+
+    /**
+     * API để lấy danh sách dự án theo manager ID: GET /api/projects/manager/{managerId}?pageNo=1&pageSize=10&search=keyword&status=IN_PROGRESS
+     */
+    @GetMapping("/manager/{managerId}")
+    public ResponseEntity<PagedResponse<ProjectResponse>> getProjectsByManagerId(
+            @PathVariable Integer managerId,
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
+
+        // Chuyển đổi status từ String sang Enum nếu có giá trị
+        ProjectStatus projectStatus = null;
+        if (status != null && !status.equals("all")) {
+            try {
+                projectStatus = ProjectStatus.valueOf(status);
+            } catch (IllegalArgumentException e) {
+                // Nếu giá trị status không hợp lệ, bỏ qua
+            }
+        }
+
+        // Gọi service để lấy dữ liệu
+        PagedResponse<ProjectResponse> response = projectService.getProjectsByManagerId(
+                managerId, pageNo, pageSize, search, projectStatus);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API để lấy danh sách dự án mà một user tham gia: GET /api/projects/user/{userId}?pageNo=1&pageSize=10&search=keyword&status=IN_PROGRESS
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<PagedResponse<ProjectResponse>> getProjectsByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
+
+        // Chuyển đổi status từ String sang Enum nếu có giá trị
+        ProjectStatus projectStatus = null;
+        if (status != null && !status.equals("all")) {
+            try {
+                projectStatus = ProjectStatus.valueOf(status);
+            } catch (IllegalArgumentException e) {
+                // Nếu giá trị status không hợp lệ, bỏ qua
+            }
+        }
+
+        // Gọi service để lấy dữ liệu
+        PagedResponse<ProjectResponse> response = projectService.getProjectsByUserId(
+                userId, pageNo, pageSize, search, projectStatus);
+
+        return ResponseEntity.ok(response);
+    }
 }
