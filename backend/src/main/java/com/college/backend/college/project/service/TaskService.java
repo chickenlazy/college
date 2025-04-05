@@ -7,6 +7,8 @@ import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.TaskResponse;
 
 public interface TaskService {
+    // Thêm vào interface TaskService
+    TaskResponse updateTask(Integer taskId, TaskRequest taskRequest);
     ApiResponse deleteTask(Integer taskId);
     TaskResponse toggleTaskStatus(Integer taskId);
     TaskResponse createTaskForProject(TaskRequest taskRequest);

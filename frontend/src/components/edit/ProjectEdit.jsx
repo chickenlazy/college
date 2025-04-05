@@ -141,7 +141,6 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
   const [tagsMenuOpen, setTagsMenuOpen] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [allTags, setAllTags] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [apiError, setApiError] = useState(null);
@@ -161,7 +160,18 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
   
   const fetchProjectData = async (projectId) => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/projects/${projectId}`);
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      const response = await axios.get(`http://localhost:8080/api/projects/${projectId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const projectData = response.data;
       
       // Convert userIds and tagIds arrays for editing
@@ -182,21 +192,45 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
   
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/users');
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      const response = await axios.get('http://localhost:8080/api/users', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setAllUsers(response.data.content);
     } catch (error) {
       console.error("Error fetching users:", error);
     }
   };
   
+  
   const fetchTags = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/tags');
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      const response = await axios.get('http://localhost:8080/api/tags', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setAllTags(response.data.content);
     } catch (error) {
       console.error("Error fetching tags:", error);
     }
   };
+  
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -277,33 +311,48 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     if (!validateForm()) {
       return;
     }
-    
+  
     // Format the dates for API
     const formattedProject = {
       ...project,
       startDate: new Date(project.startDate).toISOString(),
       dueDate: new Date(project.dueDate).toISOString()
     };
-    
+  
     // Remove fields that shouldn't be sent to create/update API
     const { id, users, tags, managerName, progress, totalTasks, totalCompletedTasks, ...apiProject } = formattedProject;
-    
+  
     setSavingData(true);
     setApiError(null);
-    
+  
     try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
       if (isNew) {
         // Create new project
-        const response = await axios.post('http://localhost:8080/api/projects', apiProject);
+        const response = await axios.post('http://localhost:8080/api/projects', apiProject, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         console.log("Project created:", response.data);
         alert("Project created successfully!");
       } else {
         // Update existing project
-        const response = await axios.put(`http://localhost:8080/api/projects/${id}`, apiProject);
+        const response = await axios.put(`http://localhost:8080/api/projects/${id}`, apiProject, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         console.log("Project updated:", response.data);
         alert("Project updated successfully!");
       }
-      
+  
       // Gọi onBack để quay lại và refresh dữ liệu
       onBack();
       
@@ -314,16 +363,28 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       setSavingData(false);
     }
   };
+  
 
   // Cập nhật hàm handleDelete
   const handleDelete = async () => {
     if (!project.id) return;
-    
+  
     setSavingData(true);
     setApiError(null);
-    
+  
     try {
-      await axios.delete(`http://localhost:8080/api/projects/${project.id}`);
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      await axios.delete(`http://localhost:8080/api/projects/${project.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       alert("Project deleted successfully!");
       onBack(); // Gọi onBack để quay lại và refresh dữ liệu
     } catch (error) {
@@ -334,6 +395,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       setSavingData(false);
     }
   };
+  
   
   if (loading) {
     return (

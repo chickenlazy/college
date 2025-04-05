@@ -4,6 +4,7 @@ import com.college.backend.college.project.entity.Project;
 import com.college.backend.college.project.entity.Subtask;
 import com.college.backend.college.project.entity.Task;
 import com.college.backend.college.project.entity.User;
+import com.college.backend.college.project.enums.ProjectStatus;
 import com.college.backend.college.project.enums.TaskStatus;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
 import com.college.backend.college.project.mapper.SubtaskMapper;
@@ -49,6 +50,83 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
+    public TaskResponse updateTask(Integer taskId, TaskRequest taskRequest) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        // Lưu trữ status hiện tại trước khi cập nhật
+        TaskStatus oldStatus = task.getStatus();
+
+        // Sử dụng mapper để cập nhật các thông tin cơ bản
+        TaskMapper.INSTANCE.updateTaskFromRequest(taskRequest, task);
+
+        // Kiểm tra nếu deadline được cập nhật dài hơn và trạng thái hiện tại là OVER_DUE
+        if (taskRequest.getDueDate() != null
+                && oldStatus == TaskStatus.OVER_DUE
+                && taskRequest.getDueDate().after(new Date())) {
+            task.setStatus(TaskStatus.IN_PROGRESS);
+        } else if (taskRequest.getStatus() != null) {
+            // Nếu không phải trường hợp đặc biệt trên và có status mới, áp dụng status mới
+            task.setStatus(taskRequest.getStatus());
+        }
+
+        // Cập nhật thời gian chỉnh sửa
+        task.setLastModifiedDate(new Date());
+
+        // Lưu task đã cập nhật
+        Task updatedTask = taskRepository.save(task);
+
+        // Trả về response
+        TaskResponse response = TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
+
+        // Cập nhật thông tin project
+        if (updatedTask.getProject() != null) {
+            response.setProjectId(updatedTask.getProject().getId());
+            response.setProjectName(updatedTask.getProject().getName());
+        }
+
+        // Tính toán thông tin subtasks
+        Set<Subtask> subtasks = updatedTask.getSubtasks();
+        int totalSubtasks = subtasks != null ? subtasks.size() : 0;
+        int completedSubtasks = subtasks != null ?
+                (int) subtasks.stream()
+                        .filter(Subtask::getCompleted)
+                        .count() : 0;
+
+        response.setTotalSubtasks(totalSubtasks);
+        response.setTotalCompletedSubtasks(completedSubtasks);
+
+        // Tính và thiết lập tiến độ
+        double progress = totalSubtasks > 0 ?
+                ((double) completedSubtasks / totalSubtasks) * 100.0 : 0.0;
+        response.setProgress(progress);
+
+        // Xử lý subtasks
+        if (subtasks != null) {
+            Set<SubtaskResponse> subtaskResponses = subtasks.stream()
+                    .map(subtask -> {
+                        SubtaskResponse subtaskResponse = SubtaskMapper.INSTANCE.subtaskToSubtaskRes(subtask);
+
+                        // Thêm thông tin assignee
+                        if (subtask.getAssignee() != null) {
+                            subtaskResponse.setAssigneeId(subtask.getAssignee().getId());
+                            subtaskResponse.setAssigneeName(subtask.getAssignee().getFullName());
+                            subtaskResponse.setAssigneeEmail(subtask.getAssignee().getEmail());
+                        }
+
+                        return subtaskResponse;
+                    })
+                    .collect(Collectors.toSet());
+            response.setSubTasks(subtaskResponses);
+        } else {
+            response.setSubTasks(new HashSet<>());
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional
     public ApiResponse deleteTask(Integer taskId) {
         // Kiểm tra xem Task có tồn tại hay không
         Task task = taskRepository.findById(taskId)
@@ -71,13 +149,22 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
 
-        // Chuyển đổi trạng thái task
-        if (task.getStatus() == TaskStatus.COMPLETED) {
-            // Nếu đã hoàn thành, chuyển sang trạng thái trước đó hoặc IN_PROGRESS
+        // Cập nhật trạng thái task
+        boolean wasCompleted = task.getStatus() == TaskStatus.COMPLETED;
+        if (wasCompleted) {
             task.setStatus(TaskStatus.IN_PROGRESS);
         } else {
-            // Nếu chưa hoàn thành, chuyển sang COMPLETED
             task.setStatus(TaskStatus.COMPLETED);
+
+            // Cũng cập nhật tất cả subtasks thành completed
+            if (task.getSubtasks() != null && !task.getSubtasks().isEmpty()) {
+                for (Subtask subtask : task.getSubtasks()) {
+                    if (!subtask.getCompleted()) {
+                        subtask.setCompleted(true);
+                        subtaskRepository.save(subtask);
+                    }
+                }
+            }
         }
 
         // Cập nhật thời gian chỉnh sửa
@@ -86,8 +173,81 @@ public class TaskServiceImpl implements TaskService {
         // Lưu task đã cập nhật
         Task updatedTask = taskRepository.save(task);
 
+        // Nếu task đã được hoàn thành, kiểm tra project
+        if (!wasCompleted && task.getStatus() == TaskStatus.COMPLETED) {
+            updateProjectStatusIfNeeded(updatedTask.getProject());
+        }
+
         // Chuyển đổi và trả về response
         return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse updateTaskStatus(Integer taskId, TaskStatus newStatus) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
+        boolean wasCompleted = task.getStatus() == TaskStatus.COMPLETED;
+
+        // Cập nhật trạng thái mới
+        task.setStatus(newStatus);
+
+        // Cập nhật thời gian chỉnh sửa
+        task.setLastModifiedDate(new Date());
+
+        // Nếu task chuyển sang trạng thái COMPLETED
+        if (newStatus == TaskStatus.COMPLETED) {
+            // Cập nhật tất cả subtasks thành completed
+            if (task.getSubtasks() != null && !task.getSubtasks().isEmpty()) {
+                for (Subtask subtask : task.getSubtasks()) {
+                    if (!subtask.getCompleted()) {
+                        subtask.setCompleted(true);
+                        subtaskRepository.save(subtask);
+                    }
+                }
+            }
+
+            // Kiểm tra và cập nhật project nếu cần
+            if (!wasCompleted) {
+                updateProjectStatusIfNeeded(task.getProject());
+            }
+        }
+
+        // Lưu task đã cập nhật
+        Task updatedTask = taskRepository.save(task);
+
+        // Chuyển đổi và trả về response
+        return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
+    }
+
+    /**
+     * Kiểm tra và cập nhật trạng thái của project nếu cần
+     */
+    private void updateProjectStatusIfNeeded(Project project) {
+        if (project == null) return;
+
+        // Kiểm tra tất cả tasks của project
+        boolean allTasksCompleted = true;
+        List<Task> tasks = taskRepository.findByProjectId(project.getId());
+
+        if (tasks.isEmpty()) {
+            return; // Không có task nào, không cần cập nhật
+        }
+
+        for (Task t : tasks) {
+            if (t.getStatus() != TaskStatus.COMPLETED) {
+                allTasksCompleted = false;
+                break;
+            }
+        }
+
+        // Nếu tất cả tasks đều hoàn thành, cập nhật project thành COMPLETED
+        if (allTasksCompleted && project.getStatus() != ProjectStatus.COMPLETED) {
+            project.setStatus(ProjectStatus.COMPLETED);
+            project.setLastModifiedDate(new Date());
+            projectRepository.save(project);
+        }
     }
 
     @Override
@@ -354,25 +514,6 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return taskResponse;
-    }
-
-    @Override
-    @Transactional
-    public TaskResponse updateTaskStatus(Integer taskId, TaskStatus newStatus) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
-
-        // Cập nhật trạng thái mới
-        task.setStatus(newStatus);
-
-        // Cập nhật thời gian chỉnh sửa
-        task.setLastModifiedDate(new Date());
-
-        // Lưu task đã cập nhật
-        Task updatedTask = taskRepository.save(task);
-
-        // Chuyển đổi và trả về response
-        return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
     }
 
     @Override

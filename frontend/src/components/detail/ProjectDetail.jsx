@@ -405,88 +405,146 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
   const [loadingMember, setLoadingMember] = useState(false);
   const [memberError, setMemberError] = useState(null);
 
-  // Thêm useEffect để load danh sách tất cả users
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/users");
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+        }
+  
+        const response = await axios.get("http://localhost:8080/api/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setAllUsers(response.data.content || []);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
-
+  
     fetchAllUsers();
   }, []);
+  
 
   // Hàm thêm member vào project
-  const handleAddMember = async (userId) => {
-    if (!project || !userId) return;
+const handleAddMember = async (userId) => {
+  if (!project || !userId) return;
 
-    setLoadingMember(true);
-    setMemberError(null);
+  const storedUser = localStorage.getItem("user");
+  let token = null;
+  if (storedUser) {
+    const user = JSON.parse(storedUser);
+    token = user.accessToken;
+  }
 
-    try {
-      const response = await axios.post(
-        `http://localhost:8080/api/projects/${project.id}/members/${userId}`
-      );
-      // Cập nhật lại project với member mới
-      setProject(response.data);
-      setMembersMenuOpen(false);
-    } catch (error) {
-      console.error("Error adding member:", error);
-      setMemberError("Failed to add member. Please try again.");
-    } finally {
-      setLoadingMember(false);
-    }
-  };
+  setLoadingMember(true);
+  setMemberError(null);
 
-  // Hàm xóa member khỏi project
-  const handleRemoveMember = async (userId) => {
-    if (!project || !userId) return;
+  try {
+    const response = await axios.post(
+      `http://localhost:8080/api/projects/${project.id}/members/${userId}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    setProject(response.data);
+    setMembersMenuOpen(false);
+  } catch (error) {
+    console.error("Error adding member:", error);
+    setMemberError("Failed to add member. Please try again.");
+  } finally {
+    setLoadingMember(false);
+  }
+};
 
-    setLoadingMember(true);
-    setMemberError(null);
+// Hàm xóa member khỏi project
+const handleRemoveMember = async (userId) => {
+  if (!project || !userId) return;
 
-    try {
-      const response = await axios.delete(
-        `http://localhost:8080/api/projects/${project.id}/members/${userId}`
-      );
-      // Cập nhật lại project sau khi xóa member
-      setProject(response.data);
-    } catch (error) {
-      console.error("Error removing member:", error);
-      setMemberError("Failed to remove member. Please try again.");
-    } finally {
-      setLoadingMember(false);
-    }
-  };
+  const storedUser = localStorage.getItem("user");
+  let token = null;
+  if (storedUser) {
+    const user = JSON.parse(storedUser);
+    token = user.accessToken;
+  }
+
+  setLoadingMember(true);
+  setMemberError(null);
+
+  try {
+    const response = await axios.delete(
+      `http://localhost:8080/api/projects/${project.id}/members/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    setProject(response.data);
+  } catch (error) {
+    console.error("Error removing member:", error);
+    setMemberError("Failed to remove member. Please try again.");
+  } finally {
+    setLoadingMember(false);
+  }
+};
+
 
   useEffect(() => {
     const fetchAllTags = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/tags");
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+        }
+  
+        const response = await axios.get("http://localhost:8080/api/tags", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setAllTags(response.data.content || []);
       } catch (error) {
         console.error("Error fetching tags:", error);
       }
     };
-
+  
     fetchAllTags();
   }, []);
+  
 
-  // Thêm hàm xử lý thêm tag
   const handleAddTag = async (tagId) => {
     if (!project || !tagId) return;
-
+  
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
+    }
+  
     setLoadingTag(true);
     setTagError(null);
-
+  
     try {
       const response = await axios.post(
-        `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`
+        `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`,
+        {}, // empty data object
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      // Cập nhật lại project với tag mới
       setProject(response.data);
       setTagsMenuOpen(false);
     } catch (error) {
@@ -496,19 +554,29 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
       setLoadingTag(false);
     }
   };
-
-  // Thêm hàm xử lý xóa tag
+  
   const handleRemoveTag = async (tagId) => {
     if (!project || !tagId) return;
-
+  
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
+    }
+  
     setLoadingTag(true);
     setTagError(null);
-
+  
     try {
       const response = await axios.delete(
-        `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`
+        `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      // Cập nhật lại project sau khi xóa tag
       setProject(response.data);
     } catch (error) {
       console.error("Error removing tag:", error);
@@ -566,7 +634,11 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
 
   if (showProjectEdit) {
     return (
-      <ProjectEdit project={project} onBack={() => setShowProjectEdit(false)} />
+      <ProjectEdit 
+        project={project} 
+        onBack={() => setShowProjectEdit(false)} 
+        isNew={false} 
+      />
     );
   }
 

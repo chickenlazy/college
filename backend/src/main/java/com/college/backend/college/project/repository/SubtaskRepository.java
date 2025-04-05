@@ -11,4 +11,6 @@ import java.util.List;
 public interface SubtaskRepository extends JpaRepository<Subtask, Integer> {
     List<Subtask> findByTaskId(Integer taskId);
     void deleteAllByTask(Task task);
+    // Tìm subtask theo người được gán
+    List<Subtask> findByAssigneeId(Integer assigneeId);
 }

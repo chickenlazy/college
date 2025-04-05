@@ -356,12 +356,24 @@ const TaskDetail = ({ task, onBack }) => {
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/users");
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+        }
+    
+        const response = await axios.get("http://localhost:8080/api/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setAllUsers(response.data.content || []);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
+    
 
     fetchAllUsers();
   }, []);
@@ -387,7 +399,12 @@ const TaskDetail = ({ task, onBack }) => {
   const daysRemaining = getDaysRemaining(task.dueDate);
 
   if (isEditing) {
-    return <TaskEdit task={task} onBack={() => setIsEditing(false)} />;
+    return <TaskEdit 
+      task={task} 
+      onBack={() => setIsEditing(false)} 
+      isNew={false}  // Thêm prop này để biết đang edit task đã tồn tại
+      taskId={task.id}  // Truyền ID của task để fetch chi tiết
+    />;
   }
 
   // Thêm subtask
@@ -396,15 +413,30 @@ const TaskDetail = ({ task, onBack }) => {
       alert("Vui lòng nhập tên subtask và chọn người được giao");
       return;
     }
-
+  
     try {
-      const response = await axios.post("http://localhost:8080/api/subtasks", {
-        name: newSubtask,
-        completed: false,
-        taskId: task.id,
-        assigneeId: selectedAssignee.id,
-      });
-
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      const response = await axios.post(
+        "http://localhost:8080/api/subtasks",
+        {
+          name: newSubtask,
+          completed: false,
+          taskId: task.id,
+          assigneeId: selectedAssignee.id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
       // Thêm subtask mới vào danh sách
       setSubtasks([...subtasks, response.data]);
       setNewSubtask("");
@@ -414,14 +446,27 @@ const TaskDetail = ({ task, onBack }) => {
       console.error("Error adding subtask:", error);
     }
   };
+  
 
-  // Toggle trạng thái subtask
   const handleToggleSubtask = async (subtaskId) => {
     try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
       await axios.patch(
-        `http://localhost:8080/api/subtasks/${subtaskId}/toggle`
+        `http://localhost:8080/api/subtasks/${subtaskId}/toggle`,
+        // Thêm header Authorization
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-
+  
       // Cập nhật trạng thái subtask trong state
       const updatedSubtasks = subtasks.map((subtask) =>
         subtask.id === subtaskId
@@ -434,11 +479,21 @@ const TaskDetail = ({ task, onBack }) => {
     }
   };
 
-  // Xóa subtask
   const handleDeleteSubtask = async (subtaskId) => {
     try {
-      await axios.delete(`http://localhost:8080/api/subtasks/${subtaskId}`);
-
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      await axios.delete(`http://localhost:8080/api/subtasks/${subtaskId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
       // Loại bỏ subtask khỏi danh sách
       const updatedSubtasks = subtasks.filter(
         (subtask) => subtask.id !== subtaskId
@@ -448,6 +503,7 @@ const TaskDetail = ({ task, onBack }) => {
       console.error("Error deleting subtask:", error);
     }
   };
+  
 
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
@@ -471,29 +527,44 @@ const TaskDetail = ({ task, onBack }) => {
     <Clock size={16} className="mr-2" />
     Update Status
   </button>
-  
   {statusMenuOpen && (
-    <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-10">
-      {['COMPLETED', 'IN_PROGRESS', 'NOT_STARTED', 'OVER_DUE', 'ON_HOLD'].map(status => (
-        <div
-          key={status} 
-          className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-          onClick={async () => {
-            try {
-              await axios.patch(`http://localhost:8080/api/tasks/${task.id}/status?status=${status}`);
-              // Refresh task data after updating status
-              // You can fetch the updated task here and update the state
-            } catch (error) {
-              console.error('Error updating task status:', error);  
+  <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-10">
+    {['COMPLETED', 'IN_PROGRESS', 'NOT_STARTED', 'OVER_DUE', 'ON_HOLD'].map(status => (
+      <div
+        key={status} 
+        className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+        onClick={async () => {
+          try {
+            const storedUser = localStorage.getItem("user");
+            let token = null;
+            if (storedUser) {
+              const user = JSON.parse(storedUser);
+              token = user.accessToken;
             }
-            setStatusMenuOpen(false);
-          }}
-        >
-          {status.replace('_', ' ')}
-        </div>
-      ))}
-    </div>
-  )}
+
+            await axios.patch(
+              `http://localhost:8080/api/tasks/${task.id}/status?status=${status}`,
+              {}, // body rỗng nếu không cần gửi dữ liệu
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            // Refresh task data after updating status
+            // You can fetch the updated task here and update the state
+          } catch (error) {
+            console.error('Error updating task status:', error);  
+          }
+          setStatusMenuOpen(false);
+        }}
+      >
+        {status.replace('_', ' ')}
+      </div>
+    ))}
+  </div>
+)}
+
 </div>
           <button
             className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
@@ -502,10 +573,33 @@ const TaskDetail = ({ task, onBack }) => {
             <Edit size={16} className="mr-2" />
             Edit Task
           </button>
-          <button className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center">
-            <Trash2 size={16} className="mr-2" />
-            Delete
-          </button>
+          <button 
+  className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center"
+  onClick={async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      await axios.delete(`http://localhost:8080/api/tasks/${task.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      // Quay lại trang danh sách task hoặc refresh danh sách
+      onBack();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  }}
+>
+  <Trash2 size={16} className="mr-2" />
+  Delete
+</button>
         </div>
       </div>
 

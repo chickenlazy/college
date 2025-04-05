@@ -173,8 +173,6 @@ const UserOption = ({ user, isSelected, onSelect }) => (
   </div>
 );
 
-
-
 // Task Dependency Component
 const TaskDependency = ({ task, onRemove }) => (
   <div className="flex items-center justify-between p-2 bg-gray-700 rounded-md">
@@ -211,7 +209,7 @@ const TaskOption = ({ task, onSelect }) => (
 // Thay thế Subtask component từ dòng 360-375 bằng phiên bản mới
 const Subtask = ({ subtask, onChange, onRemove, users }) => {
   const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
-  
+
   const handleAssigneeSelect = (user) => {
     subtask.assigneeId = user.id;
     setAssigneeMenuOpen(false);
@@ -230,7 +228,7 @@ const Subtask = ({ subtask, onChange, onRemove, users }) => {
           {subtask.name}
         </span>
       </div>
-      
+
       <div className="relative">
         <div
           className="bg-gray-700 border border-gray-600 rounded-md py-1 px-2 text-white cursor-pointer flex items-center"
@@ -238,9 +236,10 @@ const Subtask = ({ subtask, onChange, onRemove, users }) => {
         >
           <User size={14} className="mr-1 text-gray-400" />
           <span className="text-xs">
-            {subtask.assigneeId 
-              ? users.find(u => u.id === subtask.assigneeId)?.fullName || 'Select'
-              : 'Assign'}
+            {subtask.assigneeId
+              ? users.find((u) => u.id === subtask.assigneeId)?.fullName ||
+                "Select"
+              : "Assign"}
           </span>
         </div>
 
@@ -273,7 +272,7 @@ const Subtask = ({ subtask, onChange, onRemove, users }) => {
 };
 
 const TaskEdit = ({
-  // task
+  task: initialTask = null, // Sử dụng initialTask với giá trị mặc định là null
   isNew = false,
   projectId = null,
   projectName = "",
@@ -285,25 +284,30 @@ const TaskEdit = ({
       ? {
           name: "",
           description: "",
-          projectId: null,
-          projectName: "",
+          projectId: projectId || null,
+          projectName: projectName || "",
           assigneeId: null,
           assigneeName: "",
           startDate: new Date().toISOString().split("T")[0],
-          dueDate: new Date(new Date().setDate(new Date().getDate() + 7))
+          dueDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
             .toISOString()
             .split("T")[0],
           status: "NOT_STARTED",
           priority: "MEDIUM",
           progress: 0,
-          subtasks: [],
-          dependencies: [],
-          tags: [],
+          subtasks: [], // Khởi tạo mảng rỗng
+          dependencies: [], // Khởi tạo mảng rỗng
+          tags: [], // Khởi tạo mảng rỗng
         }
-      : null
+      : {
+          ...initialTask,
+          subtasks: initialTask.subtasks || [], // Đảm bảo subtasks luôn là mảng
+          dependencies: initialTask.dependencies || [], // Đảm bảo dependencies luôn là mảng
+          tags: initialTask.tags || [], // Đảm bảo tags luôn là mảng
+        }
   );
 
-  const [loading, setLoading] = useState(!isNew);
+  const [loading, setLoading] = useState(!isNew && !initialTask);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
   const [tagsMenuOpen, setTagsMenuOpen] = useState(false);
@@ -319,9 +323,21 @@ const TaskEdit = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+        }
+
         // Fetch projects
         const projectsResponse = await fetch(
-          "http://localhost:8080/api/projects"
+          "http://localhost:8080/api/projects",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         if (!projectsResponse.ok) {
           throw new Error("Failed to fetch projects");
@@ -330,7 +346,11 @@ const TaskEdit = ({
         setProjects(projectsData.content);
 
         // Fetch users
-        const usersResponse = await fetch("http://localhost:8080/api/users");
+        const usersResponse = await fetch("http://localhost:8080/api/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!usersResponse.ok) {
           throw new Error("Failed to fetch users");
         }
@@ -340,13 +360,26 @@ const TaskEdit = ({
         // If editing existing task, fetch task data
         if (!isNew && taskId) {
           const taskResponse = await fetch(
-            `http://localhost:8080/api/tasks/${taskId}`
+            `http://localhost:8080/api/tasks/${taskId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
           );
           if (!taskResponse.ok) {
             throw new Error("Failed to fetch task");
           }
           const taskData = await taskResponse.json();
-          setTask(taskData);
+          setTask({
+            ...taskData,
+            // Chuyển đổi startDate và dueDate sang định dạng yyyy-MM-dd
+            startDate: taskData.startDate ? new Date(taskData.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString().split('T')[0] : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+            subtasks: taskData.subtasks || [],
+            dependencies: taskData.dependencies || [],
+            tags: taskData.tags || []
+          });
         }
 
         // If we have a projectId from props, set it in the task
@@ -451,43 +484,137 @@ const TaskEdit = ({
     });
   };
 
-// Sửa đoạn code từ dòng 470-482
-const handleAddSubtask = () => {
-  if (newSubtask.trim() !== "") {
-    const newSubtaskObj = {
-      id: Date.now(), // Temporary ID
-      name: newSubtask.trim(),
-      completed: false,
-      assigneeId: null
-    };
-
-    setTask({
-      ...task,
-      subtasks: [...task.subtasks, newSubtaskObj],
-    });
-    setNewSubtask("");
-  }
-};
-
-  const handleSubtaskChange = (subtaskId, completed) => {
-    setTask({
-      ...task,
-      subtasks: task.subtasks.map((subtask) =>
-        subtask.id === subtaskId ? { ...subtask, completed } : subtask
-      ),
-    });
+  const handleAddSubtask = async () => {
+    if (newSubtask.trim() !== "") {
+      const newSubtaskObj = {
+        name: newSubtask.trim(),
+        completed: false,
+        taskId: task.id, // Gửi taskId từ task hiện tại
+        assigneeId: null, // Giả sử assigneeId là null cho subtask mới
+      };
+  
+      try {
+        // Nếu là task mới, không gửi Subtask ngay mà chỉ thêm tạm thời vào state
+        if (isNew) {
+          setTask({
+            ...task,
+            subtasks: [...task.subtasks, newSubtaskObj], // Thêm tạm thời vào state
+          });
+          setNewSubtask(""); // Xóa nội dung ô input
+          return; // Không cần gửi yêu cầu POST ngay khi task mới
+        }
+  
+        // Gửi yêu cầu POST để thêm subtask mới
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+        }
+  
+        const response = await fetch("http://localhost:8080/api/subtasks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newSubtaskObj),
+        });
+  
+        if (!response.ok) {
+          throw new Error("Failed to add subtask");
+        }
+  
+        const subtaskData = await response.json();
+  
+        // Cập nhật task với subtask mới
+        setTask({
+          ...task,
+          subtasks: [...task.subtasks, subtaskData], // Thêm subtask mới vào task
+        });
+  
+        setNewSubtask(""); // Xóa nội dung ô input
+      } catch (error) {
+        console.error("Error adding subtask:", error);
+        alert(`Error: ${error.message}`);
+      }
+    }
   };
+  
+  
+  
 
-  const handleRemoveSubtask = (subtaskId) => {
-    setTask({
-      ...task,
-      subtasks: task.subtasks.filter((subtask) => subtask.id !== subtaskId),
-    });
+  const handleSubtaskChange = async (subtaskId, completed) => {
+    try {
+      // Gửi yêu cầu PUT để toggle trạng thái subtask
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      const response = await fetch(`http://localhost:8080/api/subtasks/${subtaskId}/toggle`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to toggle subtask completion");
+      }
+  
+      // Cập nhật trạng thái subtask trong state
+      setTask({
+        ...task,
+        subtasks: task.subtasks.map((subtask) =>
+          subtask.id === subtaskId ? { ...subtask, completed } : subtask
+        ),
+      });
+    } catch (error) {
+      console.error("Error toggling subtask completion:", error);
+      alert(`Error: ${error.message}`);
+    }
   };
+  
+
+  const handleRemoveSubtask = async (subtaskId) => {
+    try {
+      // Gửi yêu cầu DELETE tới API
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      const response = await fetch(`http://localhost:8080/api/subtasks/${subtaskId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to delete subtask");
+      }
+  
+      // Cập nhật state sau khi xóa thành công
+      setTask({
+        ...task,
+        subtasks: task.subtasks.filter((subtask) => subtask.id !== subtaskId),
+      });
+    } catch (error) {
+      console.error("Error deleting subtask:", error);
+      alert(`Error: ${error.message}`);
+    }
+  };
+  
 
   const calculateProgress = () => {
-    if (task.subtasks.length === 0) {
-      return task.progress;
+    if (!task.subtasks || task.subtasks.length === 0) {
+      return task.progress || 0;
     }
 
     const completedCount = task.subtasks.filter(
@@ -522,21 +649,28 @@ const handleAddSubtask = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!validateForm()) {
       return;
     }
-
+  
     try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
       setSubmitting(true);
-
+  
       // Prepare subtask requests
       const subtaskRequests = task.subtasks.map((subtask) => ({
         name: subtask.name,
         completed: subtask.completed,
         assigneeId: subtask.assigneeId || null,
       }));
-
+  
       // Prepare request payload
       const payload = {
         name: task.name,
@@ -548,36 +682,34 @@ const handleAddSubtask = () => {
         projectId: task.projectId,
         subtaskRequests,
       };
-
+  
       // If task has an assignee, add it to the payload
       if (task.assigneeId) {
         payload.assigneeId = task.assigneeId;
       }
-
-      // API endpoint and method based on whether creating or editing
+  
       const url = isNew
         ? "http://localhost:8080/api/tasks"
         : `http://localhost:8080/api/tasks/${task.id}`;
-
+  
       const method = isNew ? "POST" : "PUT";
-
-      // Send request to API
+  
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Add token to headers
         },
         body: JSON.stringify(payload),
       });
-
+  
       if (!response.ok) {
         throw new Error(`Failed to ${isNew ? "create" : "update"} task`);
       }
-
+  
       const result = await response.json();
       console.log(`Task ${isNew ? "created" : "updated"}:`, result);
-
-      // Show success message and go back
+  
       alert(`Task ${isNew ? "created" : "updated"} successfully!`);
       onBack();
     } catch (error) {
@@ -587,14 +719,26 @@ const handleAddSubtask = () => {
       setSubmitting(false);
     }
   };
+  
 
   const handleDelete = async () => {
     try {
+      // Lấy token từ localStorage
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
       setSubmitting(true);
       const response = await fetch(
         `http://localhost:8080/api/tasks/${task.id}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`, // Thêm token vào headers
+          },
         }
       );
 
@@ -981,11 +1125,11 @@ const handleAddSubtask = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Created by:</span>
-                    <span>{task.createdBy}</span>
+                    <span>{task.createdByName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Created at:</span>
-                    <span>{new Date(task.createdAt).toLocaleString()}</span>
+                    <span>{new Date(task.createdDate).toLocaleString()}</span>
                   </div>
                   {task.completedDate && (
                     <div className="flex justify-between">

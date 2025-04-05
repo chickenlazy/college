@@ -270,9 +270,22 @@ const TeamTask = () => {
 
   const handleViewTask = async (task) => {
     try {
+      // Lấy token từ localStorage
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8080/api/tasks/${task.id}`
+        `http://localhost:8080/api/tasks/${task.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Thêm token vào headers
+          },
+        }
       );
       setTaskDetail(response.data);
       setShowTaskDetail(true);
@@ -300,7 +313,19 @@ const TeamTask = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await axios.delete(`http://localhost:8080/api/tasks/${taskId}`);
+      // Lấy token từ localStorage
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      await axios.delete(`http://localhost:8080/api/tasks/${taskId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Thêm token vào headers
+        },
+      });
       // Refresh data after deletion
       refreshData();
     } catch (err) {
@@ -316,23 +341,34 @@ const TeamTask = () => {
   ) => {
     setLoading(true);
     try {
+      // Lấy token từ localStorage
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
       const params = {
         page: page,
         size: size,
       };
-
+  
       // Thêm tham số tìm kiếm nếu có
       if (searchTerm) {
         params.search = searchTerm;
       }
-
+  
       // Thêm tham số lọc status nếu không phải "all"
       if (filterStatus !== "all") {
         params.status = filterStatus;
       }
-
+  
       const response = await axios.get(`http://localhost:8080/api/tasks`, {
         params: params,
+        headers: {
+          Authorization: `Bearer ${token}`, // Thêm token vào headers
+        },
       });
       setApiData(response.data);
       setTasks(response.data.content);

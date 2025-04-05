@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Search, 
   Calendar, 
@@ -6,187 +7,29 @@ import {
   CheckCircle, 
   AlertTriangle, 
   User, 
-  BarChart4, 
-  LineChart, 
-  PieChart,
+  BarChart4 as BarIcon, 
+  LineChart as LineIcon, 
+  PieChart as PieIcon,
   ListChecks,
   FolderKanban,
   Bell,
   ChevronRight,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  TrendingUp,
+  Flame
 } from 'lucide-react';
-
-// Mock data for dashboard
-const mockData = {
-  stats: {
-    totalProjects: 10,
-    activeProjects: 6,
-    completedProjects: 2,
-    overdueProjects: 1,
-    totalTasks: 32,
-    completedTasks: 14,
-    pendingTasks: 15,
-    overdueTasks: 3
-  },
-  recentProjects: [
-    {
-      id: 31,
-      name: "Đồ án tốt nghiệp updated",
-      status: "IN_PROGRESS",
-      progress: 20,
-      dueDate: "2025-05-17T23:53:00"
-    },
-    {
-      id: 32,
-      name: "GIang ne ne ne",
-      status: "NOT_STARTED",
-      progress: 0,
-      dueDate: "2025-03-24T21:00:00"
-    },
-    {
-      id: 2,
-      name: "Project B",
-      status: "IN_PROGRESS",
-      progress: 50,
-      dueDate: "2025-07-01T09:00:00"
-    },
-    {
-      id: 1,
-      name: "Project A",
-      status: "NOT_STARTED",
-      progress: 0,
-      dueDate: "2025-06-01T08:00:00"
-    }
-  ],
-  upcomingTasks: [
-    {
-      id: 4,
-      name: "Frontend Development",
-      projectName: "Đồ án tốt nghiệp updated",
-      assigneeName: "Michael Johnson",
-      dueDate: "2025-04-20T17:00:00",
-      status: "NOT_STARTED",
-      priority: "HIGH"
-    },
-    {
-      id: 3,
-      name: "Database Design",
-      projectName: "Đồ án tốt nghiệp updated",
-      assigneeName: "Emily Davis",
-      dueDate: "2025-04-01T17:00:00",
-      status: "IN_PROGRESS",
-      priority: "MEDIUM"
-    },
-    {
-      id: 9,
-      name: "Prepare monthly report",
-      projectName: "Project B",
-      assigneeName: "John Doe",
-      dueDate: "2025-04-30T17:00:00",
-      status: "NOT_STARTED",
-      priority: "HIGH"
-    },
-    {
-      id: 10,
-      name: "Client meeting preparation",
-      projectName: "Project C",
-      assigneeName: "Michael Johnson",
-      dueDate: "2025-04-12T15:00:00",
-      status: "ON_HOLD",
-      priority: "HIGH"
-    }
-  ],
-  activityLog: [
-    {
-      id: 1,
-      action: "created a new project",
-      user: "John Doe",
-      timestamp: "2025-03-22T09:30:00",
-      details: "Đồ án tốt nghiệp updated"
-    },
-    {
-      id: 2,
-      action: "completed a task",
-      user: "Jane Smith",
-      timestamp: "2025-03-21T16:45:00",
-      details: "Create wireframes for UI/UX Design"
-    },
-    {
-      id: 3,
-      action: "added a new team member",
-      user: "John Doe",
-      timestamp: "2025-03-21T14:20:00",
-      details: "Emily Davis was added to Đồ án tốt nghiệp updated"
-    },
-    {
-      id: 4,
-      action: "commented on a task",
-      user: "Michael Johnson",
-      timestamp: "2025-03-21T11:15:00",
-      details: "Left a comment on Database Design task"
-    },
-    {
-      id: 5,
-      action: "created a new task",
-      user: "John Doe",
-      timestamp: "2025-03-20T15:40:00",
-      details: "Frontend Development for Đồ án tốt nghiệp updated"
-    }
-  ],
-  teamMembers: [
-    {
-      id: 1,
-      name: "John Doe",
-      role: "Project Manager",
-      tasks: 8,
-      completedTasks: 3
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      role: "UI/UX Designer",
-      tasks: 5,
-      completedTasks: 2
-    },
-    {
-      id: 3,
-      name: "Michael Johnson",
-      role: "Frontend Developer",
-      tasks: 7,
-      completedTasks: 3
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      role: "Backend Developer",
-      tasks: 6,
-      completedTasks: 2
-    }
-  ],
-  tasksByPriority: {
-    HIGH: 12,
-    MEDIUM: 15,
-    LOW: 5
-  },
-  tasksByStatus: {
-    COMPLETED: 14,
-    IN_PROGRESS: 8,
-    NOT_STARTED: 7,
-    ON_HOLD: 3
-  },
-  projectProgress: [
-    { month: 'Jan', progress: 15 },
-    { month: 'Feb', progress: 30 },
-    { month: 'Mar', progress: 45 },
-    { month: 'Apr', progress: 60 },
-    { month: 'May', progress: 80 },
-    { month: 'Jun', progress: 90 }
-  ]
-};
+import { 
+  PieChart, Pie, Cell, 
+  BarChart, Bar, 
+  LineChart, Line, 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 
 // Format date for display
 const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { 
     month: 'short', 
@@ -194,25 +37,12 @@ const formatDate = (dateString) => {
   });
 };
 
-// Get timestamp relative to now
-const getRelativeTime = (dateString) => {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now - date;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffDay > 0) {
-    return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
-  } else if (diffHour > 0) {
-    return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
-  } else if (diffMin > 0) {
-    return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
-  } else {
-    return 'Just now';
-  }
+// Calculate days remaining
+const getDaysRemaining = (dateString) => {
+  if (!dateString) return 0;
+  const dueDate = new Date(dateString);
+  const today = new Date();
+  return Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 };
 
 // Status Badge Component
@@ -237,6 +67,10 @@ const StatusBadge = ({ status }) => {
       color = 'text-yellow-600';
       bgColor = 'bg-yellow-100';
       break;
+    case 'OVER_DUE':
+      color = 'text-red-600';
+      bgColor = 'bg-red-100';
+      break;
     default:
       color = 'text-gray-600';
       bgColor = 'bg-gray-200';
@@ -249,40 +83,15 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Priority Badge Component
-const PriorityBadge = ({ priority }) => {
-  let color;
-  let bgColor;
-  
-  switch (priority) {
-    case 'HIGH':
-      color = 'text-red-600';
-      bgColor = 'bg-red-100';
-      break;
-    case 'MEDIUM':
-      color = 'text-yellow-600';
-      bgColor = 'bg-yellow-100';
-      break;
-    case 'LOW':
-      color = 'text-green-600';
-      bgColor = 'bg-green-100';
-      break;
-    default:
-      color = 'text-gray-600';
-      bgColor = 'bg-gray-200';
-  }
-  
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${color} ${bgColor}`}>
-      {priority}
-    </span>
-  );
-};
-
 // Stats Card Component
-const StatsCard = ({ title, value, icon, trend, trendValue }) => {
+const StatsCard = ({ title, value, icon, trend }) => {
+  // Generate random trend percentage between 3 and 15
+  const randomTrend = Math.floor(Math.random() * 13) + 3;
+  const showTrend = trend !== undefined ? trend : randomTrend;
+  const isPositive = showTrend > 0;
+  
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
+    <div className="bg-gray-800 rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:shadow-purple-900/20">
       <div className="flex justify-between items-start mb-2">
         <div className="text-sm text-gray-400">{title}</div>
         <div className="p-2 bg-gray-700 rounded-full">
@@ -290,12 +99,10 @@ const StatsCard = ({ title, value, icon, trend, trendValue }) => {
         </div>
       </div>
       <div className="text-2xl font-bold mb-2">{value}</div>
-      {trend && (
-        <div className={`flex items-center text-xs ${trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-          {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-          <span>{trendValue}% from last month</span>
-        </div>
-      )}
+      <div className={`flex items-center text-xs ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+        {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+        <span>{Math.abs(showTrend)}% from last month</span>
+      </div>
     </div>
   );
 };
@@ -315,7 +122,7 @@ const SectionHeader = ({ title, viewAllLink }) => (
 
 // Project Card Component
 const ProjectCard = ({ project }) => {
-  const daysRemaining = Math.ceil((new Date(project.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+  const daysRemaining = getDaysRemaining(project.dueDate);
   
   return (
     <div className="bg-gray-800 rounded-lg p-4">
@@ -326,7 +133,7 @@ const ProjectCard = ({ project }) => {
       <div className="mb-3">
         <div className="flex justify-between text-sm text-gray-400 mb-1">
           <span>Progress</span>
-          <span>{project.progress}%</span>
+          <span>{project.progress.toFixed(1)}%</span>
         </div>
         <div className="w-full bg-gray-700 rounded-full h-1.5">
           <div 
@@ -345,84 +152,237 @@ const ProjectCard = ({ project }) => {
           ({daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left)
         </span>
       </div>
+      {project.manager && (
+        <div className="flex items-center mt-2 text-sm text-gray-400">
+          <User size={14} className="mr-1" />
+          <span>Manager: {project.manager.fullName}</span>
+        </div>
+      )}
     </div>
   );
 };
 
-// Task Row Component
-const TaskRow = ({ task }) => (
+// Deadline Item Component
+const DeadlineItem = ({ item }) => (
   <div className="flex items-center py-3 border-b border-gray-700">
     <div className="flex-1">
-      <div className="font-medium mb-1">{task.name}</div>
-      <div className="text-xs text-gray-400">{task.projectName}</div>
-    </div>
-    <div className="flex items-center mr-4">
-      <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
-        {task.assigneeName.split(' ').map(n => n[0]).join('')}
+      <div className="font-medium mb-1">{item.name}</div>
+      {item.projectName && <div className="text-xs text-gray-400">{item.projectName}</div>}
+      <div className="text-xs flex items-center mt-1">
+        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${item.type === 'task' ? 'bg-blue-900 text-blue-200' : 'bg-purple-900 text-purple-200'}`}>
+          {item.type === 'task' ? 'TASK' : 'PROJECT'}
+        </span>
       </div>
     </div>
     <div className="text-sm text-right mr-4">
-      <div>{formatDate(task.dueDate)}</div>
+      <div>{formatDate(item.dueDate)}</div>
+      <div className="text-xs text-gray-400">
+        {getDaysRemaining(item.dueDate)} days left
+      </div>
     </div>
     <div>
-      <StatusBadge status={task.status} />
+      <StatusBadge status={item.status} />
     </div>
   </div>
 );
 
-// Activity Log Item Component
-const ActivityLogItem = ({ activity }) => (
-  <div className="flex items-start py-3 border-b border-gray-700">
-    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-3">
-      {activity.user.split(' ').map(n => n[0]).join('')}
-    </div>
-    <div className="flex-1">
-      <div className="mb-1">
-        <span className="font-medium">{activity.user}</span>
-        <span className="text-gray-400"> {activity.action}</span>
-      </div>
-      <div className="text-sm text-gray-400">{activity.details}</div>
-      <div className="text-xs text-gray-500 mt-1">{getRelativeTime(activity.timestamp)}</div>
-    </div>
-  </div>
-);
-
-// Team Member Component
-const TeamMemberRow = ({ member }) => (
+// Team Workload Component
+const TeamWorkloadRow = ({ member }) => (
   <div className="flex items-center py-3 border-b border-gray-700">
     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-3">
-      {member.name.split(' ').map(n => n[0]).join('')}
+      {member.fullName.split(' ').map(n => n[0]).join('')}
     </div>
     <div className="flex-1">
-      <div className="font-medium">{member.name}</div>
-      <div className="text-sm text-gray-400">{member.role}</div>
+      <div className="font-medium">{member.fullName}</div>
     </div>
     <div className="text-right">
-      <div className="font-medium">{member.completedTasks}/{member.tasks}</div>
+      <div className="font-medium">{member.completedTasks}/{member.assignedTasks}</div>
       <div className="text-xs text-gray-400">Tasks Completed</div>
     </div>
   </div>
 );
 
-// Chart placeholder component
-const ChartPlaceholder = ({ title, icon }) => (
-  <div className="bg-gray-800 rounded-lg p-4 h-64 flex flex-col items-center justify-center">
-    {icon}
-    <p className="text-gray-400 mt-2">{title}</p>
-  </div>
-);
+// Project Status Chart component
+const ProjectStatusChart = ({ data }) => {
+  // Define colors for different status
+  const statusColors = {
+    inProgress: '#3B82F6', // blue
+    notStarted: '#6B7280', // gray
+    onHold: '#F59E0B',     // amber
+    completed: '#10B981',  // green
+    overDue: '#EF4444'     // red
+  };
+
+  // Prepare data for the pie chart
+  const chartData = Object.entries(data).map(([key, value]) => ({
+    name: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+    value: value,
+    fill: statusColors[key] || '#6B7280'
+  }));
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-4 h-64">
+      <h3 className="text-sm font-medium mb-3">Project Status</h3>
+      <div className="h-52 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+              nameKey="name"
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => [`${value} projects`, 'Count']} />
+            <Legend verticalAlign="bottom" height={36} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+// Task Status Chart component
+const TaskStatusChart = ({ data }) => {
+  // Define colors for different status
+  const statusColors = {
+    completed: '#10B981',   // green
+    inProgress: '#3B82F6',  // blue
+    notStarted: '#6B7280',  // gray
+    overDue: '#EF4444',     // red
+    onHold: '#F59E0B'       // amber
+  };
+
+  // Prepare data for the bar chart
+  const chartData = Object.entries(data).map(([key, value]) => ({
+    name: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+    value: value,
+    fill: statusColors[key] || '#6B7280'
+  }));
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-4 h-64">
+      <h3 className="text-sm font-medium mb-3">Task Status</h3>
+      <div className="h-52 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip 
+              formatter={(value) => [`${value} tasks`, 'Count']}
+              contentStyle={{ backgroundColor: '#374151', border: 'none' }}
+              labelStyle={{ color: 'white' }}
+            />
+            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+// Progress Trend Chart Component
+const ProgressTrendChart = () => {
+  // Sample data for project completion trend
+  const trendData = [
+    { name: 'Jan', completed: 5, total: 12 },
+    { name: 'Feb', completed: 8, total: 15 },
+    { name: 'Mar', completed: 12, total: 18 },
+    { name: 'Apr', completed: 7, total: 10 },
+    { name: 'May', completed: 9, total: 14 },
+    { name: 'Jun', completed: 11, total: 16 },
+  ];
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-4 h-64">
+      <h3 className="text-sm font-medium mb-3">Completion Trend</h3>
+      <div className="h-52 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={trendData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#374151', border: 'none' }}
+              labelStyle={{ color: 'white' }}
+            />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="completed" 
+              stroke="#10B981" 
+              strokeWidth={2} 
+              activeDot={{ r: 8 }} 
+              name="Completed" 
+            />
+            <Line 
+              type="monotone" 
+              dataKey="total" 
+              stroke="#6366F1" 
+              strokeWidth={2} 
+              name="Total" 
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // Load dashboard data
+  // Fetch dashboard data from API
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setDashboardData(mockData);
-      setLoading(false);
-    }, 500);
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // Get authentication token
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+        }
+
+        // Fetch dashboard data
+        const response = await axios.get("http://localhost:8080/api/dashboard", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        setDashboardData(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again later.");
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
   
   if (loading) {
@@ -432,6 +392,39 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-red-500 bg-red-100 p-4 rounded-lg">
+          <p>{error}</p>
+          <button 
+            className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!dashboardData || !dashboardData.data) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-gray-500">No dashboard data available</div>
+      </div>
+    );
+  }
+
+  const { 
+    stats, 
+    projectStatus, 
+    taskStatus, 
+    recentProjects, 
+    upcomingDeadlines, 
+    teamWorkload 
+  } = dashboardData.data;
   
   return (
     <div className="bg-gray-900 rounded-lg p-6">
@@ -454,86 +447,117 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard 
           title="Total Projects" 
-          value={dashboardData.stats.totalProjects} 
-          icon={<FolderKanban size={20} className="text-purple-500" />} 
-          trend="up"
-          trendValue={12}
+          value={stats.totalProjects} 
+          icon={<FolderKanban size={20} className="text-purple-500" />}
         />
         <StatsCard 
-          title="Active Projects" 
-          value={dashboardData.stats.activeProjects} 
+          title="In Progress Projects" 
+          value={stats.inProgressProjects} 
           icon={<Clock size={20} className="text-blue-500" />} 
         />
         <StatsCard 
-          title="Total Tasks" 
-          value={dashboardData.stats.totalTasks} 
-          icon={<ListChecks size={20} className="text-indigo-500" />} 
-          trend="up"
-          trendValue={8}
-        />
-        <StatsCard 
-          title="Completed Tasks" 
-          value={dashboardData.stats.completedTasks} 
+          title="Completed Projects" 
+          value={stats.completedProjects} 
           icon={<CheckCircle size={20} className="text-green-500" />} 
         />
+        <StatsCard 
+          title="Total Tasks" 
+          value={stats.totalTasks} 
+          icon={<ListChecks size={20} className="text-indigo-500" />} 
+        />
       </div>
       
-      {/* Second Row - Projects and Tasks */}
+      {/* Second Row - Projects and Deadlines */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div>
-          <SectionHeader title="Recent Projects" viewAllLink="#" />
+          <SectionHeader title="Recent Projects" viewAllLink="/projects" />
           <div className="grid grid-cols-1 gap-4">
-            {dashboardData.recentProjects.slice(0, 3).map(project => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
+            {recentProjects && recentProjects.length > 0 ? (
+              recentProjects.slice(0, 3).map(project => (
+                <ProjectCard key={project.id} project={project} />
+              ))
+            ) : (
+              <div className="bg-gray-800 rounded-lg p-4 text-center text-gray-400">
+                No recent projects
+              </div>
+            )}
           </div>
         </div>
         
         <div>
-          <SectionHeader title="Upcoming Tasks" viewAllLink="#" />
+          <SectionHeader title="Upcoming Deadlines" viewAllLink="/tasks" />
           <div className="bg-gray-800 rounded-lg p-4">
-            {dashboardData.upcomingTasks.slice(0, 4).map(task => (
-              <TaskRow key={task.id} task={task} />
-            ))}
+            {upcomingDeadlines && upcomingDeadlines.length > 0 ? (
+              upcomingDeadlines.map(item => (
+                <DeadlineItem key={`${item.type}-${item.id}`} item={item} />
+              ))
+            ) : (
+              <div className="text-center text-gray-400 py-4">
+                No upcoming deadlines
+              </div>
+            )}
           </div>
         </div>
       </div>
       
-      {/* Third Row - Activity and Team */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div>
-          <SectionHeader title="Recent Activity" viewAllLink="#" />
-          <div className="bg-gray-800 rounded-lg p-4">
-            {dashboardData.activityLog.slice(0, 4).map(activity => (
-              <ActivityLogItem key={activity.id} activity={activity} />
-            ))}
-          </div>
-        </div>
+      {/* Third Row - Status Charts and Team */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <ProjectStatusChart data={projectStatus} />
+        <TaskStatusChart data={taskStatus} />
         
         <div>
-          <SectionHeader title="Team Performance" />
-          <div className="bg-gray-800 rounded-lg p-4">
-            {dashboardData.teamMembers.map(member => (
-              <TeamMemberRow key={member.id} member={member} />
-            ))}
+          <SectionHeader title="Team Workload" viewAllLink="/users" />
+          <div className="bg-gray-800 rounded-lg p-4 h-64 overflow-auto">
+            {teamWorkload && teamWorkload.length > 0 ? (
+              teamWorkload.map(member => (
+                <TeamWorkloadRow key={member.userId} member={member} />
+              ))
+            ) : (
+              <div className="text-center text-gray-400 py-4">
+                No team workload data
+              </div>
+            )}
           </div>
         </div>
       </div>
       
-      {/* Fourth Row - Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <ChartPlaceholder 
-          title="Tasks by Status" 
-          icon={<PieChart size={48} className="text-gray-600" />} 
-        />
-        <ChartPlaceholder 
-          title="Tasks by Priority" 
-          icon={<BarChart4 size={48} className="text-gray-600" />} 
-        />
-        <ChartPlaceholder 
-          title="Project Progress" 
-          icon={<LineChart size={48} className="text-gray-600" />} 
-        />
+      {/* Fourth Row - Additional Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ProgressTrendChart />
+        
+        <div className="bg-gray-800 rounded-lg p-4 h-64">
+          <h3 className="text-sm font-medium mb-3">Hot Projects</h3>
+          <div className="space-y-4 overflow-auto h-52 pr-2">
+            {recentProjects && recentProjects.length > 0 ? 
+              recentProjects.slice(0, 4).map((project, index) => (
+                <div key={project.id} className="flex items-center bg-gray-700/50 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 flex items-center justify-center text-white font-bold mr-3">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{project.name}</p>
+                    <div className="flex items-center mt-1">
+                      <StatusBadge status={project.status} />
+                      <div className="ml-2 text-xs text-gray-400">
+                        <Flame className="h-3 w-3 inline mr-1 text-amber-500" />
+                        {project.progress.toFixed(0)}% complete
+                      </div>
+                    </div>
+                  </div>
+                  <div className="ml-2">
+                    <TrendingUp className={`h-5 w-5 ${
+                      project.progress > 50 ? 'text-green-500' : 'text-amber-500'
+                    }`} />
+                  </div>
+                </div>
+              )) : (
+                <div className="text-center text-gray-400 py-4">
+                  No projects data
+                </div>
+              )
+            }
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -170,8 +170,16 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
+        ProjectStatus oldStatus = project.getStatus();
+
         // Cập nhật các thông tin cơ bản
         ProjectMapper.INSTANCE.updateProjectFromRequest(projectRequest, project);
+
+        if (projectRequest.getDueDate() != null
+                && oldStatus == ProjectStatus.OVER_DUE
+                && projectRequest.getDueDate().after(new Date())) {
+            project.setStatus(ProjectStatus.IN_PROGRESS);
+        }
 
         // Cập nhật ngày chỉnh sửa
         project.setLastModifiedDate(new Date());
