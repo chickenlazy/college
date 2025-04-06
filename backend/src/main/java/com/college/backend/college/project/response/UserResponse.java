@@ -17,4 +17,7 @@ public class UserResponse {
     private Role role;
     private Date createdDate;
     private Date lastModifiedDate;
+    private String department;  // New field for department
+    private String address;     // New field for address
+    private String position;    // New field for position
 }

@@ -50,6 +50,9 @@ public class ProjectResponse {
         private String fullName;
         private String email;
         private Role role;
+        private String department;  // New field for department
+        private String address;     // New field for address
+        private String position;    // New field for position
     }
 
     @Getter

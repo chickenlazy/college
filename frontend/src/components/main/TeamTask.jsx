@@ -9,6 +9,11 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  Check,
+  XCircle,
+  X,
+  RefreshCw,
+  Loader,
   AlertTriangle,
   ArrowUpDown,
   ChevronLeft,
@@ -19,7 +24,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import TaskEdit from "../edit/TaskEdit";
-import TaskDetail from "../detail/TaskDetail"
+import TaskDetail from "../detail/TaskDetail";
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -221,7 +226,7 @@ const Pagination = ({
 };
 
 // Action Buttons Component
-const ActionButtons = ({ task, onDelete, onEdit, onView  }) => {
+const ActionButtons = ({ task, onDelete, onEdit, onView }) => {
   return (
     <div className="flex gap-2">
       <button
@@ -249,6 +254,71 @@ const ActionButtons = ({ task, onDelete, onEdit, onView  }) => {
   );
 };
 
+// Thêm các component Toast và ConfirmationDialog
+const Toast = ({ message, type, onClose }) => {
+  const bgColor =
+    type === "success"
+      ? "bg-green-600"
+      : type === "error"
+      ? "bg-red-600"
+      : "bg-blue-600";
+  const icon =
+    type === "success" ? (
+      <Check size={20} />
+    ) : type === "error" ? (
+      <XCircle size={20} />
+    ) : (
+      <RefreshCw size={20} />
+    );
+
+  return (
+    <div
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+    >
+      {icon}
+      <span>{message}</span>
+      <button
+        onClick={onClose}
+        className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+};
+
+// Confirmation Dialog Component
+const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
+        <h2 className="text-xl font-bold mb-4">{title}</h2>
+        <p className="text-gray-300 mb-6">{message}</p>
+        <div className="flex justify-end space-x-3">
+          <button
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TeamTask = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -262,6 +332,13 @@ const TeamTask = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [taskDetail, setTaskDetail] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [error, setError] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    taskId: null,
+  });
 
   const handleEditTask = (task) => {
     setSelectedTask(task);
@@ -277,7 +354,7 @@ const TeamTask = () => {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
+
       setLoading(true);
       const response = await axios.get(
         `http://localhost:8080/api/tasks/${task.id}`,
@@ -311,26 +388,42 @@ const TeamTask = () => {
     last: false,
   });
 
-  const handleDeleteTask = async (taskId) => {
+  // Cập nhật hàm handleDeleteTask
+  const handleDeleteTask = (taskId) => {
+    setDeleteConfirm({ show: true, taskId });
+  };
+
+  // Thêm hàm confirmDeleteTask
+  const confirmDeleteTask = async () => {
     try {
-      // Lấy token từ localStorage
       const storedUser = localStorage.getItem("user");
       let token = null;
       if (storedUser) {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
-      await axios.delete(`http://localhost:8080/api/tasks/${taskId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // Thêm token vào headers
-        },
-      });
-      // Refresh data after deletion
+
+      await axios.delete(
+        `http://localhost:8080/api/tasks/${deleteConfirm.taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      showToast("Task deleted successfully", "success");
       refreshData();
     } catch (err) {
       console.error("Error deleting task:", err);
+      showToast("Failed to delete task", "error");
     }
+  };
+
+  // Thêm hàm showToast
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const fetchTasks = async (
@@ -348,49 +441,54 @@ const TeamTask = () => {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
+
       const params = {
         page: page,
         size: size,
       };
-  
+
       // Thêm tham số tìm kiếm nếu có
       if (searchTerm) {
         params.search = searchTerm;
       }
-  
+
       // Thêm tham số lọc status nếu không phải "all"
       if (filterStatus !== "all") {
         params.status = filterStatus;
       }
-  
+
       const response = await axios.get(`http://localhost:8080/api/tasks`, {
         params: params,
         headers: {
-          Authorization: `Bearer ${token}`, // Thêm token vào headers
+          Authorization: `Bearer ${token}`,
         },
       });
       setApiData(response.data);
       setTasks(response.data.content);
+      setError(null); // Reset error
       setLoading(false);
     } catch (err) {
       console.error("Error fetching tasks:", err);
+      setError("Failed to load tasks. Please try again later.");
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTasks(currentPage, itemsPerPage, search, activeFilter);
-  }, [currentPage, itemsPerPage, search, activeFilter]);
+    const timeoutId = setTimeout(() => {
+      if (search.length >= 3 || search.length === 0) {
+        setDebouncedSearch(search);
+      }
+    }, 500);
 
-  // Handle checkbox selection
-  const handleSelectTask = (id) => {
-    if (selectedTasks.includes(id)) {
-      setSelectedTasks(selectedTasks.filter((taskId) => taskId !== id));
-    } else {
-      setSelectedTasks([...selectedTasks, id]);
-    }
-  };
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [search]);
+
+  useEffect(() => {
+    fetchTasks(currentPage, itemsPerPage, debouncedSearch, activeFilter);
+  }, [currentPage, itemsPerPage, debouncedSearch, activeFilter]);
 
   // Calculate pagination
   const currentTasks = tasks;
@@ -408,11 +506,28 @@ const TeamTask = () => {
     fetchTasks(1, newItemsPerPage, search, activeFilter); // Gọi API với pageSize mới
   };
 
+  // Thêm hàm formatName để giới hạn độ dài tên task
+  const formatName = (name) => {
+    if (!name) return "";
+
+    if (name.length > 25) {
+      return (
+        <div className="group relative cursor-pointer">
+          <span>{name.substring(0, 25)}...</span>
+          <div className="absolute top-full left-0 mt-1 bg-gray-800 text-white p-2 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-64 text-sm">
+            {name}
+          </div>
+        </div>
+      );
+    }
+
+    return name;
+  };
+
   const handleReset = () => {
     setSearch(""); // Reset search query
     setActiveFilter("all"); // Reset active filter to 'all'
     setCurrentPage(1); // Reset to the first page
-    setSelectAll(false); // Unselect 'select all' checkbox
     setSelectedTasks([]); // Deselect all tasks
     fetchTasks(1, itemsPerPage); // Reload data from API
   };
@@ -432,7 +547,7 @@ const TeamTask = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-900 text-white rounded-lg">
+    <div className="p-6 bg-gray-950 text-white">
       {showTaskEdit ? (
         <TaskEdit
           isNew={selectedTask === null}
@@ -443,34 +558,49 @@ const TeamTask = () => {
           }}
         />
       ) : showTaskDetail ? (
-        <TaskDetail 
-          task={taskDetail} 
-          onBack={handleBackFromTaskDetail} 
-        />
+        <TaskDetail task={taskDetail} onBack={handleBackFromTaskDetail} />
       ) : (
         <>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">TEAM TASKS</h1>
+          <h1 className="text-2xl font-bold mb-4">TEAM TASKS</h1>
 
-              <div className="flex gap-2">
-                <button
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center gap-2"
-                  onClick={() => {
-                    setSelectedTask(null); // Không có task nào được chọn để tạo mới
-                    setShowTaskEdit(true); // Hiển thị TaskEdit component
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 rounded-md"
+                onClick={() => {
+                  setSelectedTask(null);
+                  setShowTaskEdit(true);
+                }}
+              >
+                <Plus size={18} />
+                <span>New</span>
+              </button>
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"
+                onClick={handleReset}
+              >
+                <RotateCcw size={18} />
+                <span>Reset</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by Name"
+                  className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-64"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
                   }}
-                >
-                  <Plus size={18} />
-                  <span>New Task</span>
-                </button>
-                <button
-                  className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-md flex items-center gap-2"
-                  onClick={handleReset}
-                >
-                  <RotateCcw size={18} />
-                  <span>Reset</span>
-                </button>
+                />
+                <Search
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
               </div>
             </div>
           </div>
@@ -483,141 +613,107 @@ const TeamTask = () => {
                 setCurrentPage(1); // Reset to first page when changing filter
               }}
             />
-
-            <div className="relative w-full md:w-64">
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-full"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1); // Reset to first page when searching
-                }}
-              />
-              <Search
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-            </div>
           </div>
 
           {/* Tasks Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="text-left">
-                  <th className="p-3 border-b border-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={selectAll}
-                      onChange={handleSelectAll}
-                      className="w-4 h-4"
-                    />
-                  </th>
-                  <th className="p-3 border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                      Task
-                      <button>
-                        <ArrowUpDown size={14} />
-                      </button>
-                    </div>
-                  </th>
-                  <th className="p-3 border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                      Project
-                      <button>
-                        <ArrowUpDown size={14} />
-                      </button>
-                    </div>
-                  </th>
-                  <th className="p-3 border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                      Due Date
-                      <button>
-                        <ArrowUpDown size={14} />
-                      </button>
-                    </div>
-                  </th>
-                  <th className="p-3 border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                      Priority
-                      <button>
-                        <ArrowUpDown size={14} />
-                      </button>
-                    </div>
-                  </th>
-                  <th className="p-3 border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                      Status
-                      <button>
-                        <ArrowUpDown size={14} />
-                      </button>
-                    </div>
-                  </th>
-                  <th className="p-3 border-b border-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="7" className="p-4 text-center">
-                      Loading...
-                    </td>
+          <div className="mt-4 overflow-x-auto min-h-[400px]">
+            {loading ? (
+              <div className="flex flex-col justify-center items-center h-64">
+                <Loader
+                  size={36}
+                  className="text-purple-500 animate-spin mb-4"
+                />
+                <p className="text-gray-400">Loading task data...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center p-4 text-red-500">{error}</div>
+            ) : currentTasks.length === 0 ? (
+              <div className="text-center p-4">No tasks found</div>
+            ) : (
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-900 text-left">
+                    <th className="p-3 border-b border-gray-700">
+                      <div className="flex items-center gap-2">Task</div>
+                    </th>
+                    <th className="p-3 border-b border-gray-700">
+                      <div className="flex items-center gap-2">Project</div>
+                    </th>
+                    <th className="p-3 border-b border-gray-700">
+                      <div className="flex items-center gap-2">Due Date</div>
+                    </th>
+                    <th className="p-3 border-b border-gray-700">
+                      <div className="flex items-center gap-2">Priority</div>
+                    </th>
+                    <th className="p-3 border-b border-gray-700">
+                      <div className="flex items-center gap-2">Status</div>
+                    </th>
+                    <th className="p-3 border-b border-gray-700">Actions</th>
                   </tr>
-                ) : currentTasks.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="p-4 text-center">
-                      No tasks found
-                    </td>
-                  </tr>
-                ) : (
-                  currentTasks.map((task) => (
-                    <tr key={task.id} className="hover:bg-gray-800">
-                      <td className="p-3 border-b border-gray-700">
-                        <input
-                          type="checkbox"
-                          checked={selectedTasks.includes(task.id)}
-                          onChange={() => handleSelectTask(task.id)}
-                          className="w-4 h-4"
-                        />
-                      </td>
-                      <td className="p-3 border-b border-gray-700">
-                        <div>
-                          <div className="font-medium">{task.name}</div>
-                          <div className="text-sm text-gray-400">
-                            {task.description}
-                          </div>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="p-4 text-center">
+                        <div className="flex flex-col justify-center items-center h-64">
+                          <Loader
+                            size={36}
+                            className="text-purple-500 animate-spin mb-4"
+                          />
+                          <p className="text-gray-400">Loading task data...</p>
                         </div>
-                      </td>
-                      <td className="p-3 border-b border-gray-700">
-                        {task.projectName}
-                      </td>
-                      <td className="p-3 border-b border-gray-700">
-                        <div className="flex items-center gap-2">
-                          <Calendar size={16} className="text-gray-400" />
-                          {formatDate(task.dueDate)}
-                        </div>
-                      </td>
-                      <td className="p-3 border-b border-gray-700">
-                        <PriorityBadge priority={task.priority} />
-                      </td>
-                      <td className="p-3 border-b border-gray-700">
-                        <StatusBadge status={task.status} />
-                      </td>
-                      <td className="p-3 border-b border-gray-700">
-                        <ActionButtons
-                          task={task}
-                          onDelete={handleDeleteTask}
-                          onEdit={handleEditTask}
-                          onView={handleViewTask}
-                        />
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : currentTasks.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="p-4 text-center">
+                        No tasks found
+                      </td>
+                    </tr>
+                  ) : (
+                    currentTasks.map((task) => (
+                      <tr key={task.id} className="hover:bg-gray-800">
+                        <td className="p-3 border-b border-gray-700">
+                          <div>
+                            <div className="font-medium">
+                              {formatName(task.name)}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              {task.description && task.description.length > 50
+                                ? task.description.substring(0, 50) + "..."
+                                : task.description}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3 border-b border-gray-700">
+                          {task.projectName}
+                        </td>
+                        <td className="p-3 border-b border-gray-700">
+                          <div className="flex items-center gap-2">
+                            <Calendar size={16} className="text-gray-400" />
+                            {formatDate(task.dueDate)}
+                          </div>
+                        </td>
+                        <td className="p-3 border-b border-gray-700">
+                          <PriorityBadge priority={task.priority} />
+                        </td>
+                        <td className="p-3 border-b border-gray-700">
+                          <StatusBadge status={task.status} />
+                        </td>
+                        <td className="p-3 border-b border-gray-700">
+                          <ActionButtons
+                            task={task}
+                            onDelete={handleDeleteTask}
+                            onEdit={handleEditTask}
+                            onView={handleViewTask}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <Pagination
@@ -629,6 +725,24 @@ const TeamTask = () => {
             onItemsPerPageChange={handleItemsPerPageChange}
           />
         </>
+      )}
+
+      {/* Confirmation Dialog for Deleting Task */}
+      <ConfirmationDialog
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, taskId: null })}
+        onConfirm={confirmDeleteTask}
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

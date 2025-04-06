@@ -323,41 +323,6 @@ const UserProfile = ({ user }) => {
             </div>
           </div>
 
-          {/* Recent Activity Section */}
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold border-b border-gray-700 pb-2 mb-4">
-              Recent Activity
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-start gap-4 p-3 hover:bg-gray-800 rounded-lg transition-colors">
-                <div className="p-2 bg-blue-500 bg-opacity-20 rounded-full">
-                  <Shield size={16} className="text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-sm">Updated project status for <strong>Client Portal Redesign</strong></p>
-                  <p className="text-xs text-gray-400 mt-1">2 days ago</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-3 hover:bg-gray-800 rounded-lg transition-colors">
-                <div className="p-2 bg-green-500 bg-opacity-20 rounded-full">
-                  <Briefcase size={16} className="text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm">Completed task <strong>Create wireframes</strong></p>
-                  <p className="text-xs text-gray-400 mt-1">4 days ago</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 p-3 hover:bg-gray-800 rounded-lg transition-colors">
-                <div className="p-2 bg-purple-500 bg-opacity-20 rounded-full">
-                  <User size={16} className="text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-sm">Joined project <strong>E-commerce Platform</strong></p>
-                  <p className="text-xs text-gray-400 mt-1">1 week ago</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 

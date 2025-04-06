@@ -312,6 +312,16 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       return;
     }
   
+    // Validate Start Date không được sau Due Date
+    if (new Date(project.startDate) > new Date(project.dueDate)) {
+      setFormErrors(prevErrors => ({
+        ...prevErrors,
+        startDate: "Start date cannot be after due date",
+        dueDate: "Due date cannot be before start date"
+      }));
+      return;
+    }
+  
     // Format the dates for API
     const formattedProject = {
       ...project,
@@ -340,8 +350,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log("Project created:", response.data);
-        alert("Project created successfully!");
+        
+        onBack(true); // Truyền true để báo cần refresh dữ liệu
       } else {
         // Update existing project
         const response = await axios.put(`http://localhost:8080/api/projects/${id}`, apiProject, {
@@ -349,12 +359,9 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log("Project updated:", response.data);
-        alert("Project updated successfully!");
+        
+        onBack(true); // Truyền true để báo cần refresh dữ liệu
       }
-  
-      // Gọi onBack để quay lại và refresh dữ liệu
-      onBack();
       
     } catch (error) {
       console.error("Error saving project:", error);

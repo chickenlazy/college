@@ -12,6 +12,7 @@ SHOW GRANTS FOR 'admin'@'localhost';
 -- End creating Admin user
 
 -- Xóa và tạo lại bảng `users`
+-- Xóa và tạo lại bảng `users` với các trường mới
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -21,7 +22,9 @@ CREATE TABLE users (
   email VARCHAR(255) UNIQUE,
   phone_number VARCHAR(20),
   role ENUM('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_USER'),
---   status ENUM('ACTIVE', 'INACTIVE'),
+  department VARCHAR(255),  -- Mới thêm
+  address VARCHAR(255),     -- Mới thêm
+  position VARCHAR(255),    -- Mới thêm
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -99,28 +102,29 @@ CREATE TABLE project_tags (
 );
 
 
--- Chèn dữ liệu vào bảng `users`
-INSERT INTO users (full_name, username, password, email, phone_number, role)
+-- Cập nhật câu lệnh INSERT vào bảng `users`
+INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position)
 VALUES
-  ('Nguyễn Văn A', 'nguyenvana', 'password123', 'nguyenvana@example.com', '0912345678', 'ROLE_ADMIN'),
-  ('Trần Thị B', 'tranthib', 'password123', 'tranthib@example.com', '0912345679', 'ROLE_MANAGER'),
-  ('Lê Minh C', 'leminhc', 'password123', 'leminhc@example.com', '0912345680', 'ROLE_MANAGER'),
-  ('Phan Thi D', 'phanthid', 'password123', 'phanthid@example.com', '0912345681', 'ROLE_USER'),
-  ('Vũ Văn E', 'vuvan', 'password123', 'vuvan@example.com', '0912345682', 'ROLE_USER'),
-  ('Hoàng Thị F', 'hoangthif', 'password123', 'hoangthif@example.com', '0912345683', 'ROLE_USER'),
-  ('Đoàn Minh G', 'doanming', 'password123', 'doanming@example.com', '0912345684', 'ROLE_USER'),
-  ('Nguyễn Thị H', 'nguyenh', 'password123', 'nguyenh@example.com', '0912345685', 'ROLE_USER'),
-  ('Trần Minh I', 'tranminhi', 'password123', 'tranminhi@example.com', '0912345686', 'ROLE_USER'),
-  ('Phạm Văn J', 'phamvanj', 'password123', 'phamvanj@example.com', '0912345687', 'ROLE_USER'),
-  ('Lý Minh K', 'lyminhk', 'password123', 'lyminhk@example.com', '0912345688', 'ROLE_USER'),
-  ('Hồ Thi L', 'hothil', 'password123', 'hothil@example.com', '0912345689', 'ROLE_USER'),
-  ('Tôn Thị M', 'tonthim', 'password123', 'tonthim@example.com', '0912345690', 'ROLE_USER'),
-  ('Ngô Minh N', 'ngominhn', 'password123', 'ngominhn@example.com', '0912345691', 'ROLE_USER'),
-  ('Vũ Thi O', 'vuthio', 'password123', 'vuthio@example.com', '0912345692', 'ROLE_USER'),
-  ('Mai Văn P', 'maivanp', 'password123', 'maivanp@example.com', '0912345693', 'ROLE_USER'),
-  ('Phan Minh Q', 'phanminhq', 'password123', 'phanminhq@example.com', '0912345694', 'ROLE_USER'),
-  ('Đặng Thị R', 'dangthir', 'password123', 'dangthir@example.com', '0912345695', 'ROLE_USER'),
-  ('Bùi Minh S', 'buiminhs', 'password123', 'buiminhs@example.com', '0912345696', 'ROLE_USER');
+  ('Nguyễn Trường Giang', 'admin', '$2a$10$/bkNd5hWTUVjSo8AFKa1VujE/U2vr.kI59dsNNC0phnKWw.zJ1f/C', 'admin@gmail.com', '0975076123', 'ROLE_ADMIN', 'IT', '123 Main St', 'Admin'),
+  ('Nguyễn Văn A', 'nguyenvana', 'password123', 'nguyenvana@example.com', '0912345678', 'ROLE_ADMIN', 'IT', '123 Main St', 'Manager'),
+  ('Trần Thị B', 'tranthib', 'password123', 'tranthib@example.com', '0912345679', 'ROLE_MANAGER', 'Marketing', '456 Oak St', 'Coordinator'),
+  ('Lê Minh C', 'leminhc', 'password123', 'leminhc@example.com', '0912345680', 'ROLE_MANAGER', 'Sales', '789 Pine St', 'Supervisor'),
+  ('Phan Thi D', 'phanthid', 'password123', 'phanthid@example.com', '0912345681', 'ROLE_USER', 'HR', '101 Maple St', 'Staff'),
+  ('Vũ Văn E', 'vuvan', 'password123', 'vuvan@example.com', '0912345682', 'ROLE_USER', 'Finance', '102 Birch St', 'Accountant'),
+  ('Hoàng Thị F', 'hoangthif', 'password123', 'hoangthif@example.com', '0912345683', 'ROLE_USER', 'IT', '103 Cedar St', 'Developer'),
+  ('Đoàn Minh G', 'doanming', 'password123', 'doanming@example.com', '0912345684', 'ROLE_USER', 'Marketing', '104 Elm St', 'Designer'),
+  ('Nguyễn Thị H', 'nguyenh', 'password123', 'nguyenh@example.com', '0912345685', 'ROLE_USER', 'Operations', '105 Birch St', 'Coordinator'),
+  ('Trần Minh I', 'tranminhi', 'password123', 'tranminhi@example.com', '0912345686', 'ROLE_USER', 'Sales', '106 Oak St', 'Representative'),
+  ('Phạm Văn J', 'phamvanj', 'password123', 'phamvanj@example.com', '0912345687', 'ROLE_USER', 'IT', '107 Pine St', 'Technician'),
+  ('Lý Minh K', 'lyminhk', 'password123', 'lyminhk@example.com', '0912345688', 'ROLE_USER', 'HR', '108 Cedar St', 'Recruiter'),
+  ('Hồ Thi L', 'hothil', 'password123', 'hothil@example.com', '0912345689', 'ROLE_USER', 'Finance', '109 Elm St', 'Analyst'),
+  ('Tôn Thị M', 'tonthim', 'password123', 'tonthim@example.com', '0912345690', 'ROLE_USER', 'Marketing', '110 Birch St', 'Manager'),
+  ('Ngô Minh N', 'ngominhn', 'password123', 'ngominhn@example.com', '0912345691', 'ROLE_USER', 'Operations', '111 Oak St', 'Administrator'),
+  ('Vũ Thi O', 'vuthio', 'password123', 'vuthio@example.com', '0912345692', 'ROLE_USER', 'Sales', '112 Pine St', 'Assistant'),
+  ('Mai Văn P', 'maivanp', 'password123', 'maivanp@example.com', '0912345693', 'ROLE_USER', 'Finance', '113 Cedar St', 'Controller'),
+  ('Phan Minh Q', 'phanminhq', 'password123', 'phanminhq@example.com', '0912345694', 'ROLE_USER', 'HR', '114 Elm St', 'Manager'),
+  ('Đặng Thị R', 'dangthir', 'password123', 'dangthir@example.com', '0912345695', 'ROLE_USER', 'Marketing', '115 Birch St', 'Assistant'),
+  ('Bùi Minh S', 'buiminhs', 'password123', 'buiminhs@example.com', '0912345696', 'ROLE_USER', 'IT', '116 Oak St', 'Developer');
 
 -- Chèn dữ liệu vào bảng `projects`
 INSERT INTO projects (name, description, start_date, due_date, status, manager_id)

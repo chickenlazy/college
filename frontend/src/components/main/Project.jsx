@@ -10,6 +10,10 @@ import {
   Edit,
   RotateCcw,
   MoreVertical,
+  CheckCircle,
+  AlertTriangle,
+  Pause,
+  Clock,
   RefreshCw,
   Eye,
   Download,
@@ -84,29 +88,43 @@ const getAssignedUsers = (users) => {
 // Status Badge Component
 const StatusBadge = ({ status }) => {
   let color;
+  let icon;
   let displayText = status.replace(/_/g, " ");
 
   switch (status) {
     case "NOT_STARTED":
-      color = "text-red-500";
+      color = "bg-gray-200 text-gray-800";
+      icon = <Clock size={14} />;
       break;
     case "IN_PROGRESS":
-      color = "text-yellow-500";
+      color = "bg-blue-200 text-blue-800";
+      icon = <Clock size={14} />;
       break;
     case "COMPLETED":
-      color = "text-green-500";
-      break;
-    case "ON_HOLD":
-      color = "text-blue-500";
+      color = "bg-green-200 text-green-800";
+      icon = <CheckCircle size={14} />;
       break;
     case "OVER_DUE":
-      color = "text-orange-500";
+      color = "bg-red-200 text-red-800";
+      icon = <AlertTriangle size={14} />;
+      break;
+    case "ON_HOLD":
+      color = "bg-yellow-200 text-yellow-800";
+      icon = <Pause size={14} />;
       break;
     default:
-      color = "text-gray-500";
+      color = "bg-gray-200 text-gray-800";
+      icon = <Clock size={14} />;
   }
 
-  return <span className={color}>{displayText}</span>;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${color}`}
+    >
+      {icon}
+      {displayText}
+    </span>
+  );
 };
 
 // Toast notification component
@@ -461,6 +479,16 @@ const Project = () => {
     setShowProjectDetail(true);
   };
 
+  // Cập nhật hàm xử lý khi quay lại
+  const handleBackFromDetail = (needRefresh = false) => {
+    setShowProjectDetail(false);
+    setSelectedProject(null);
+
+    if (needRefresh) {
+      refreshData();
+    }
+  };
+
   const openProjectEdit = (project) => {
     setSelectedProject(project);
     setShowProjectEdit(true);
@@ -517,7 +545,7 @@ const Project = () => {
       {showProjectDetail ? (
         <ProjectDetail
           project={selectedProject}
-          onBack={() => setShowProjectDetail(false)}
+          onBack={handleBackFromDetail}
         />
       ) : showProjectEdit ? (
         <ProjectEdit
@@ -565,6 +593,10 @@ const Project = () => {
                     setSearch(e.target.value);
                     setCurrentPage(1);
                   }}
+                />
+                <Search
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
                 />
               </div>
             </div>
@@ -625,7 +657,7 @@ const Project = () => {
                         {project.totalCompletedTasks}/{project.totalTasks}
                       </td>
                       <td className="p-4 border-b border-gray-800">
-                        <ProgressBar progress={project.progress} />
+                        <ProgressBar progress={project.progress.toFixed(1)} />
                       </td>
                       <td className="p-4 border-b border-gray-800">
                         <StatusBadge status={project.status} />

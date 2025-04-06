@@ -10,6 +10,7 @@ import {
   ListChecks,
   PieChart,
   MessageSquare,
+  Shield,
   Plus,
   User,
   CheckCircle,
@@ -29,6 +30,7 @@ import {
 
 import ProjectEdit from "../edit/ProjectEdit";
 import TaskEdit from "../edit/TaskEdit";
+import TaskDetail from "./TaskDetail";
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -191,7 +193,8 @@ const MemberDropdownMenu = ({
 };
 
 // Task Item Component
-const TaskItem = ({ task, index }) => {
+// Task Item Component
+const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
   const [expanded, setExpanded] = useState(false);
   const statusInfo = getStatusInfo(task.status);
   const priorityInfo = getPriorityInfo(task.priority);
@@ -249,24 +252,6 @@ const TaskItem = ({ task, index }) => {
                 <span>{priorityInfo.text}</span>
               </div>
             </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">Assignee</p>
-              <div className="flex items-center">
-                {task.assigneeName ? (
-                  <>
-                    <div className="h-6 w-6 rounded-full bg-gray-600 flex items-center justify-center text-xs mr-2">
-                      {task.assigneeName
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <span>{task.assigneeName}</span>
-                  </>
-                ) : (
-                  <span className="text-gray-400">Not assigned</span>
-                )}
-              </div>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -286,11 +271,87 @@ const TaskItem = ({ task, index }) => {
             </div>
           </div>
 
+          {/* Hiển thị subtasks */}
+          {task.subtasks && task.subtasks.length > 0 && (
+            <div className="mt-3 mb-4">
+              <p className="text-xs text-gray-400 mb-2">Subtasks</p>
+              <div className="space-y-2 pl-2">
+                {task.subtasks.map((subtask) => (
+                  <div key={subtask.id} className="flex items-center">
+                    <CheckCircle2
+                      size={14}
+                      className={
+                        subtask.completed
+                          ? "text-green-500 mr-2"
+                          : "text-gray-400 mr-2"
+                      }
+                    />
+                    <span
+                      className={
+                        subtask.completed ? "text-gray-400 line-through" : ""
+                      }
+                    >
+                      {subtask.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end space-x-2 mt-2">
-            <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
-              View
+            <button
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+              onClick={() => onTaskDetail(task)}
+            >
+              Detail
             </button>
-            <button className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+            <button
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  const storedUser = localStorage.getItem("user");
+                  let token = null;
+                  if (storedUser) {
+                    const user = JSON.parse(storedUser);
+                    token = user.accessToken;
+                  }
+
+                  // Dùng ConfirmationDialog thay vì window.confirm
+                  if (
+                    window.confirm(
+                      "Are you sure you want to delete this task? This action cannot be undone."
+                    )
+                  ) {
+                    await axios.delete(
+                      `http://localhost:8080/api/tasks/${task.id}`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+
+                    // Thay vì reload toàn bộ trang, gọi API lấy dữ liệu project mới nhất
+                    const projectResponse = await axios.get(
+                      `http://localhost:8080/api/projects/${task.projectId}`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+
+                    // Dùng callback để cập nhật dữ liệu
+                    onTaskDeleted(projectResponse.data);
+                  }
+                } catch (error) {
+                  console.error("Error deleting task:", error);
+                  alert("Failed to delete task. Please try again.");
+                }
+              }}
+            >
               Delete
             </button>
           </div>
@@ -389,7 +450,9 @@ const TagDropdownMenu = ({ isOpen, onClose, tags, onSelect, usedTagIds }) => {
   );
 };
 
-const ProjectDetail = ({ project: initialProject, onBack }) => {
+const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [toast, setToast] = useState(null);
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("tasks");
@@ -399,11 +462,60 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
   const [tagsMenuOpen, setTagsMenuOpen] = useState(false);
   const [loadingTag, setLoadingTag] = useState(false);
   const [tagError, setTagError] = useState(null);
-  // Thêm state để quản lý member
+  const [taskLoading, setTaskLoading] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [loadingMember, setLoadingMember] = useState(false);
   const [memberError, setMemberError] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [showTaskDetail, setShowTaskDetail] = useState(false);
+
+  const onBack = (needRefresh) => {
+    if (needRefresh) {
+      fetchProjectData();
+    } else {
+      navigateBack();
+    }
+  };
+
+  // Thêm hàm xử lý task bị xóa
+  const handleTaskDeleted = (updatedProject) => {
+    // Cập nhật state project với dữ liệu mới
+    setProject(updatedProject);
+    // Hiển thị thông báo
+    showToast("Task deleted successfully", "success");
+  };
+
+  const openTaskDetail = async (task) => {
+    try {
+      setTaskLoading(true);
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      // Gọi API để lấy chi tiết task
+      const response = await axios.get(
+        `http://localhost:8080/api/tasks/${task.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Cập nhật task với dữ liệu chi tiết từ API
+      setSelectedTask(response.data);
+      setShowTaskDetail(true);
+    } catch (error) {
+      console.error("Error fetching task details:", error);
+      showToast("Failed to load task details", "error");
+    } finally {
+      setTaskLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -414,7 +526,7 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
           const user = JSON.parse(storedUser);
           token = user.accessToken;
         }
-  
+
         const response = await axios.get("http://localhost:8080/api/users", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -425,77 +537,109 @@ const ProjectDetail = ({ project: initialProject, onBack }) => {
         console.error("Error fetching users:", error);
       }
     };
-  
+
     fetchAllUsers();
   }, []);
-  
+
+  // Thêm hàm xử lý Delete Project
+  const handleDeleteProject = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      await axios.delete(`http://localhost:8080/api/projects/${project.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      showToast("Project deleted successfully", "success");
+
+      // Đổi cách xử lý: force reload dữ liệu khi quay về màn hình chính
+      setTimeout(() => {
+        onBack(true); // Truyền tham số true để báo hiệu cần refresh dữ liệu
+      }, 1000);
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      showToast("Failed to delete project", "error");
+    }
+  };
+
+  // Hàm hiển thị toast
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   // Hàm thêm member vào project
-const handleAddMember = async (userId) => {
-  if (!project || !userId) return;
+  const handleAddMember = async (userId) => {
+    if (!project || !userId) return;
 
-  const storedUser = localStorage.getItem("user");
-  let token = null;
-  if (storedUser) {
-    const user = JSON.parse(storedUser);
-    token = user.accessToken;
-  }
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
+    }
 
-  setLoadingMember(true);
-  setMemberError(null);
+    setLoadingMember(true);
+    setMemberError(null);
 
-  try {
-    const response = await axios.post(
-      `http://localhost:8080/api/projects/${project.id}/members/${userId}`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    setProject(response.data);
-    setMembersMenuOpen(false);
-  } catch (error) {
-    console.error("Error adding member:", error);
-    setMemberError("Failed to add member. Please try again.");
-  } finally {
-    setLoadingMember(false);
-  }
-};
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/api/projects/${project.id}/members/${userId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setProject(response.data);
+      setMembersMenuOpen(false);
+    } catch (error) {
+      console.error("Error adding member:", error);
+      setMemberError("Failed to add member. Please try again.");
+    } finally {
+      setLoadingMember(false);
+    }
+  };
 
-// Hàm xóa member khỏi project
-const handleRemoveMember = async (userId) => {
-  if (!project || !userId) return;
+  // Hàm xóa member khỏi project
+  const handleRemoveMember = async (userId) => {
+    if (!project || !userId) return;
 
-  const storedUser = localStorage.getItem("user");
-  let token = null;
-  if (storedUser) {
-    const user = JSON.parse(storedUser);
-    token = user.accessToken;
-  }
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
+    }
 
-  setLoadingMember(true);
-  setMemberError(null);
+    setLoadingMember(true);
+    setMemberError(null);
 
-  try {
-    const response = await axios.delete(
-      `http://localhost:8080/api/projects/${project.id}/members/${userId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    setProject(response.data);
-  } catch (error) {
-    console.error("Error removing member:", error);
-    setMemberError("Failed to remove member. Please try again.");
-  } finally {
-    setLoadingMember(false);
-  }
-};
-
+    try {
+      const response = await axios.delete(
+        `http://localhost:8080/api/projects/${project.id}/members/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setProject(response.data);
+    } catch (error) {
+      console.error("Error removing member:", error);
+      setMemberError("Failed to remove member. Please try again.");
+    } finally {
+      setLoadingMember(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAllTags = async () => {
@@ -506,7 +650,7 @@ const handleRemoveMember = async (userId) => {
           const user = JSON.parse(storedUser);
           token = user.accessToken;
         }
-  
+
         const response = await axios.get("http://localhost:8080/api/tags", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -517,24 +661,23 @@ const handleRemoveMember = async (userId) => {
         console.error("Error fetching tags:", error);
       }
     };
-  
+
     fetchAllTags();
   }, []);
-  
 
   const handleAddTag = async (tagId) => {
     if (!project || !tagId) return;
-  
+
     const storedUser = localStorage.getItem("user");
     let token = null;
     if (storedUser) {
       const user = JSON.parse(storedUser);
       token = user.accessToken;
     }
-  
+
     setLoadingTag(true);
     setTagError(null);
-  
+
     try {
       const response = await axios.post(
         `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`,
@@ -554,20 +697,20 @@ const handleRemoveMember = async (userId) => {
       setLoadingTag(false);
     }
   };
-  
+
   const handleRemoveTag = async (tagId) => {
     if (!project || !tagId) return;
-  
+
     const storedUser = localStorage.getItem("user");
     let token = null;
     if (storedUser) {
       const user = JSON.parse(storedUser);
       token = user.accessToken;
     }
-  
+
     setLoadingTag(true);
     setTagError(null);
-  
+
     try {
       const response = await axios.delete(
         `http://localhost:8080/api/projects/${project.id}/tags/${tagId}`,
@@ -593,15 +736,36 @@ const handleRemoveMember = async (userId) => {
       setProject(initialProject);
       setLoading(false);
     } else {
-      // If we need to fetch project (for development/testing)
-      setLoading(true);
-      // Fetch from API here if needed
-      setTimeout(() => {
-        setProject(initialProject);
-        setLoading(false);
-      }, 500);
+      // If we need to fetch project
+      fetchProjectData();
     }
   }, [initialProject]);
+
+  const fetchProjectData = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      const response = await axios.get(
+        `http://localhost:8080/api/projects/${initialProject.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setProject(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching project data:", error);
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -621,9 +785,9 @@ const handleRemoveMember = async (userId) => {
         </p>
         <button
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
-          onClick={onBack}
+          onClick={() => onBack(false)}
         >
-          Back to Projects
+          Back
         </button>
       </div>
     );
@@ -634,10 +798,10 @@ const handleRemoveMember = async (userId) => {
 
   if (showProjectEdit) {
     return (
-      <ProjectEdit 
-        project={project} 
-        onBack={() => setShowProjectEdit(false)} 
-        isNew={false} 
+      <ProjectEdit
+        project={project}
+        onBack={() => setShowProjectEdit(false)}
+        isNew={false}
       />
     );
   }
@@ -654,560 +818,723 @@ const handleRemoveMember = async (userId) => {
   }
 
   return (
-    <div className="p-6 bg-gray-900 text-white rounded-lg">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          className="flex items-center text-gray-400 hover:text-white"
-          onClick={onBack}
-        >
-          <ChevronLeft size={20} className="mr-1" />
-          <span>Back to Projects</span>
-        </button>
-
-        <div className="flex space-x-2">
-          <button
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
-            onClick={() => setShowProjectEdit(true)}
-          >
-            <Edit size={16} className="mr-2" />
-            Edit Project
-          </button>
-          <button className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center">
-            <Trash2 size={16} className="mr-2" />
-            Delete
-          </button>
-        </div>
-      </div>
-
-      {/* Project Title and Status */}
-      <div className="mb-6">
-        <div className="flex items-center mb-2">
-          <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
-          <div
-            className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} bg-opacity-20 ${statusInfo.textColor}`}
-          >
-            {statusInfo.text}
+    <>
+      {showTaskDetail ? (
+        taskLoading ? (
+          <div className="flex justify-center items-center h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
           </div>
-        </div>
-        <p className="text-gray-300">{project.description}</p>
+        ) : (
+          <TaskDetail
+            task={selectedTask}
+            onBack={(needRefresh) => {
+              setShowTaskDetail(false);
+              setSelectedTask(null);
 
-        {/* Tags */}
-        {project.tags && project.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap">
-            {project.tags.map((tag) => (
-              <TagItem key={tag.id} tag={tag} />
-            ))}
-          </div>
-        )}
-      </div>
+              // Nếu needRefresh là true, cập nhật lại dữ liệu project
+              if (needRefresh) {
+                const fetchProjectData = async () => {
+                  try {
+                    const storedUser = localStorage.getItem("user");
+                    let token = null;
+                    if (storedUser) {
+                      const user = JSON.parse(storedUser);
+                      token = user.accessToken;
+                    }
 
-      {/* Project Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Timeline</p>
-              <p className="font-medium">
-                {formatDate(project.startDate)} - {formatDate(project.dueDate)}
-              </p>
-            </div>
-            <Calendar size={20} className="text-purple-500" />
-          </div>
-        </div>
+                    const response = await axios.get(
+                      `http://localhost:8080/api/projects/${project.id}`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+                    setProject(response.data);
+                  } catch (error) {
+                    console.error("Error fetching project details:", error);
+                    showToast("Failed to refresh project data", "error");
+                  }
+                };
 
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
-              <p className="font-medium">
-                {daysRemaining > 0
-                  ? `${daysRemaining} days left`
-                  : daysRemaining === 0
-                  ? "Due today"
-                  : `${Math.abs(daysRemaining)} days overdue`}
-              </p>
-            </div>
-            <Clock
-              size={20}
-              className={daysRemaining < 0 ? "text-red-500" : "text-purple-500"}
-            />
-          </div>
-        </div>
-
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Team Members</p>
-              <p className="font-medium">{project.users.length} members</p>
-            </div>
-            <Users size={20} className="text-purple-500" />
-          </div>
-        </div>
-
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Tasks Progress</p>
-              <p className="font-medium">
-                {project.totalCompletedTasks}/{project.totalTasks} completed
-              </p>
-            </div>
-            <ListChecks size={20} className="text-purple-500" />
-          </div>
-          <div className="mt-2 w-full bg-gray-700 rounded-full h-2.5">
-            <div
-              className="bg-purple-600 h-2.5 rounded-full"
-              style={{ width: `${project.progress}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-700 mb-6">
-        <div className="flex overflow-x-auto hide-scrollbar">
-          <Tab
-            icon={<ListChecks size={18} />}
-            label="Tasks"
-            active={activeTab === "tasks"}
-            onClick={() => setActiveTab("tasks")}
+                fetchProjectData();
+              }
+            }}
           />
-          <Tab
-            icon={<Users size={18} />}
-            label="Team"
-            active={activeTab === "team"}
-            onClick={() => setActiveTab("team")}
-          />
-          {project.tags && project.tags.length > 0 && (
-            <Tab
-              icon={<Tag size={18} />}
-              label="Tags"
-              active={activeTab === "tags"}
-              onClick={() => setActiveTab("tags")}
-            />
-          )}
-          <Tab
-            icon={<PieChart size={18} />}
-            label="Analytics"
-            active={activeTab === "analytics"}
-            onClick={() => setActiveTab("analytics")}
-          />
-        </div>
-      </div>
+        )
+      ) : (
+        <div className="p-6 bg-gray-900 text-white rounded-lg">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              className="flex items-center text-gray-400 hover:text-white"
+              onClick={() => onBack(false)}
+            >
+              <ChevronLeft size={20} className="mr-1" />
+              <span>Back</span>
+            </button>
 
-      {/* Tab Content */}
-      <div className="mb-6">
-        {activeTab === "tasks" && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Project Tasks</h2>
+            <div className="flex space-x-2">
               <button
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                onClick={() => setShowTaskEdit(true)}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
+                onClick={() => setShowProjectEdit(true)}
               >
-                <Plus size={16} className="mr-2" />
-                Add Task
+                <Edit size={16} className="mr-2" />
+                Edit Project
+              </button>
+              <button
+                className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center"
+                onClick={() => setDeleteConfirm(true)}
+              >
+                <Trash2 size={16} className="mr-2" />
+                Delete
               </button>
             </div>
-
-            <div className="mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
-                <div className="bg-gray-800 p-3 rounded-lg">
-                  <div className="text-sm text-gray-400 mb-1">Total</div>
-                  <div className="text-2xl font-bold">{project.totalTasks}</div>
-                </div>
-                <div className="bg-gray-800 p-3 rounded-lg">
-                  <div className="text-sm text-gray-400 mb-1">In Progress</div>
-                  <div className="text-2xl font-bold text-blue-500">
-                    {
-                      project.tasks.filter((t) => t.status === "IN_PROGRESS")
-                        .length
-                    }
-                  </div>
-                </div>
-                <div className="bg-gray-800 p-3 rounded-lg">
-                  <div className="text-sm text-gray-400 mb-1">Completed</div>
-                  <div className="text-2xl font-bold text-green-500">
-                    {
-                      project.tasks.filter((t) => t.status === "COMPLETED")
-                        .length
-                    }
-                  </div>
-                </div>
-                <div className="bg-gray-800 p-3 rounded-lg">
-                  <div className="text-sm text-gray-400 mb-1">Not Started</div>
-                  <div className="text-2xl font-bold text-gray-500">
-                    {
-                      project.tasks.filter((t) => t.status === "NOT_STARTED")
-                        .length
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              {project.tasks.length === 0 ? (
-                <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
-                  <ListChecks size={48} className="mx-auto mb-3 opacity-50" />
-                  <p>No tasks found for this project.</p>
-                  <button
-                    className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
-                    onClick={() => setShowTaskEdit(true)}
-                  >
-                    Add your first task
-                  </button>
-                </div>
-              ) : (
-                project.tasks.map((task, index) => (
-                  <TaskItem key={task.id} task={task} index={index} />
-                ))
-              )}
-            </div>
           </div>
-        )}
 
-        {activeTab === "team" && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Team Members</h2>
-              <div className="relative">
-                <button
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                  onClick={() => setMembersMenuOpen(!membersMenuOpen)}
-                  disabled={loadingMember}
-                >
-                  <Plus size={16} className="mr-2" />
-                  Add Member
-                  {loadingMember && (
-                    <span className="ml-2 animate-spin">⟳</span>
-                  )}
-                </button>
-
-                {/* Member Dropdown Menu */}
-                <MemberDropdownMenu
-                  isOpen={membersMenuOpen}
-                  onClose={() => setMembersMenuOpen(false)}
-                  users={allUsers}
-                  onSelect={handleAddMember}
-                  usedUserIds={project.users.map((user) => user.id)}
-                />
+          {/* Project Title and Status */}
+          <div className="mb-6">
+            <div className="flex items-center mb-2">
+              <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
+              <div
+                className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} bg-opacity-20 ${statusInfo.textColor}`}
+              >
+                {statusInfo.text}
               </div>
             </div>
+            <p className="text-gray-300">{project.description}</p>
 
-            {memberError && (
-              <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
-                {memberError}
-              </div>
-            )}
-
-            {project.users.length === 0 ? (
-              <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
-                <Users size={48} className="mx-auto mb-3 opacity-50" />
-                <p>No team members assigned to this project yet.</p>
-                <button
-                  className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
-                  onClick={() => setMembersMenuOpen(true)}
-                >
-                  Add team members
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {project.users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="bg-gray-800 rounded-lg p-3 flex justify-between items-center"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-                        {user.fullName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .substring(0, 2)}
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{user.fullName}</h4>
-                        <p className="text-sm text-gray-400">{user.role}</p>
-                      </div>
-                    </div>
-                    <button
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-700 rounded-full"
-                      onClick={() => handleRemoveMember(user.id)}
-                      disabled={loadingMember}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+            {/* Tags */}
+            {project.tags && project.tags.length > 0 && (
+              <div className="mt-3 flex flex-wrap">
+                {project.tags.map((tag) => (
+                  <TagItem key={tag.id} tag={tag} />
                 ))}
               </div>
             )}
           </div>
-        )}
 
-        {activeTab === "tags" && project.tags && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Project Tags</h2>
-              <div className="relative">
-                <button
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                  onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
-                  disabled={loadingTag}
-                >
-                  <Plus size={16} className="mr-2" />
-                  Add Tag
-                  {loadingTag && <span className="ml-2 animate-spin">⟳</span>}
-                </button>
+          {/* Project Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Timeline</p>
+                  <p className="font-medium">
+                    {formatDate(project.startDate)} -{" "}
+                    {formatDate(project.dueDate)}
+                  </p>
+                </div>
+                <Calendar size={20} className="text-purple-500" />
+              </div>
+            </div>
 
-                {/* Tag Dropdown Menu */}
-                <TagDropdownMenu
-                  isOpen={tagsMenuOpen}
-                  onClose={() => setTagsMenuOpen(false)}
-                  tags={allTags}
-                  onSelect={handleAddTag}
-                  usedTagIds={project.tags.map((tag) => tag.id)}
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
+                  <p className="font-medium">
+                    {daysRemaining > 0
+                      ? `${daysRemaining} days left`
+                      : daysRemaining === 0
+                      ? "Due today"
+                      : `${Math.abs(daysRemaining)} days overdue`}
+                  </p>
+                </div>
+                <Clock
+                  size={20}
+                  className={
+                    daysRemaining < 0 ? "text-red-500" : "text-purple-500"
+                  }
                 />
               </div>
             </div>
 
-            {tagError && (
-              <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
-                {tagError}
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Team Members</p>
+                  <p className="font-medium">{project.users.length} members</p>
+                </div>
+                <Users size={20} className="text-purple-500" />
               </div>
-            )}
+            </div>
 
-            {project.tags.length === 0 ? (
-              <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
-                <Tag size={48} className="mx-auto mb-3 opacity-50" />
-                <p>No tags assigned to this project yet.</p>
-                <button
-                  className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
-                  onClick={() => setTagsMenuOpen(true)}
-                >
-                  Add your first tag
-                </button>
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Tasks Progress</p>
+                  <p className="font-medium">
+                    {project.totalCompletedTasks}/{project.totalTasks} completed
+                  </p>
+                </div>
+                <ListChecks size={20} className="text-purple-500" />
               </div>
-            ) : (
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="flex flex-wrap">
-                  {project.tags.map((tag) => (
-                    <div
-                      key={tag.id}
-                      className="flex items-center justify-between bg-gray-700 rounded-lg p-3 mr-4 mb-4"
-                      style={{ borderLeft: `4px solid ${tag.color}` }}
-                    >
-                      <div className="flex items-center">
-                        <div
-                          className="w-4 h-4 rounded-full mr-2"
-                          style={{ backgroundColor: tag.color }}
-                        ></div>
-                        <span>{tag.name}</span>
-                      </div>
-                      <div className="flex space-x-2 ml-4">
-                        <button
-                          className="p-1 hover:bg-gray-600 rounded"
-                          onClick={() => handleRemoveTag(tag.id)}
-                          disabled={loadingTag}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+              <div className="mt-2 w-full bg-gray-700 rounded-full h-2.5">
+                <div
+                  className="bg-purple-600 h-2.5 rounded-full"
+                  style={{ width: `${project.progress}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="border-b border-gray-700 mb-6">
+            <div className="flex overflow-x-auto hide-scrollbar">
+              <Tab
+                icon={<ListChecks size={18} />}
+                label="Tasks"
+                active={activeTab === "tasks"}
+                onClick={() => setActiveTab("tasks")}
+              />
+              <Tab
+                icon={<Users size={18} />}
+                label="Team"
+                active={activeTab === "team"}
+                onClick={() => setActiveTab("team")}
+              />
+              {project.tags && project.tags.length > 0 && (
+                <Tab
+                  icon={<Tag size={18} />}
+                  label="Tags"
+                  active={activeTab === "tags"}
+                  onClick={() => setActiveTab("tags")}
+                />
+              )}
+              <Tab
+                icon={<PieChart size={18} />}
+                label="Analytics"
+                active={activeTab === "analytics"}
+                onClick={() => setActiveTab("analytics")}
+              />
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="mb-6">
+            {activeTab === "tasks" && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Project Tasks</h2>
+                  <button
+                    className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                    onClick={() => setShowTaskEdit(true)}
+                  >
+                    <Plus size={16} className="mr-2" />
+                    Add Task
+                  </button>
+                </div>
+
+                <div className="mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+                    <div className="bg-gray-800 p-3 rounded-lg">
+                      <div className="text-sm text-gray-400 mb-1">Total</div>
+                      <div className="text-2xl font-bold">
+                        {project.totalTasks}
                       </div>
                     </div>
-                  ))}
+                    <div className="bg-gray-800 p-3 rounded-lg">
+                      <div className="text-sm text-gray-400 mb-1">
+                        In Progress
+                      </div>
+                      <div className="text-2xl font-bold text-blue-500">
+                        {
+                          project.tasks.filter(
+                            (t) => t.status === "IN_PROGRESS"
+                          ).length
+                        }
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 p-3 rounded-lg">
+                      <div className="text-sm text-gray-400 mb-1">
+                        Completed
+                      </div>
+                      <div className="text-2xl font-bold text-green-500">
+                        {
+                          project.tasks.filter((t) => t.status === "COMPLETED")
+                            .length
+                        }
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 p-3 rounded-lg">
+                      <div className="text-sm text-gray-400 mb-1">
+                        Not Started
+                      </div>
+                      <div className="text-2xl font-bold text-gray-500">
+                        {
+                          project.tasks.filter(
+                            (t) => t.status === "NOT_STARTED"
+                          ).length
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  {project.tasks.length === 0 ? (
+                    <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
+                      <ListChecks
+                        size={48}
+                        className="mx-auto mb-3 opacity-50"
+                      />
+                      <p>No tasks found for this project.</p>
+                      <button
+                        className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
+                        onClick={() => setShowTaskEdit(true)}
+                      >
+                        Add your first task
+                      </button>
+                    </div>
+                  ) : (
+                    project.tasks.map((task, index) => (
+                      <TaskItem
+                        key={task.id}
+                        task={{ ...task, projectId: project.id }}
+                        onTaskDeleted={handleTaskDeleted}
+                        index={index}
+                        onTaskDetail={openTaskDetail}
+                      />
+                    ))
+                  )}
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {activeTab === "analytics" && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Project Analytics</h2>
+            {activeTab === "team" && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Team Members</h2>
+                  <div className="relative">
+                    <button
+                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                      onClick={() => setMembersMenuOpen(!membersMenuOpen)}
+                      disabled={loadingMember}
+                    >
+                      <Plus size={16} className="mr-2" />
+                      Add Member
+                      {loadingMember && (
+                        <span className="ml-2 animate-spin">⟳</span>
+                      )}
+                    </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="font-medium mb-4">Task Status Distribution</h3>
-                <div className="flex items-center h-60 justify-center text-center">
-                  <div className="text-gray-400">
-                    <PieChart size={100} className="mx-auto mb-3 opacity-50" />
-                    <p>Task status chart visualization would appear here</p>
+                    {/* Member Dropdown Menu */}
+                    <MemberDropdownMenu
+                      isOpen={membersMenuOpen}
+                      onClose={() => setMembersMenuOpen(false)}
+                      users={allUsers}
+                      onSelect={handleAddMember}
+                      usedUserIds={project.users.map((user) => user.id)}
+                    />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span className="text-sm">
-                      Completed ({project.totalCompletedTasks})
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                    <span className="text-sm">
-                      In Progress (
-                      {
-                        project.tasks.filter((t) => t.status === "IN_PROGRESS")
-                          .length
-                      }
-                      )
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-gray-500 mr-2"></div>
-                    <span className="text-sm">
-                      Not Started (
-                      {
-                        project.tasks.filter((t) => t.status === "NOT_STARTED")
-                          .length
-                      }
-                      )
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    <span className="text-sm">
-                      On Hold (
-                      {
-                        project.tasks.filter((t) => t.status === "ON_HOLD")
-                          .length
-                      }
-                      )
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span className="text-sm">
-                      Over Due (
-                      {
-                        project.tasks.filter((t) => t.status === "OVER_DUE")
-                          .length
-                      }
-                      )
-                    </span>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="font-medium mb-4">Priority Distribution</h3>
-                <div className="flex items-center h-60 justify-center text-center">
-                  <div className="text-gray-400">
-                    <PieChart size={100} className="mx-auto mb-3 opacity-50" />
-                    <p>Priority distribution chart would appear here</p>
+                {memberError && (
+                  <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
+                    {memberError}
                   </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span className="text-sm">
-                      High (
-                      {
-                        project.tasks.filter((t) => t.priority === "HIGH")
-                          .length
-                      }
-                      )
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    <span className="text-sm">
-                      Medium (
-                      {
-                        project.tasks.filter((t) => t.priority === "MEDIUM")
-                          .length
-                      }
-                      )
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span className="text-sm">
-                      Low (
-                      {project.tasks.filter((t) => t.priority === "LOW").length}
-                      )
-                    </span>
-                  </div>
-                </div>
-              </div>
+                )}
 
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="font-medium mb-4">Project Timeline</h3>
-                <div className="flex items-center h-60 justify-center text-center">
-                  <div className="text-gray-400">
-                    <Calendar size={100} className="mx-auto mb-3 opacity-50" />
-                    <p>Project timeline chart would appear here</p>
+                {project.managerId && (
+                  <div className="mb-4">
+                    <h3 className="text-md font-medium mb-3 text-purple-400 flex items-center">
+                      <Shield size={16} className="mr-2" />
+                      Project Manager
+                    </h3>
+                    <div className="bg-purple-900 bg-opacity-30 border border-purple-800 rounded-lg p-3">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-3">
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
+                            {project.managerName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .substring(0, 2)}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-lg">
+                              {project.managerName}
+                            </h4>
+                            {/* Tạm thời bỏ qua position và department nếu không có */}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )}
 
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Task Ownership</h3>
-                <div className="text-sm text-gray-400 mb-4">
-                  Distribution of tasks among team members
-                </div>
+                <h3 className="text-md font-medium mb-3 flex items-center">
+                  <Users size={16} className="mr-2" />
+                  Team Members
+                </h3>
 
                 {project.users.length === 0 ? (
-                  <div className="text-center py-6 text-gray-400">
-                    <Users size={32} className="mx-auto mb-3 opacity-50" />
-                    <p>No team members assigned yet</p>
+                  <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
+                    <Users size={48} className="mx-auto mb-3 opacity-50" />
+                    <p>No team members assigned to this project yet.</p>
+                    <button
+                      className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
+                      onClick={() => setMembersMenuOpen(true)}
+                    >
+                      Add team members
+                    </button>
                   </div>
                 ) : (
-                  project.users.map((user) => {
-                    // This would need real task assignment data,
-                    // currently mocking up for visualization
-                    const userTasks = [];
-                    const completedTasks = [];
-                    const percentage = 0;
-
-                    return (
-                      <div key={user.id} className="mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center">
-                            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {project.users
+                      .filter((user) => user.id !== project.managerId)
+                      .map((user) => (
+                        <div
+                          key={user.id}
+                          className="bg-gray-800 rounded-lg p-3 flex justify-between items-center"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
                               {user.fullName
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")
                                 .substring(0, 2)}
                             </div>
-                            <span>{user.fullName}</span>
+                            <div>
+                              <h4 className="font-medium">{user.fullName}</h4>
+                              <p className="text-sm text-gray-400">
+                                {user.position}
+                              </p>
+                            </div>
                           </div>
-                          <span className="text-sm">0/0 tasks</span>
+                          <button
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-700 rounded-full"
+                            onClick={() => handleRemoveMember(user.id)}
+                            disabled={loadingMember}
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2">
-                          <div
-                            className="bg-purple-600 h-2 rounded-full"
-                            style={{ width: `0%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    );
-                  })
+                      ))}
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
-        )}
-      </div>
+            )}
 
-      {/* Footer */}
-      <div className="mt-8 pt-6 border-t border-gray-700">
-        <div className="flex justify-between text-sm text-gray-400">
-          <div className="flex space-x-2">
-            <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded flex items-center">
-              <Download size={14} className="mr-1" />
-              Export
-            </button>
-            <button className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded flex items-center">
-              <FileText size={14} className="mr-1" />
-              Report
-            </button>
+            {activeTab === "tags" && project.tags && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Project Tags</h2>
+                  <div className="relative">
+                    <button
+                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                      onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
+                      disabled={loadingTag}
+                    >
+                      <Plus size={16} className="mr-2" />
+                      Add Tag
+                      {loadingTag && (
+                        <span className="ml-2 animate-spin">⟳</span>
+                      )}
+                    </button>
+
+                    {/* Tag Dropdown Menu */}
+                    <TagDropdownMenu
+                      isOpen={tagsMenuOpen}
+                      onClose={() => setTagsMenuOpen(false)}
+                      tags={allTags}
+                      onSelect={handleAddTag}
+                      usedTagIds={project.tags.map((tag) => tag.id)}
+                    />
+                  </div>
+                </div>
+
+                {tagError && (
+                  <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
+                    {tagError}
+                  </div>
+                )}
+
+                {project.tags.length === 0 ? (
+                  <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
+                    <Tag size={48} className="mx-auto mb-3 opacity-50" />
+                    <p>No tags assigned to this project yet.</p>
+                    <button
+                      className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
+                      onClick={() => setTagsMenuOpen(true)}
+                    >
+                      Add your first tag
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <div className="flex flex-wrap">
+                      {project.tags.map((tag) => (
+                        <div
+                          key={tag.id}
+                          className="flex items-center justify-between bg-gray-700 rounded-lg p-3 mr-4 mb-4"
+                          style={{ borderLeft: `4px solid ${tag.color}` }}
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className="w-4 h-4 rounded-full mr-2"
+                              style={{ backgroundColor: tag.color }}
+                            ></div>
+                            <span>{tag.name}</span>
+                          </div>
+                          <div className="flex space-x-2 ml-4">
+                            <button
+                              className="p-1 hover:bg-gray-600 rounded"
+                              onClick={() => handleRemoveTag(tag.id)}
+                              disabled={loadingTag}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "analytics" && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">
+                  Project Analytics
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="font-medium mb-4">
+                      Task Status Distribution
+                    </h3>
+                    <div className="flex items-center h-60 justify-center text-center">
+                      <div className="text-gray-400">
+                        <PieChart
+                          size={100}
+                          className="mx-auto mb-3 opacity-50"
+                        />
+                        <p>Task status chart visualization would appear here</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                        <span className="text-sm">
+                          Completed ({project.totalCompletedTasks})
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                        <span className="text-sm">
+                          In Progress (
+                          {
+                            project.tasks.filter(
+                              (t) => t.status === "IN_PROGRESS"
+                            ).length
+                          }
+                          )
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-gray-500 mr-2"></div>
+                        <span className="text-sm">
+                          Not Started (
+                          {
+                            project.tasks.filter(
+                              (t) => t.status === "NOT_STARTED"
+                            ).length
+                          }
+                          )
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                        <span className="text-sm">
+                          On Hold (
+                          {
+                            project.tasks.filter((t) => t.status === "ON_HOLD")
+                              .length
+                          }
+                          )
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                        <span className="text-sm">
+                          Over Due (
+                          {
+                            project.tasks.filter((t) => t.status === "OVER_DUE")
+                              .length
+                          }
+                          )
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="font-medium mb-4">Priority Distribution</h3>
+                    <div className="flex items-center h-60 justify-center text-center">
+                      <div className="text-gray-400">
+                        <PieChart
+                          size={100}
+                          className="mx-auto mb-3 opacity-50"
+                        />
+                        <p>Priority distribution chart would appear here</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                        <span className="text-sm">
+                          High (
+                          {
+                            project.tasks.filter((t) => t.priority === "HIGH")
+                              .length
+                          }
+                          )
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                        <span className="text-sm">
+                          Medium (
+                          {
+                            project.tasks.filter((t) => t.priority === "MEDIUM")
+                              .length
+                          }
+                          )
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                        <span className="text-sm">
+                          Low (
+                          {
+                            project.tasks.filter((t) => t.priority === "LOW")
+                              .length
+                          }
+                          )
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="font-medium mb-4">Project Timeline</h3>
+                    <div className="flex items-center h-60 justify-center text-center">
+                      <div className="text-gray-400">
+                        <Calendar
+                          size={100}
+                          className="mx-auto mb-3 opacity-50"
+                        />
+                        <p>Project timeline chart would appear here</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="font-medium mb-2">Task Ownership</h3>
+                    <div className="text-sm text-gray-400 mb-4">
+                      Distribution of tasks among team members
+                    </div>
+
+                    {project.users.length === 0 ? (
+                      <div className="text-center py-6 text-gray-400">
+                        <Users size={32} className="mx-auto mb-3 opacity-50" />
+                        <p>No team members assigned yet</p>
+                      </div>
+                    ) : (
+                      project.users.map((user) => {
+                        // This would need real task assignment data,
+                        // currently mocking up for visualization
+                        const userTasks = [];
+                        const completedTasks = [];
+                        const percentage = 0;
+
+                        return (
+                          <div key={user.id} className="mb-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center">
+                                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
+                                  {user.fullName
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .substring(0, 2)}
+                                </div>
+                                <span>{user.fullName}</span>
+                              </div>
+                              <span className="text-sm">0/0 tasks</span>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-purple-600 h-2 rounded-full"
+                                style={{ width: `0%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Confirmation Dialog for Deleting Project */}
+          {deleteConfirm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+              <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
+                <h2 className="text-xl font-bold mb-4">Delete Project</h2>
+                <p className="text-gray-300 mb-6">
+                  Are you sure you want to delete this project? This action
+                  cannot be undone.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
+                    onClick={() => setDeleteConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
+                    onClick={handleDeleteProject}
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Toast Notification */}
+          {toast && (
+            <div
+              className={`fixed bottom-4 right-4 ${
+                toast.type === "success" ? "bg-green-600" : "bg-red-600"
+              } text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+            >
+              {toast.type === "success" ? (
+                <CheckCircle size={20} />
+              ) : (
+                <AlertTriangle size={20} />
+              )}
+              <span>{toast.message}</span>
+              <button
+                onClick={() => setToast(null)}
+                className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 

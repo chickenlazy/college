@@ -3,7 +3,7 @@ import {
   Save,
   X,
   Calendar,
-  Clock,
+  ChevronDown,
   User,
   Flag,
   ListChecks,
@@ -271,6 +271,7 @@ const Subtask = ({ subtask, onChange, onRemove, users }) => {
   );
 };
 
+
 const TaskEdit = ({
   task: initialTask = null, // Sử dụng initialTask với giá trị mặc định là null
   isNew = false,
@@ -295,26 +296,17 @@ const TaskEdit = ({
           status: "NOT_STARTED",
           priority: "MEDIUM",
           progress: 0,
-          subtasks: [], // Khởi tạo mảng rỗng
-          dependencies: [], // Khởi tạo mảng rỗng
-          tags: [], // Khởi tạo mảng rỗng
         }
       : {
           ...initialTask,
-          subtasks: initialTask.subtasks || [], // Đảm bảo subtasks luôn là mảng
-          dependencies: initialTask.dependencies || [], // Đảm bảo dependencies luôn là mảng
-          tags: initialTask.tags || [], // Đảm bảo tags luôn là mảng
         }
   );
 
   const [loading, setLoading] = useState(!isNew && !initialTask);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
-  const [tagsMenuOpen, setTagsMenuOpen] = useState(false);
-  const [dependenciesMenuOpen, setDependenciesMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [newSubtask, setNewSubtask] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
@@ -374,11 +366,14 @@ const TaskEdit = ({
           setTask({
             ...taskData,
             // Chuyển đổi startDate và dueDate sang định dạng yyyy-MM-dd
-            startDate: taskData.startDate ? new Date(taskData.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString().split('T')[0] : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
-            subtasks: taskData.subtasks || [],
-            dependencies: taskData.dependencies || [],
-            tags: taskData.tags || []
+            startDate: taskData.startDate
+              ? new Date(taskData.startDate).toISOString().split("T")[0]
+              : new Date().toISOString().split("T")[0],
+            dueDate: taskData.dueDate
+              ? new Date(taskData.dueDate).toISOString().split("T")[0]
+              : new Date(new Date().setMonth(new Date().getMonth() + 1))
+                  .toISOString()
+                  .split("T")[0],
           });
         }
 
@@ -448,181 +443,6 @@ const TaskEdit = ({
     setAssigneeMenuOpen(false);
   };
 
-  const handleAddTag = (tag) => {
-    // Check if tag is already in the task
-    if (!task.tags.find((t) => t.id === tag.id)) {
-      setTask({
-        ...task,
-        tags: [...task.tags, tag],
-      });
-    }
-    setTagsMenuOpen(false);
-  };
-
-  const handleRemoveTag = (tagId) => {
-    setTask({
-      ...task,
-      tags: task.tags.filter((tag) => tag.id !== tagId),
-    });
-  };
-
-  const handleAddDependency = (dependency) => {
-    // Check if dependency is already in the task
-    if (!task.dependencies.find((d) => d.id === dependency.id)) {
-      setTask({
-        ...task,
-        dependencies: [...task.dependencies, dependency],
-      });
-    }
-    setDependenciesMenuOpen(false);
-  };
-
-  const handleRemoveDependency = (dependencyId) => {
-    setTask({
-      ...task,
-      dependencies: task.dependencies.filter((dep) => dep.id !== dependencyId),
-    });
-  };
-
-  const handleAddSubtask = async () => {
-    if (newSubtask.trim() !== "") {
-      const newSubtaskObj = {
-        name: newSubtask.trim(),
-        completed: false,
-        taskId: task.id, // Gửi taskId từ task hiện tại
-        assigneeId: null, // Giả sử assigneeId là null cho subtask mới
-      };
-  
-      try {
-        // Nếu là task mới, không gửi Subtask ngay mà chỉ thêm tạm thời vào state
-        if (isNew) {
-          setTask({
-            ...task,
-            subtasks: [...task.subtasks, newSubtaskObj], // Thêm tạm thời vào state
-          });
-          setNewSubtask(""); // Xóa nội dung ô input
-          return; // Không cần gửi yêu cầu POST ngay khi task mới
-        }
-  
-        // Gửi yêu cầu POST để thêm subtask mới
-        const storedUser = localStorage.getItem("user");
-        let token = null;
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          token = user.accessToken;
-        }
-  
-        const response = await fetch("http://localhost:8080/api/subtasks", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(newSubtaskObj),
-        });
-  
-        if (!response.ok) {
-          throw new Error("Failed to add subtask");
-        }
-  
-        const subtaskData = await response.json();
-  
-        // Cập nhật task với subtask mới
-        setTask({
-          ...task,
-          subtasks: [...task.subtasks, subtaskData], // Thêm subtask mới vào task
-        });
-  
-        setNewSubtask(""); // Xóa nội dung ô input
-      } catch (error) {
-        console.error("Error adding subtask:", error);
-        alert(`Error: ${error.message}`);
-      }
-    }
-  };
-  
-  
-  
-
-  const handleSubtaskChange = async (subtaskId, completed) => {
-    try {
-      // Gửi yêu cầu PUT để toggle trạng thái subtask
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
-  
-      const response = await fetch(`http://localhost:8080/api/subtasks/${subtaskId}/toggle`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error("Failed to toggle subtask completion");
-      }
-  
-      // Cập nhật trạng thái subtask trong state
-      setTask({
-        ...task,
-        subtasks: task.subtasks.map((subtask) =>
-          subtask.id === subtaskId ? { ...subtask, completed } : subtask
-        ),
-      });
-    } catch (error) {
-      console.error("Error toggling subtask completion:", error);
-      alert(`Error: ${error.message}`);
-    }
-  };
-  
-
-  const handleRemoveSubtask = async (subtaskId) => {
-    try {
-      // Gửi yêu cầu DELETE tới API
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
-  
-      const response = await fetch(`http://localhost:8080/api/subtasks/${subtaskId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error("Failed to delete subtask");
-      }
-  
-      // Cập nhật state sau khi xóa thành công
-      setTask({
-        ...task,
-        subtasks: task.subtasks.filter((subtask) => subtask.id !== subtaskId),
-      });
-    } catch (error) {
-      console.error("Error deleting subtask:", error);
-      alert(`Error: ${error.message}`);
-    }
-  };
-  
-
-  const calculateProgress = () => {
-    if (!task.subtasks || task.subtasks.length === 0) {
-      return task.progress || 0;
-    }
-
-    const completedCount = task.subtasks.filter(
-      (subtask) => subtask.completed
-    ).length;
-    return Math.round((completedCount / task.subtasks.length) * 100);
-  };
-
   const validateForm = () => {
     const errors = {};
 
@@ -647,13 +467,14 @@ const TaskEdit = ({
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!validateForm()) {
       return;
     }
-  
+
     try {
       const storedUser = localStorage.getItem("user");
       let token = null;
@@ -661,16 +482,9 @@ const TaskEdit = ({
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
+
       setSubmitting(true);
-  
-      // Prepare subtask requests
-      const subtaskRequests = task.subtasks.map((subtask) => ({
-        name: subtask.name,
-        completed: subtask.completed,
-        assigneeId: subtask.assigneeId || null,
-      }));
-  
+
       // Prepare request payload
       const payload = {
         name: task.name,
@@ -680,20 +494,14 @@ const TaskEdit = ({
         status: task.status,
         priority: task.priority,
         projectId: task.projectId,
-        subtaskRequests,
       };
-  
-      // If task has an assignee, add it to the payload
-      if (task.assigneeId) {
-        payload.assigneeId = task.assigneeId;
-      }
-  
+
       const url = isNew
         ? "http://localhost:8080/api/tasks"
         : `http://localhost:8080/api/tasks/${task.id}`;
-  
+
       const method = isNew ? "POST" : "PUT";
-  
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -702,14 +510,14 @@ const TaskEdit = ({
         },
         body: JSON.stringify(payload),
       });
-  
+
       if (!response.ok) {
         throw new Error(`Failed to ${isNew ? "create" : "update"} task`);
       }
-  
+
       const result = await response.json();
       console.log(`Task ${isNew ? "created" : "updated"}:`, result);
-  
+
       alert(`Task ${isNew ? "created" : "updated"} successfully!`);
       onBack();
     } catch (error) {
@@ -719,7 +527,6 @@ const TaskEdit = ({
       setSubmitting(false);
     }
   };
-  
 
   const handleDelete = async () => {
     try {
@@ -772,7 +579,7 @@ const TaskEdit = ({
           onClick={onBack}
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back to Project Detail</span>
+          <span>Back</span>
         </button>
 
         <h1 className="text-xl font-bold">
@@ -967,117 +774,11 @@ const TaskEdit = ({
                     </select>
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-gray-400 mb-1">Assignee</label>
-                  <div className="relative">
-                    <div
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white cursor-pointer flex justify-between items-center"
-                      onClick={() => setAssigneeMenuOpen(!assigneeMenuOpen)}
-                    >
-                      {task.assigneeId ? (
-                        <div className="flex items-center">
-                          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
-                            {task.assigneeName
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </div>
-                          <span>{task.assigneeName}</span>
-                        </div>
-                      ) : (
-                        <span>Unassigned</span>
-                      )}
-                      <User size={18} className="text-gray-400" />
-                    </div>
-                    <DropdownMenu
-                      isOpen={assigneeMenuOpen}
-                      onClose={() => setAssigneeMenuOpen(false)}
-                      title="Select Assignee"
-                    >
-                      <div className="space-y-1">
-                        {users.map((user) => (
-                          <UserOption
-                            key={user.id}
-                            user={user}
-                            isSelected={user.id === task.assigneeId}
-                            onSelect={handleAssigneeSelect}
-                          />
-                        ))}
-                      </div>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Subtasks Section */}
-            <div className="bg-gray-800 rounded-lg p-4">
-              <h2 className="text-lg font-semibold mb-4">Subtasks</h2>
-
-              <div className="mb-4 flex">
-                <input
-                  type="text"
-                  value={newSubtask}
-                  onChange={(e) => setNewSubtask(e.target.value)}
-                  className="flex-1 bg-gray-700 border border-gray-600 rounded-l-md py-2 px-3 text-white"
-                  placeholder="Add a subtask"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddSubtask();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-r-md"
-                  onClick={handleAddSubtask}
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
-
-              <div>
-                {task.subtasks.length === 0 ? (
-                  <p className="text-gray-400 text-sm">
-                    No subtasks added yet.
-                  </p>
-                ) : (
-                  task.subtasks.map((subtask) => (
-                    <Subtask
-                      key={subtask.id}
-                      subtask={subtask}
-                      onChange={handleSubtaskChange}
-                      onRemove={handleRemoveSubtask}
-                      users={users}
-                    />
-                  ))
-                )}
-              </div>
-
-              <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-400 mb-1">
-                  <span>Progress</span>
-                  <span>{calculateProgress()}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full ${
-                      calculateProgress() >= 100
-                        ? "bg-green-500"
-                        : calculateProgress() > 0
-                        ? "bg-blue-500"
-                        : "bg-gray-600"
-                    }`}
-                    style={{ width: `${calculateProgress()}%` }}
-                  ></div>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Tags and Additional Info */}
+          {/* Right Column - Tips and Additional Info */}
           <div className="space-y-6">
             {/* Tips Section */}
             <div className="bg-gray-800 rounded-lg p-4">
@@ -1089,32 +790,8 @@ const TaskEdit = ({
                     className="text-green-500 mt-0.5 mr-2 shrink-0"
                   />
                   <p>
-                    Break down complex tasks into smaller subtasks for better
-                    tracking.
+                    Set realistic due dates to ensure timely completion.
                   </p>
-                </div>
-                <div className="flex items-start">
-                  <Check
-                    size={16}
-                    className="text-green-500 mt-0.5 mr-2 shrink-0"
-                  />
-                  <p>Set realistic due dates to ensure timely completion.</p>
-                </div>
-                <div className="flex items-start">
-                  <Check
-                    size={16}
-                    className="text-green-500 mt-0.5 mr-2 shrink-0"
-                  />
-                  <p>
-                    Add dependencies to maintain the correct workflow sequence.
-                  </p>
-                </div>
-                <div className="flex items-start">
-                  <Check
-                    size={16}
-                    className="text-green-500 mt-0.5 mr-2 shrink-0"
-                  />
-                  <p>Use tags to categorize and easily filter tasks later.</p>
                 </div>
               </div>
             </div>

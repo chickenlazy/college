@@ -39,6 +39,15 @@ public class User {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "department")
+    private String department;  // New field for department
+
+    @Column(name = "address")
+    private String address;  // New field for address
+
+    @Column(name = "position")
+    private String position;  // New field for position
+
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private Role role;

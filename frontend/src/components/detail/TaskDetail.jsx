@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   ChevronLeft,
+  Pause,
   Edit,
   Trash2,
   Clock,
@@ -15,7 +16,7 @@ import {
   Link2,
   Flag,
   MoreVertical,
-  CheckCircle2,
+  ChevronDown,
   X,
   Plus,
 } from "lucide-react";
@@ -29,6 +30,47 @@ const formatDate = (dateString) => {
     month: "short",
     day: "numeric",
   });
+};
+
+const StatusBadge = ({ status }) => {
+  let color;
+  let icon;
+  let displayText = status.replace(/_/g, " ");
+
+  switch (status) {
+    case "NOT_STARTED":
+      color = "bg-gray-200 text-gray-800";
+      icon = <Clock size={16} />;
+      break;
+    case "IN_PROGRESS":
+      color = "bg-blue-200 text-blue-800";
+      icon = <Clock size={16} />;
+      break;
+    case "COMPLETED":
+      color = "bg-green-200 text-green-800";
+      icon = <CheckCircle size={16} />;
+      break;
+    case "OVER_DUE":
+      color = "bg-red-200 text-red-800";
+      icon = <AlertTriangle size={16} />;
+      break;
+    case "ON_HOLD":
+      color = "bg-yellow-200 text-yellow-800";
+      icon = <Pause size={16} />;
+      break;
+    default:
+      color = "bg-gray-200 text-gray-800";
+      icon = <Clock size={16} />;
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${color} whitespace-nowrap min-w-[120px] justify-center`}
+    >
+      {icon}
+      <span>{displayText}</span>
+    </span>
+  );
 };
 
 // Format datetime for display
@@ -336,23 +378,36 @@ const MemberDropdownMenu = ({ isOpen, onClose, users, onSelect }) => {
   );
 };
 
-const TaskDetail = ({ task, onBack }) => {
+const TaskDetail = ({ task: initialTask, onBack }) => {
+  const [task, setTask] = useState(initialTask);
   const [activeTab, setActiveTab] = useState("details");
   const [showAddComment, setShowAddComment] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
   const [showAddSubtask, setShowAddSubtask] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [subtasks, setSubtasks] = useState(task.subTasks || []);
+  const [subtasks, setSubtasks] = useState(initialTask.subTasks || []);
   const [allUsers, setAllUsers] = useState([]);
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    taskId: null,
+  });
+
+  // Thêm hàm showToast
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
-  };  
+  };
 
+  // Trong component TaskDetail, useEffect đang thiếu phần mảng dependencies
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
@@ -362,7 +417,7 @@ const TaskDetail = ({ task, onBack }) => {
           const user = JSON.parse(storedUser);
           token = user.accessToken;
         }
-    
+
         const response = await axios.get("http://localhost:8080/api/users", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -373,10 +428,9 @@ const TaskDetail = ({ task, onBack }) => {
         console.error("Error fetching users:", error);
       }
     };
-    
 
     fetchAllUsers();
-  }, []);
+  }, []); // Đã có mảng dependencies nhưng không có vấn đề
 
   if (!task) {
     return (
@@ -388,7 +442,7 @@ const TaskDetail = ({ task, onBack }) => {
           onClick={onBack}
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
         >
-          Back to Tasks
+          Back
         </button>
       </div>
     );
@@ -399,21 +453,24 @@ const TaskDetail = ({ task, onBack }) => {
   const daysRemaining = getDaysRemaining(task.dueDate);
 
   if (isEditing) {
-    return <TaskEdit 
-      task={task} 
-      onBack={() => setIsEditing(false)} 
-      isNew={false}  // Thêm prop này để biết đang edit task đã tồn tại
-      taskId={task.id}  // Truyền ID của task để fetch chi tiết
-    />;
+    return (
+      <TaskEdit
+        task={task}
+        onBack={() => setIsEditing(false)}
+        isNew={false} // Thêm prop này để biết đang edit task đã tồn tại
+        taskId={task.id} // Truyền ID của task để fetch chi tiết
+      />
+    );
   }
 
   // Thêm subtask
+  // Thêm subtask
   const handleAddSubtask = async () => {
     if (!newSubtask.trim() || !selectedAssignee) {
-      alert("Vui lòng nhập tên subtask và chọn người được giao");
+      showToast("Please enter subtask name and select an assignee", "error");
       return;
     }
-  
+
     try {
       const storedUser = localStorage.getItem("user");
       let token = null;
@@ -421,8 +478,8 @@ const TaskDetail = ({ task, onBack }) => {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
-      const response = await axios.post(
+
+      await axios.post(
         "http://localhost:8080/api/subtasks",
         {
           name: newSubtask,
@@ -436,17 +493,30 @@ const TaskDetail = ({ task, onBack }) => {
           },
         }
       );
-  
-      // Thêm subtask mới vào danh sách
-      setSubtasks([...subtasks, response.data]);
+
+      // Lấy dữ liệu task mới sau khi thêm subtask
+      const taskResponse = await axios.get(
+        `http://localhost:8080/api/tasks/${task.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Cập nhật cả task và subtasks
+      // Trong hàm handleAddSubtask
+      setTask(taskResponse.data);
+      setSubtasks(taskResponse.data.subTasks || []);
       setNewSubtask("");
       setSelectedAssignee(null);
       setShowAddSubtask(false);
+      showToast("Subtask added successfully", "success");
     } catch (error) {
       console.error("Error adding subtask:", error);
+      showToast("Failed to add subtask", "error");
     }
   };
-  
 
   const handleToggleSubtask = async (subtaskId) => {
     try {
@@ -456,26 +526,64 @@ const TaskDetail = ({ task, onBack }) => {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
-      await axios.patch(
+
+      const response = await fetch(
         `http://localhost:8080/api/subtasks/${subtaskId}/toggle`,
-        // Thêm header Authorization
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to toggle subtask completion");
+      }
+
+      // Lấy dữ liệu task mới sau khi toggle subtask
+      const taskResponse = await axios.get(
+        `http://localhost:8080/api/tasks/${task.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-  
-      // Cập nhật trạng thái subtask trong state
-      const updatedSubtasks = subtasks.map((subtask) =>
-        subtask.id === subtaskId
-          ? { ...subtask, completed: !subtask.completed }
-          : subtask
-      );
-      setSubtasks(updatedSubtasks);
+
+      // Cập nhật cả task và subtasks
+      setTask(taskResponse.data);
+      setSubtasks(taskResponse.data.subTasks || []);
     } catch (error) {
       console.error("Error toggling subtask:", error);
+      showToast("Failed to update subtask", "error");
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      await axios.delete(
+        `http://localhost:8080/api/tasks/${deleteConfirm.taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Quay lại và báo hiệu cần refresh dữ liệu
+      onBack(true);
+      showToast("Task deleted successfully", "success");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      showToast("Failed to delete task", "error");
     }
   };
 
@@ -487,85 +595,48 @@ const TaskDetail = ({ task, onBack }) => {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
+
       await axios.delete(`http://localhost:8080/api/subtasks/${subtaskId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
-      // Loại bỏ subtask khỏi danh sách
-      const updatedSubtasks = subtasks.filter(
-        (subtask) => subtask.id !== subtaskId
+
+      // Lấy dữ liệu task mới sau khi xóa subtask
+      const taskResponse = await axios.get(
+        `http://localhost:8080/api/tasks/${task.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      setSubtasks(updatedSubtasks);
+
+      // Cập nhật cả task và subtasks
+      setTask(taskResponse.data);
+      setSubtasks(taskResponse.data.subTasks || []);
+      showToast("Subtask deleted successfully", "success");
     } catch (error) {
       console.error("Error deleting subtask:", error);
+      showToast("Failed to delete subtask", "error");
     }
   };
-  
 
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <button
-          onClick={onBack}
+          onClick={() => onBack(true)} // Thêm tham số true để báo hiệu cần refresh
           className="flex items-center text-gray-400 hover:text-white"
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back to Project</span>
+          <span>Back</span>
         </button>
 
         <div className="flex space-x-2">
           {/* Replace the "Mark Complete" button */}
-<div className="relative">
-  <button 
-    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
-    onClick={() => setStatusMenuOpen(!statusMenuOpen)}
-  >
-    <Clock size={16} className="mr-2" />
-    Update Status
-  </button>
-  {statusMenuOpen && (
-  <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-10">
-    {['COMPLETED', 'IN_PROGRESS', 'NOT_STARTED', 'OVER_DUE', 'ON_HOLD'].map(status => (
-      <div
-        key={status} 
-        className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-        onClick={async () => {
-          try {
-            const storedUser = localStorage.getItem("user");
-            let token = null;
-            if (storedUser) {
-              const user = JSON.parse(storedUser);
-              token = user.accessToken;
-            }
-
-            await axios.patch(
-              `http://localhost:8080/api/tasks/${task.id}/status?status=${status}`,
-              {}, // body rỗng nếu không cần gửi dữ liệu
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-            // Refresh task data after updating status
-            // You can fetch the updated task here and update the state
-          } catch (error) {
-            console.error('Error updating task status:', error);  
-          }
-          setStatusMenuOpen(false);
-        }}
-      >
-        {status.replace('_', ' ')}
-      </div>
-    ))}
-  </div>
-)}
-
-</div>
+          <div className="relative"></div>
           <button
             className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
             onClick={handleEdit}
@@ -573,33 +644,13 @@ const TaskDetail = ({ task, onBack }) => {
             <Edit size={16} className="mr-2" />
             Edit Task
           </button>
-          <button 
-  className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center"
-  onClick={async () => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
-
-      await axios.delete(`http://localhost:8080/api/tasks/${task.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      // Quay lại trang danh sách task hoặc refresh danh sách
-      onBack();
-    } catch (error) {
-      console.error('Error deleting task:', error);
-    }
-  }}
->
-  <Trash2 size={16} className="mr-2" />
-  Delete
-</button>
+          <button
+            className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center"
+            onClick={() => setDeleteConfirm({ show: true, taskId: task.id })}
+          >
+            <Trash2 size={16} className="mr-2" />
+            Delete
+          </button>
         </div>
       </div>
 
@@ -608,11 +659,81 @@ const TaskDetail = ({ task, onBack }) => {
         <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
           <h1 className="text-2xl font-bold">{task.name}</h1>
           <div className="flex items-center gap-2">
-            <div
-              className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${statusInfo.bgColor} ${statusInfo.textColor}`}
-            >
-              {statusInfo.icon}
-              <span>{statusInfo.text}</span>
+            <div className="relative">
+              <div
+                className="cursor-pointer"
+                onClick={() => setStatusMenuOpen(!statusMenuOpen)}
+              >
+                <div className="flex items-center gap-1">
+                  <StatusBadge status={task.status} />
+                  <ChevronDown size={12} />
+                </div>
+              </div>
+              {statusMenuOpen && (
+                <div className="absolute left-0 mt-1 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700 min-w-[171px] w-auto">
+                  {[
+                    "COMPLETED",
+                    "IN_PROGRESS",
+                    "NOT_STARTED",
+                    "OVER_DUE",
+                    "ON_HOLD",
+                  ].map((status) => (
+                    <div
+                      key={status}
+                      className={`px-3 py-2 rounded-md flex items-center gap-2 cursor-pointer my-1 hover:bg-gray-700 mx-1 ${
+                        task.status === status ? "bg-gray-700" : ""
+                      }`}
+                      onClick={async () => {
+                        try {
+                          const storedUser = localStorage.getItem("user");
+                          let token = null;
+                          if (storedUser) {
+                            const user = JSON.parse(storedUser);
+                            token = user.accessToken;
+                          }
+
+                          await axios.patch(
+                            `http://localhost:8080/api/tasks/${task.id}/status?status=${status}`,
+                            {}, // body rỗng nếu không cần gửi dữ liệu
+                            {
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                              },
+                            }
+                          );
+
+                          // Lấy dữ liệu task mới sau khi cập nhật status
+                          const response = await axios.get(
+                            `http://localhost:8080/api/tasks/${task.id}`,
+                            {
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                              },
+                            }
+                          );
+
+                          // Cập nhật dữ liệu task trong component hiện tại
+                          setTask(response.data);
+                          showToast(
+                            `Task status updated to ${status.replace(
+                              /_/g,
+                              " "
+                            )}`,
+                            "success"
+                          );
+                          setStatusMenuOpen(false);
+                        } catch (error) {
+                          console.error("Error updating task status:", error);
+                          showToast("Failed to update task status", "error");
+                          setStatusMenuOpen(false);
+                        }
+                      }}
+                    >
+                      <StatusBadge status={status} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div
               className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${priorityInfo.bgColor} ${priorityInfo.textColor}`}
@@ -627,42 +748,22 @@ const TaskDetail = ({ task, onBack }) => {
 
       {/* Project and Assignee Info */}
       <div className="bg-gray-800 rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {" "}
+          {/* Thay đổi thành 2 cột thay vì 3 */}
           <div>
             <p className="text-sm text-gray-400 mb-1">Project</p>
             <p className="font-medium">{task.projectName}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-400 mb-1">Assignee</p>
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-2">
-                {task.assigneeName
-                  ? task.assigneeName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                  : "?"}
-              </div>
-              <div>
-                <p className="font-medium">
-                  {task.assigneeName || "Unassigned"}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {task.assigneeRole || ""}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div>
             <p className="text-sm text-gray-400 mb-1">Created by</p>
-            <p className="font-medium">{task.createdBy}</p>
+            <p className="font-medium">{task.createdByName || "Unknown"}</p>
             <p className="text-xs text-gray-400">
-              {formatDateTime(task.createdAt)}
+              {formatDateTime(task.createdDate)}
             </p>
           </div>
         </div>
       </div>
-
       {/* Timeline and Progress */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-800 p-4 rounded-lg">
@@ -709,7 +810,7 @@ const TaskDetail = ({ task, onBack }) => {
           <div className="flex justify-between items-start mb-2">
             <div>
               <p className="text-sm text-gray-400 mb-1">Progress</p>
-              <p className="font-medium">{task.progress}%</p>
+              <p className="font-medium">{task.progress.toFixed(1)}%</p>
             </div>
             <CheckCircle size={20} className="text-purple-500" />
           </div>
@@ -737,18 +838,6 @@ const TaskDetail = ({ task, onBack }) => {
             active={activeTab === "comments"}
             onClick={() => setActiveTab("comments")}
           />
-          <Tab
-            icon={<Paperclip size={18} />}
-            label="Attachments"
-            active={activeTab === "attachments"}
-            onClick={() => setActiveTab("attachments")}
-          />
-          <Tab
-            icon={<Clock size={18} />}
-            label="Activity"
-            active={activeTab === "activity"}
-            onClick={() => setActiveTab("activity")}
-          />
         </div>
       </div>
 
@@ -769,51 +858,122 @@ const TaskDetail = ({ task, onBack }) => {
                 </button>
               </div>
               {showAddSubtask && (
-                <div className="flex items-center mb-3 relative">
-                  <input
-                    type="text"
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-l-md py-2 px-3"
-                    placeholder="Enter subtask name"
-                    value={newSubtask}
-                    onChange={(e) => setNewSubtask(e.target.value)}
-                  />
-                  <div className="relative">
-                    <button
-                      className="px-3 py-2 bg-gray-700 border-t border-b border-gray-700 flex items-center"
-                      onClick={() => setMembersMenuOpen(!membersMenuOpen)}
-                    >
-                      {selectedAssignee ? (
-                        <div className="flex items-center">
-                          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs mr-2">
-                            {selectedAssignee.fullName
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .substring(0, 2)}
-                          </div>
-                          <span>{selectedAssignee.fullName}</span>
-                        </div>
-                      ) : (
-                        <span>Select Assignee</span>
-                      )}
-                    </button>
-                    <MemberDropdownMenu
-                      isOpen={membersMenuOpen}
-                      onClose={() => setMembersMenuOpen(false)}
-                      users={allUsers}
-                      onSelect={setSelectedAssignee}
+                <div className="bg-gray-800 rounded-lg p-5 mb-4 border border-gray-700">
+                  <h4 className="text-sm font-medium mb-4">New Subtask</h4>
+                  <div className="flex flex-col gap-4">
+                    <input
+                      type="text"
+                      className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
+                      placeholder="Enter subtask name"
+                      value={newSubtask}
+                      onChange={(e) => setNewSubtask(e.target.value)}
                     />
+
+                    <div className="relative">
+                      <button
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md flex items-center justify-between text-left"
+                        onClick={() => setMembersMenuOpen(!membersMenuOpen)}
+                      >
+                        {selectedAssignee ? (
+                          <div className="flex items-center overflow-hidden">
+                            <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm mr-3 flex-shrink-0">
+                              {selectedAssignee.fullName
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .substring(0, 2)}
+                            </div>
+                            <div className="truncate">
+                              <div className="font-medium">
+                                {selectedAssignee.fullName}
+                              </div>
+                              <div className="text-xs text-gray-400 truncate">
+                                {selectedAssignee.position} •{" "}
+                                {selectedAssignee.department}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">Select Assignee</span>
+                        )}
+                        <ChevronDown
+                          size={16}
+                          className="text-gray-400 flex-shrink-0"
+                        />
+                      </button>
+
+                      {membersMenuOpen && (
+                        <div className="absolute left-0 right-0 mt-2 bg-gray-800 rounded-lg border border-gray-700 shadow-lg z-30 max-h-80 overflow-y-auto">
+                          <div className="p-3 border-b border-gray-700 flex justify-between items-center">
+                            <h3 className="font-medium">Select Assignee</h3>
+                            <button
+                              className="p-1 hover:bg-gray-700 rounded-full"
+                              onClick={() => setMembersMenuOpen(false)}
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                          <div className="p-2">
+                            {allUsers.map((user) => (
+                              <div
+                                key={user.id}
+                                className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-md cursor-pointer"
+                                onClick={() => {
+                                  setSelectedAssignee(user);
+                                  setMembersMenuOpen(false);
+                                }}
+                              >
+                                <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                                  {user.fullName
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .substring(0, 2)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">
+                                    {user.fullName}
+                                  </p>
+                                  <div className="flex items-center text-sm text-gray-400 gap-2">
+                                    <span className="truncate">
+                                      {user.position}
+                                    </span>
+                                    <span className="text-gray-500">•</span>
+                                    <span className="truncate">
+                                      {user.department}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 mt-2">
+                      <button
+                        className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
+                        onClick={() => {
+                          setShowAddSubtask(false);
+                          setNewSubtask("");
+                          setSelectedAssignee(null);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 py-3 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleAddSubtask}
+                        disabled={!newSubtask.trim() || !selectedAssignee}
+                      >
+                        Add Subtask
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    className="bg-purple-600 hover:bg-purple-700 py-2 px-4 rounded-r-md"
-                    onClick={handleAddSubtask}
-                    disabled={!selectedAssignee}
-                  >
-                    Add
-                  </button>
                 </div>
               )}
-            
+
               {subtasks.length === 0 ? (
                 <div className="text-center py-4 text-gray-400 bg-gray-800 rounded-lg">
                   <p>No subtasks have been created for this task.</p>
@@ -832,15 +992,23 @@ const TaskDetail = ({ task, onBack }) => {
                           onChange={() => handleToggleSubtask(subtask.id)}
                           className="mr-3 h-4 w-4"
                         />
-                        <span
-                          className={
-                            subtask.completed
-                              ? "line-through text-gray-400"
-                              : ""
-                          }
-                        >
-                          {subtask.name}
-                        </span>
+                        <div>
+                          <span
+                            className={
+                              subtask.completed
+                                ? "line-through text-gray-400"
+                                : ""
+                            }
+                          >
+                            {subtask.name}
+                          </span>
+                          {subtask.assigneeName && (
+                            <div className="text-xs text-gray-400 flex items-center mt-1">
+                              <User size={12} className="mr-1" />
+                              {subtask.assigneeName}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <button
                         className="text-gray-400 hover:text-red-500"
@@ -855,116 +1023,44 @@ const TaskDetail = ({ task, onBack }) => {
             </div>
           </div>
         )}
-
-        {/* thêm điều kiện như subTask */}
-        {/* {activeTab === 'comments' && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Comments</h3>
-              <button 
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                onClick={() => setShowAddComment(!showAddComment)}
-              >
-                <Plus size={16} className="mr-2" />
-                Add Comment
-              </button>
-            </div>
-            
-            {showAddComment && (
-              <div className="bg-gray-800 rounded-lg p-4 mb-6">
-                <textarea
-                  className="w-full bg-gray-700 border border-gray-600 rounded-md p-3 text-white resize-none mb-3"
-                  rows="4"
-                  placeholder="Type your comment here..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                ></textarea>
-                <div className="flex items-center justify-between">
-                  <button className="flex items-center text-gray-400 hover:text-white">
-                    <Paperclip size={16} className="mr-1" />
-                    Attach File
-                  </button>
-                  <div className="flex space-x-2">
-                    <button 
-                      className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded"
-                      onClick={() => {
-                        setCommentText('');
-                        setShowAddComment(false);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded">
-                      Post Comment
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              {task.comments.length === 0 ? (
-                <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
-                  <MessageSquare size={48} className="mx-auto mb-3 opacity-50" />
-                  <p>No comments yet. Be the first to comment!</p>
-                </div>
-              ) : (
-                task.comments.map((comment) => (
-                  <CommentItem key={comment.id} comment={comment} />
-                ))
-              )}
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'attachments' && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Attachments</h3>
-              <button className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center">
-                <Plus size={16} className="mr-2" />
-                Upload File
-              </button>
-            </div>
-            
-            <div className="bg-gray-800 rounded-lg p-4">
-              {task.attachments.length === 0 ? (
-                <div className="text-center py-6 text-gray-400">
-                  <Paperclip size={48} className="mx-auto mb-3 opacity-50" />
-                  <p>No files have been attached to this task.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {task.attachments.map((attachment) => (
-                    <AttachmentItem key={attachment.id} attachment={attachment} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'activity' && (
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Activity Timeline</h3>
-            
-            <div className="bg-gray-800 rounded-lg p-4">
-              {task.activity.length === 0 ? (
-                <div className="text-center py-6 text-gray-400">
-                  <Clock size={48} className="mx-auto mb-3 opacity-50" />
-                  <p>No activity recorded yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-2 mt-4">
-                  {task.activity.map((activity) => (
-                    <ActivityItem key={activity.id} activity={activity} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )} */}
       </div>
+      {/* Thiếu phần hiển thị toast notification */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 px-4 py-2 rounded-md ${
+            toast.type === "success" ? "bg-green-500" : "bg-red-500"
+          } text-white`}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      {/* Modal xác nhận xóa task */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg max-w-md">
+            <h3 className="text-xl font-bold mb-4">Confirm Delete</h3>
+            <p className="mb-6">
+              Are you sure you want to delete this task? This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded"
+                onClick={() => setDeleteConfirm({ show: false, taskId: null })}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
+                onClick={handleDeleteTask}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

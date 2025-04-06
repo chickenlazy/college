@@ -44,6 +44,9 @@ public interface ProjectMapper {
                     userResponse.setFullName(user.getFullName());
                     userResponse.setEmail(user.getEmail());
                     userResponse.setRole(user.getRole());
+                    userResponse.setDepartment(user.getDepartment());  // New field for department
+                    userResponse.setAddress(user.getAddress());        // New field for address
+                    userResponse.setPosition(user.getPosition());
                     return userResponse;
                 })
                 .collect(Collectors.toSet());

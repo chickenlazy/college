@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios"; // Thêm import axios
 import {
   Search,
   Plus,
   Filter,
+  ChevronRight,
+  ChevronsRight,
+  ChevronLeft,
+  ChevronsLeft,
   Clock,
   CheckCircle,
   Calendar,
@@ -16,114 +21,98 @@ import {
   XCircle,
   Check,
   FolderOpen,
-  ListChecks
+  ListChecks,
 } from "lucide-react";
 import TaskEdit from "../edit/TaskEdit";
 import TaskDetail from "../detail/TaskDetail";
 
-// Mock data for self tasks
-const mockTasks = [
-  {
-    id: 1,
-    name: "Complete project proposal",
-    description: "Draft and finalize project proposal for client review",
-    dueDate: "2025-04-01T10:00:00",
-    priority: "HIGH",
-    status: "IN_PROGRESS",
-    project: "Project A",
-    createdAt: "2025-03-15T09:30:00",
-  },
-  {
-    id: 2,
-    name: "Research market trends",
-    description: "Analyze current market trends for quarterly report",
-    dueDate: "2025-03-25T17:00:00",
-    priority: "MEDIUM",
-    status: "NOT_STARTED",
-    project: "Market Analysis",
-    createdAt: "2025-03-10T14:20:00",
-  },
-  {
-    id: 3,
-    name: "Prepare presentation slides",
-    description: "Create slides for next week's client meeting",
-    dueDate: "2025-03-28T09:00:00",
-    priority: "HIGH",
-    status: "NOT_STARTED",
-    project: "Client Presentation",
-    createdAt: "2025-03-18T11:45:00",
-  },
-  {
-    id: 4,
-    name: "Review code changes",
-    description: "Review pull requests and provide feedback",
-    dueDate: "2025-03-23T16:00:00",
-    priority: "MEDIUM",
-    status: "IN_PROGRESS",
-    project: "Development",
-    createdAt: "2025-03-20T08:15:00",
-  },
-  {
-    id: 5,
-    name: "Update documentation",
-    description: "Update user guide with new features",
-    dueDate: "2025-03-30T12:00:00",
-    priority: "LOW",
-    status: "NOT_STARTED",
-    project: "Documentation",
-    createdAt: "2025-03-19T13:40:00",
-  },
-  {
-    id: 6,
-    name: "Fix reported bugs",
-    description: "Address bugs reported in latest release",
-    dueDate: "2025-03-24T15:00:00",
-    priority: "HIGH",
-    status: "IN_PROGRESS",
-    project: "Bug Fixes",
-    createdAt: "2025-03-21T10:20:00",
-  },
-  {
-    id: 7,
-    name: "Client meeting",
-    description: "Weekly progress meeting with client",
-    dueDate: "2025-03-26T13:00:00",
-    priority: "MEDIUM",
-    status: "NOT_STARTED",
-    project: "Client Relations",
-    createdAt: "2025-03-17T16:30:00",
-  },
-  {
-    id: 8,
-    name: "Update project timeline",
-    description: "Revise project timeline based on current progress",
-    dueDate: "2025-03-27T11:00:00",
-    priority: "MEDIUM",
-    status: "NOT_STARTED",
-    project: "Project Management",
-    createdAt: "2025-03-22T09:10:00",
-  },
-  {
-    id: 9,
-    name: "Team sync-up",
-    description: "Daily team sync-up meeting",
-    dueDate: "2025-03-22T09:00:00",
-    priority: "LOW",
-    status: "COMPLETED",
-    project: "Team Collaboration",
-    createdAt: "2025-03-21T17:00:00",
-  },
-  {
-    id: 10,
-    name: "Prepare monthly report",
-    description: "Compile data and prepare monthly performance report",
-    dueDate: "2025-03-31T16:00:00",
-    priority: "HIGH",
-    status: "NOT_STARTED",
-    project: "Reporting",
-    createdAt: "2025-03-20T14:30:00",
-  },
-];
+// Pagination Component
+const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+  itemsPerPage,
+  totalItems,
+  onItemsPerPageChange,
+}) => {
+  return (
+    <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 gap-4">
+      <div className="flex items-center gap-2">
+        <span>Show</span>
+        <select
+          className="bg-gray-800 border border-gray-700 rounded-md p-1"
+          value={itemsPerPage}
+          onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={50}>50</option>
+        </select>
+        <span>entries</span>
+      </div>
+
+      <div className="text-sm">
+        Showing page {currentPage} of {totalPages}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
+        >
+          <ChevronsLeft size={18} />
+        </button>
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
+        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+          // Show pages around current page
+          let pageNum = i + 1;
+          if (currentPage > 3 && totalPages > 5) {
+            pageNum = i + currentPage - 2;
+          }
+
+          if (pageNum <= totalPages) {
+            return (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={`w-8 h-8 rounded-md ${
+                  pageNum === currentPage ? "bg-purple-600" : "bg-gray-800"
+                }`}
+              >
+                {pageNum}
+              </button>
+            );
+          }
+          return null;
+        })}
+
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
+        >
+          <ChevronRight size={18} />
+        </button>
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          className="p-2 rounded-md bg-gray-800 disabled:opacity-50"
+        >
+          <ChevronsRight size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -165,14 +154,28 @@ const isOverdue = (task) => {
 
 // Toast notification component
 const Toast = ({ message, type, onClose }) => {
-  const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
-  const icon = type === 'success' ? <Check size={20} /> : type === 'error' ? <XCircle size={20} /> : <AlertTriangle size={20} />;
-  
+  const bgColor =
+    type === "success"
+      ? "bg-green-600"
+      : type === "error"
+      ? "bg-red-600"
+      : "bg-blue-600";
+  const icon =
+    type === "success" ? (
+      <Check size={20} />
+    ) : type === "error" ? (
+      <XCircle size={20} />
+    ) : (
+      <AlertTriangle size={20} />
+    );
+
   return (
-    <div className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}>
+    <div
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+    >
       {icon}
       <span>{message}</span>
-      <button 
+      <button
         onClick={onClose}
         className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
       >
@@ -192,13 +195,13 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
         <h2 className="text-xl font-bold mb-4">{title}</h2>
         <p className="text-gray-300 mb-6">{message}</p>
         <div className="flex justify-end space-x-3">
-          <button 
+          <button
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
             onClick={onClose}
           >
             Cancel
           </button>
-          <button 
+          <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
             onClick={() => {
               onConfirm();
@@ -253,8 +256,10 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
   }
 
   return (
-    <div 
-      className={`bg-gray-800 rounded-lg overflow-hidden shadow-md flex flex-col hover:shadow-lg transition-all duration-200 ${isHovered ? 'transform scale-[1.02]' : ''} border border-transparent hover:border-gray-700`}
+    <div
+      className={`bg-gray-800 rounded-lg overflow-hidden shadow-md flex flex-col hover:shadow-lg transition-all duration-200 ${
+        isHovered ? "transform scale-[1.02]" : ""
+      } border border-transparent hover:border-gray-700`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -336,13 +341,17 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
         <div className="mt-auto space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs">
-              <div className={`flex items-center gap-1 ${statusColor} bg-opacity-20 px-2 py-1 rounded-full`}>
+              <div
+                className={`flex items-center gap-1 ${statusColor} bg-opacity-20 px-2 py-1 rounded-full`}
+              >
                 {statusIcon}
                 <span>{statusText}</span>
               </div>
             </div>
             <div className="flex items-center">
-              <div className={`flex items-center gap-1 text-xs ${priorityBg} ${priorityColor} px-2 py-1 rounded-full`}>
+              <div
+                className={`flex items-center gap-1 text-xs ${priorityBg} ${priorityColor} px-2 py-1 rounded-full`}
+              >
                 <Flag size={12} />
                 <span>{task.priority}</span>
               </div>
@@ -394,12 +403,8 @@ const EmptyState = ({ message, icon }) => (
     <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
       {icon}
     </div>
-    <h3 className="text-xl font-medium text-gray-300 mb-2">
-      No tasks found
-    </h3>
-    <p className="text-gray-400">
-      {message}
-    </p>
+    <h3 className="text-xl font-medium text-gray-300 mb-2">No tasks found</h3>
+    <p className="text-gray-400">{message}</p>
   </div>
 );
 
@@ -437,16 +442,113 @@ const SelfTask = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showTaskEdit, setShowTaskEdit] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isNewTask, setIsNewTask] = useState(false);
   const [toast, setToast] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, taskId: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [error, setError] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    taskId: null,
+  });
+  const [apiData, setApiData] = useState({
+    content: [],
+    pageNo: 1,
+    pageSize: 10,
+    totalElements: 0,
+    totalPages: 1,
+    last: true,
+  });
+
+  const fetchTasks = async (
+    page = currentPage,
+    size = itemsPerPage,
+    searchTerm = search,
+    filterStatus = activeFilter
+  ) => {
+    setLoading(true);
+    try {
+      const storedUser = localStorage.getItem("user");
+      let userId = 1; // Fallback
+      let token = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser.id; // Thay đổi từ user.id sang parsedUser.id
+        token = parsedUser.accessToken;
+      }
+
+      const params = {
+        page: page, // Chuyển từ 1-based sang 0-based
+        size,
+      };
+
+      // Thêm tham số tìm kiếm nếu có
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      // Thêm tham số lọc status nếu không phải "all"
+      if (filterStatus !== "all") {
+        params.status = filterStatus;
+      }
+
+      const response = await axios.get(`http://localhost:8080/api/tasks/user/${userId}`, {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      setApiData(response.data);
+      setTasks(response.data.content);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Failed to load tasks. Please try again later.");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (search.length >= 3 || search.length === 0) {
+        setDebouncedSearch(search);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [search]);
+  
+  useEffect(() => {
+    fetchTasks(currentPage, itemsPerPage, debouncedSearch, activeFilter);
+  }, [currentPage, itemsPerPage, debouncedSearch, activeFilter]);
+
+  
+  // Trong render, thêm xử lý error
+  {error && (
+    <div className="text-center p-4 text-red-500">{error}</div>
+  )}
+
+  // Update useEffect để gọi fetchTasks
+  useEffect(() => {
+    fetchTasks(currentPage, itemsPerPage);
+  }, []);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    fetchTasks(pageNumber, itemsPerPage);
+  };
 
   // Handler Functions
-  const showToast = (message, type = 'success') => {
+  const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
@@ -455,9 +557,9 @@ const SelfTask = () => {
     const updatedTasks = tasks.map((task) =>
       task.id === taskId ? { ...task, status: "COMPLETED" } : task
     );
-    
+
     setTasks(updatedTasks);
-    showToast('Task marked as completed', 'success');
+    showToast("Task marked as completed", "success");
   };
 
   const handleDeleteTask = (taskId) => {
@@ -465,9 +567,11 @@ const SelfTask = () => {
   };
 
   const confirmDeleteTask = () => {
-    const updatedTasks = tasks.filter(task => task.id !== deleteConfirm.taskId);
+    const updatedTasks = tasks.filter(
+      (task) => task.id !== deleteConfirm.taskId
+    );
     setTasks(updatedTasks);
-    showToast('Task deleted successfully', 'success');
+    showToast("Task deleted successfully", "success");
   };
 
   const handleEditTask = (task) => {
@@ -484,31 +588,34 @@ const SelfTask = () => {
 
   const handleTaskEditClose = (taskData) => {
     setShowTaskEdit(false);
-    
+
     // If task data was returned, update or add task
     if (taskData) {
       if (isNewTask) {
         // Add new task
         setTasks([...tasks, { ...taskData, id: Date.now() }]);
-        showToast('New task created successfully', 'success');
+        showToast("New task created successfully", "success");
       } else {
         // Update existing task
-        setTasks(tasks.map(task => 
-          task.id === taskData.id ? taskData : task
-        ));
-        showToast('Task updated successfully', 'success');
+        setTasks(
+          tasks.map((task) => (task.id === taskData.id ? taskData : task))
+        );
+        showToast("Task updated successfully", "success");
       }
     }
   };
 
-  // Load data initially
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setTasks(mockTasks);
-      setLoading(false);
-    }, 500);
-  }, []);
+  <Pagination
+    currentPage={apiData.pageNo}
+    totalPages={apiData.totalPages}
+    onPageChange={handlePageChange}
+    itemsPerPage={apiData.pageSize}
+    totalItems={apiData.totalElements}
+    onItemsPerPageChange={(newSize) => {
+      setItemsPerPage(newSize);
+      fetchTasks(1, newSize);
+    }}
+  />;
 
   // Filter tasks based on active filter and search
   const filteredTasks = tasks.filter((task) => {
@@ -549,9 +656,10 @@ const SelfTask = () => {
   }
 
   if (selectedTask) {
-    return <TaskDetail task={selectedTask} onBack={() => setSelectedTask(null)} />;
+    return (
+      <TaskDetail task={selectedTask} onBack={() => setSelectedTask(null)} />
+    );
   }
-  
 
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
@@ -559,16 +667,10 @@ const SelfTask = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">SELF TASKS</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage and track your personal tasks</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Manage and track your personal tasks
+          </p>
         </div>
-
-        <button
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 transition-colors rounded-md flex items-center gap-2 shadow-md shadow-purple-900/30"
-          onClick={handleCreateTask}
-        >
-          <Plus size={18} />
-          <span>New Task</span>
-        </button>
       </div>
 
       {/* Search and Filters */}
@@ -652,7 +754,7 @@ const SelfTask = () => {
           <p className="text-gray-400">Loading your tasks...</p>
         </div>
       ) : filteredTasks.length === 0 ? (
-        <EmptyState 
+        <EmptyState
           message="Try adjusting your search or filter to find what you're looking for."
           icon={<Search size={32} className="text-gray-500" />}
         />
@@ -660,15 +762,14 @@ const SelfTask = () => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredTasks.map((task) => (
-             <TaskCard
-             key={task.id}
-             task={task}
-             onEdit={handleEditTask}
-             onMarkAsCompleted={handleMarkAsCompleted}
-             onDelete={handleDeleteTask}
-             onClick={() => setSelectedTask(task)}  // Thêm onClick để set selectedTask
-           />
-           
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={handleEditTask}
+                onMarkAsCompleted={handleMarkAsCompleted}
+                onDelete={handleDeleteTask}
+                onClick={() => setSelectedTask(task)} // Thêm onClick để set selectedTask
+              />
             ))}
           </div>
 
@@ -679,10 +780,10 @@ const SelfTask = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
 
@@ -697,7 +798,7 @@ const SelfTask = () => {
 
       {/* Add CSS animations for better UX */}
       <style>
-{`
+        {`
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -737,7 +838,7 @@ const SelfTask = () => {
     animation: scale-in 0.3s ease-out;
   }
 `}
-</style>
+      </style>
     </div>
   );
 };
