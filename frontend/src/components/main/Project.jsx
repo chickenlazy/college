@@ -2,10 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   Search,
+  Loader,
+  Check,
+  XCircle,
+  X,
   Plus,
   Edit,
   RotateCcw,
   MoreVertical,
+  RefreshCw,
   Eye,
   Download,
   Trash2,
@@ -31,10 +36,49 @@ const formatDate = (dateString) => {
   })}`;
 };
 
+// Thêm hàm formatName để giới hạn độ dài tên project
+const formatName = (name) => {
+  if (!name) return "";
+
+  if (name.length > 25) {
+    return (
+      <div className="group relative cursor-pointer">
+        <span>{name.substring(0, 25)}...</span>
+        <div className="absolute top-full left-0 mt-1 bg-gray-800 text-white p-2 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-64 text-sm">
+          {name}
+        </div>
+      </div>
+    );
+  }
+
+  return name;
+};
+
 // Get assigned users as a comma-separated string
 const getAssignedUsers = (users) => {
-  if (!users || users.length === 0) return "No body assigned";
-  return users.map((user) => user.fullName).join(", ");
+  if (!users || users.length === 0) {
+    return (
+      <span className="italic text-gray-400 flex items-center">
+        <X size={14} className="text-red-400 mr-1" />
+        No body assigned
+      </span>
+    );
+  }
+
+  const fullNames = users.map((user) => user.fullName).join(", ");
+
+  if (fullNames.length > 20) {
+    return (
+      <div className="group relative cursor-pointer">
+        <span>{fullNames.substring(0, 20)}...</span>
+        <div className="absolute top-full left-0 mt-1 bg-gray-800 text-white p-2 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-48 text-sm">
+          {fullNames}
+        </div>
+      </div>
+    );
+  }
+
+  return fullNames;
 };
 
 // Status Badge Component
@@ -63,6 +107,71 @@ const StatusBadge = ({ status }) => {
   }
 
   return <span className={color}>{displayText}</span>;
+};
+
+// Toast notification component
+const Toast = ({ message, type, onClose }) => {
+  const bgColor =
+    type === "success"
+      ? "bg-green-600"
+      : type === "error"
+      ? "bg-red-600"
+      : "bg-blue-600";
+  const icon =
+    type === "success" ? (
+      <Check size={20} />
+    ) : type === "error" ? (
+      <XCircle size={20} />
+    ) : (
+      <RefreshCw size={20} />
+    );
+
+  return (
+    <div
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+    >
+      {icon}
+      <span>{message}</span>
+      <button
+        onClick={onClose}
+        className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+};
+
+// Confirmation Dialog Component
+const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
+        <h2 className="text-xl font-bold mb-4">{title}</h2>
+        <p className="text-gray-300 mb-6">{message}</p>
+        <div className="flex justify-end space-x-3">
+          <button
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // Progress Bar Component
@@ -169,7 +278,13 @@ const Pagination = ({
 };
 
 // Action Buttons Component
-const ActionButtons = ({ project, openProjectDetail, openProjectEdit }) => {
+// Action Buttons Component
+const ActionButtons = ({
+  project,
+  openProjectDetail,
+  openProjectEdit,
+  onDelete,
+}) => {
   return (
     <div className="flex gap-2">
       <button
@@ -184,10 +299,10 @@ const ActionButtons = ({ project, openProjectDetail, openProjectEdit }) => {
       >
         <Edit size={16} />
       </button>
-      <button className="p-2 rounded-full bg-purple-600 text-white">
-        <Download size={16} />
-      </button>
-      <button className="p-2 rounded-full bg-red-600 text-white">
+      <button
+        className="p-2 rounded-full bg-red-600 text-white"
+        onClick={() => onDelete(project.id)}
+      >
         <Trash2 size={16} />
       </button>
     </div>
@@ -234,6 +349,12 @@ const Project = () => {
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    projectId: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [apiData, setApiData] = useState({
     content: [],
     pageNo: 1,
@@ -293,34 +414,20 @@ const Project = () => {
 
   // 2. Cập nhật useEffect để phản ứng với sự thay đổi của search và activeFilter
   useEffect(() => {
-    fetchProjects(currentPage, itemsPerPage, search, activeFilter);
-  }, [currentPage, itemsPerPage, search, activeFilter]);
+    const timeoutId = setTimeout(() => {
+      if (search.length >= 3 || search.length === 0) {
+        setDebouncedSearch(search);
+      }
+    }, 500);
 
-  // Reload data when page or items per page changes
-  // useEffect(() => {
-  //   fetchProjects(currentPage, itemsPerPage);
-  // }, [currentPage, itemsPerPage]);
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [search]);
 
-  // Handle checkbox selection
-  const handleSelectProject = (id) => {
-    if (selectedProjects.includes(id)) {
-      setSelectedProjects(
-        selectedProjects.filter((projectId) => projectId !== id)
-      );
-    } else {
-      setSelectedProjects([...selectedProjects, id]);
-    }
-  };
-
-  // Handle select all
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedProjects([]);
-    } else {
-      setSelectedProjects(filteredProjects.map((project) => project.id));
-    }
-    setSelectAll(!selectAll);
-  };
+  useEffect(() => {
+    fetchProjects(currentPage, itemsPerPage, debouncedSearch, activeFilter);
+  }, [currentPage, itemsPerPage, debouncedSearch, activeFilter]);
 
   const refreshData = () => {
     fetchProjects(currentPage, itemsPerPage, search, activeFilter);
@@ -369,6 +476,42 @@ const Project = () => {
     fetchProjects(1, itemsPerPage); // Reload data from API
   };
 
+  const handleDeleteProject = (projectId) => {
+    setDeleteConfirm({ show: true, projectId });
+  };
+
+  const confirmDeleteProject = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      await axios.delete(
+        `http://localhost:8080/api/projects/${deleteConfirm.projectId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      showToast("Project deleted successfully", "success");
+      refreshData();
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      showToast("Failed to delete project", "error");
+    }
+  };
+
+  // Toast notification
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   return (
     <div className="p-6 bg-gray-950 text-white">
       {showProjectDetail ? (
@@ -402,10 +545,6 @@ const Project = () => {
                 <Plus size={18} />
                 <span>New</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-md">
-                <Edit size={18} />
-                <span>Edit</span>
-              </button>
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"
                 onClick={handleReset}
@@ -419,7 +558,7 @@ const Project = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search by Name"
                   className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-64"
                   value={search}
                   onChange={(e) => {
@@ -427,21 +566,7 @@ const Project = () => {
                     setCurrentPage(1);
                   }}
                 />
-                <Search
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
               </div>
-
-              <button className="p-2 bg-gray-800 rounded-md">
-                <ArrowUpDown size={18} className="text-white" />
-                <span className="sr-only">Sort</span>
-              </button>
-
-              <button className="p-2 bg-gray-800 rounded-md">
-                <MoreVertical size={18} className="text-white" />
-                <span className="sr-only">More</span>
-              </button>
             </div>
           </div>
 
@@ -455,63 +580,43 @@ const Project = () => {
           />
 
           {/* Project Table */}
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-900 text-left">
-                  <th className="p-4 border-b border-gray-800">
-                    <input
-                      type="checkbox"
-                      checked={selectAll}
-                      onChange={handleSelectAll}
-                      className="w-4 h-4"
-                    />
-                  </th>
-                  <th className="p-4 border-b border-gray-800">ID</th>
-                  <th className="p-4 border-b border-gray-800">Name</th>
-                  <th className="p-4 border-b border-gray-800">Assigned To</th>
-                  <th className="p-4 border-b border-gray-800">Tasks</th>
-                  <th className="p-4 border-b border-gray-800">Progress</th>
-                  <th className="p-4 border-b border-gray-800">Status</th>
-                  <th className="p-4 border-b border-gray-800">Due Date</th>
-                  <th className="p-4 border-b border-gray-800">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="9" className="p-4 text-center">
-                      Loading...
-                    </td>
+          <div className="mt-4 overflow-x-auto min-h-[400px]">
+            {loading ? (
+              <div className="flex flex-col justify-center items-center h-64">
+                <Loader
+                  size={36}
+                  className="text-purple-500 animate-spin mb-4"
+                />
+                <p className="text-gray-400">Loading project data...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center p-4 text-red-500">{error}</div>
+            ) : currentProjects.length === 0 ? (
+              <div className="text-center p-4">No projects found</div>
+            ) : (
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-900 text-left">
+                    <th className="p-4 border-b border-gray-800">ID</th>
+                    <th className="p-4 border-b border-gray-800">Name</th>
+                    <th className="p-4 border-b border-gray-800">
+                      Assigned To
+                    </th>
+                    <th className="p-4 border-b border-gray-800">Tasks</th>
+                    <th className="p-4 border-b border-gray-800">Progress</th>
+                    <th className="p-4 border-b border-gray-800">Status</th>
+                    <th className="p-4 border-b border-gray-800">Due Date</th>
+                    <th className="p-4 border-b border-gray-800">Action</th>
                   </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan="9" className="p-4 text-center text-red-500">
-                      {error}
-                    </td>
-                  </tr>
-                ) : currentProjects.length === 0 ? (
-                  <tr>
-                    <td colSpan="9" className="p-4 text-center">
-                      No projects found
-                    </td>
-                  </tr>
-                ) : (
-                  currentProjects.map((project) => (
+                </thead>
+                <tbody>
+                  {currentProjects.map((project) => (
                     <tr key={project.id} className="hover:bg-gray-900">
-                      <td className="p-4 border-b border-gray-800">
-                        <input
-                          type="checkbox"
-                          checked={selectedProjects.includes(project.id)}
-                          onChange={() => handleSelectProject(project.id)}
-                          className="w-4 h-4"
-                        />
-                      </td>
                       <td className="p-4 border-b border-gray-800">
                         {project.id}
                       </td>
                       <td className="p-4 border-b border-gray-800">
-                        {project.name}
+                        {formatName(project.name)}
                       </td>
                       <td className="p-4 border-b border-gray-800">
                         {getAssignedUsers(project.users)}
@@ -533,13 +638,14 @@ const Project = () => {
                           project={project}
                           openProjectDetail={openProjectDetail}
                           openProjectEdit={openProjectEdit}
+                          onDelete={handleDeleteProject}
                         />
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* Pagination */}
@@ -552,6 +658,24 @@ const Project = () => {
             onItemsPerPageChange={handleItemsPerPageChange}
           />
         </>
+      )}
+
+      {/* Confirmation Dialog for Deleting Project */}
+      <ConfirmationDialog
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, projectId: null })}
+        onConfirm={confirmDeleteProject}
+        title="Delete Project"
+        message="Are you sure you want to delete this project? This action cannot be undone."
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

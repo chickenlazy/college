@@ -98,90 +98,151 @@ CREATE TABLE project_tags (
   PRIMARY KEY (project_id, tag_id)
 );
 
+
 -- Chèn dữ liệu vào bảng `users`
-INSERT INTO users (full_name, email, phone_number, role)
+INSERT INTO users (full_name, username, password, email, phone_number, role)
 VALUES
-  ('Admin User', 'admin@example.com', '1234567890', 'ROLE_ADMIN'),
-  ('Manager 1', 'manager1@example.com', '1234567891', 'ROLE_MANAGER'),
-  ('Manager 2', 'manager2@example.com', '1234567892', 'ROLE_MANAGER'),
-  ('User 1', 'user1@example.com', '1234567893', 'ROLE_USER'),
-  ('User 2', 'user2@example.com', '1234567894', 'ROLE_USER'),
-  ('User 3', 'user3@example.com', '1234567895', 'ROLE_USER'),
-  ('User 4', 'user4@example.com', '1234567896', 'ROLE_USER'),
-  ('User 5', 'user5@example.com', '1234567897', 'ROLE_USER'),
-  ('User 6', 'user6@example.com', '1234567898', 'ROLE_USER'),
-  ('User 7', 'user7@example.com', '1234567899', 'ROLE_USER');
+  ('Nguyễn Văn A', 'nguyenvana', 'password123', 'nguyenvana@example.com', '0912345678', 'ROLE_ADMIN'),
+  ('Trần Thị B', 'tranthib', 'password123', 'tranthib@example.com', '0912345679', 'ROLE_MANAGER'),
+  ('Lê Minh C', 'leminhc', 'password123', 'leminhc@example.com', '0912345680', 'ROLE_MANAGER'),
+  ('Phan Thi D', 'phanthid', 'password123', 'phanthid@example.com', '0912345681', 'ROLE_USER'),
+  ('Vũ Văn E', 'vuvan', 'password123', 'vuvan@example.com', '0912345682', 'ROLE_USER'),
+  ('Hoàng Thị F', 'hoangthif', 'password123', 'hoangthif@example.com', '0912345683', 'ROLE_USER'),
+  ('Đoàn Minh G', 'doanming', 'password123', 'doanming@example.com', '0912345684', 'ROLE_USER'),
+  ('Nguyễn Thị H', 'nguyenh', 'password123', 'nguyenh@example.com', '0912345685', 'ROLE_USER'),
+  ('Trần Minh I', 'tranminhi', 'password123', 'tranminhi@example.com', '0912345686', 'ROLE_USER'),
+  ('Phạm Văn J', 'phamvanj', 'password123', 'phamvanj@example.com', '0912345687', 'ROLE_USER'),
+  ('Lý Minh K', 'lyminhk', 'password123', 'lyminhk@example.com', '0912345688', 'ROLE_USER'),
+  ('Hồ Thi L', 'hothil', 'password123', 'hothil@example.com', '0912345689', 'ROLE_USER'),
+  ('Tôn Thị M', 'tonthim', 'password123', 'tonthim@example.com', '0912345690', 'ROLE_USER'),
+  ('Ngô Minh N', 'ngominhn', 'password123', 'ngominhn@example.com', '0912345691', 'ROLE_USER'),
+  ('Vũ Thi O', 'vuthio', 'password123', 'vuthio@example.com', '0912345692', 'ROLE_USER'),
+  ('Mai Văn P', 'maivanp', 'password123', 'maivanp@example.com', '0912345693', 'ROLE_USER'),
+  ('Phan Minh Q', 'phanminhq', 'password123', 'phanminhq@example.com', '0912345694', 'ROLE_USER'),
+  ('Đặng Thị R', 'dangthir', 'password123', 'dangthir@example.com', '0912345695', 'ROLE_USER'),
+  ('Bùi Minh S', 'buiminhs', 'password123', 'buiminhs@example.com', '0912345696', 'ROLE_USER');
 
 -- Chèn dữ liệu vào bảng `projects`
 INSERT INTO projects (name, description, start_date, due_date, status, manager_id)
 VALUES
-  ('Project 1', 'Description of Project 1', '2025-01-01 10:00:00', '2025-01-10 10:00:00', 'IN_PROGRESS', 2),
-  ('Project 2', 'Description of Project 2', '2025-02-01 10:00:00', '2025-02-10 10:00:00', 'NOT_STARTED', 3),
-  ('Project 3', 'Description of Project 3', '2025-03-01 10:00:00', '2025-03-10 10:00:00', 'ON_HOLD', 2),
-  ('Project 4', 'Description of Project 4', '2025-04-01 10:00:00', '2025-04-10 10:00:00', 'COMPLETED', 3),
-  ('Project 5', 'Description of Project 5', '2025-05-01 10:00:00', '2025-05-10 10:00:00', 'OVER_DUE', 3),
-  ('Project 6', 'Description of Project 6', '2025-06-01 10:00:00', '2025-06-10 10:00:00', 'IN_PROGRESS', 2),
-  ('Project 7', 'Description of Project 7', '2025-07-01 10:00:00', '2025-07-10 10:00:00', 'IN_PROGRESS', 3),
-  ('Project 8', 'Description of Project 8', '2025-08-01 10:00:00', '2025-08-10 10:00:00', 'NOT_STARTED', 2),
-  ('Project 9', 'Description of Project 9', '2025-09-01 10:00:00', '2025-09-10 10:00:00', 'COMPLETED', 3),
-  ('Project 10', 'Description of Project 10', '2025-10-01 10:00:00', '2025-10-10 10:00:00', 'ON_HOLD', 2);
+  ('Hệ thống quản lý dự án', 'Phát triển hệ thống quản lý các dự án cho doanh nghiệp', '2025-01-01 09:00:00', '2025-02-01 17:00:00', 'IN_PROGRESS', 2),
+  ('Ứng dụng di động', 'Phát triển ứng dụng di động cho khách hàng', '2025-01-15 09:00:00', '2025-03-01 17:00:00', 'NOT_STARTED', 3),
+  ('Thiết kế website', 'Thiết kế giao diện cho trang web của công ty', '2025-02-01 09:00:00', '2025-04-01 17:00:00', 'ON_HOLD', 2),
+  ('Phát triển phần mềm', 'Phát triển phần mềm quản lý doanh nghiệp', '2025-03-01 09:00:00', '2025-06-01 17:00:00', 'COMPLETED', 3),
+  ('Cải tiến hệ thống', 'Cải tiến và nâng cấp hệ thống hiện tại', '2025-04-01 09:00:00', '2025-05-01 17:00:00', 'OVER_DUE', 3),
+  ('Marketing trực tuyến', 'Chiến dịch marketing trực tuyến cho sản phẩm mới', '2025-05-01 09:00:00', '2025-06-01 17:00:00', 'IN_PROGRESS', 2),
+  ('Nghiên cứu thị trường', 'Nghiên cứu thị trường cho sản phẩm mới', '2025-06-01 09:00:00', '2025-07-01 17:00:00', 'IN_PROGRESS', 3),
+  ('Xây dựng chiến lược', 'Xây dựng chiến lược cho công ty trong năm tới', '2025-07-01 09:00:00', '2025-09-01 17:00:00', 'NOT_STARTED', 2),
+  ('Chương trình đào tạo', 'Tổ chức chương trình đào tạo cho nhân viên mới', '2025-08-01 09:00:00', '2025-09-01 17:00:00', 'COMPLETED', 3),
+  ('Hỗ trợ khách hàng', 'Hỗ trợ khách hàng cho sản phẩm mới ra mắt', '2025-09-01 09:00:00', '2025-10-01 17:00:00', 'ON_HOLD', 2),
+  ('Bảo trì hệ thống', 'Bảo trì và nâng cấp hệ thống công nghệ', '2025-10-01 09:00:00', '2025-11-01 17:00:00', 'IN_PROGRESS', 3),
+  ('Tổ chức sự kiện', 'Tổ chức sự kiện giới thiệu sản phẩm mới', '2025-11-01 09:00:00', '2025-12-01 17:00:00', 'NOT_STARTED', 2),
+  ('Đầu tư công nghệ', 'Đầu tư vào các công nghệ mới cho công ty', '2025-12-01 09:00:00', '2026-01-01 17:00:00', 'IN_PROGRESS', 3),
+  ('Xây dựng cơ sở dữ liệu', 'Xây dựng cơ sở dữ liệu cho hệ thống quản lý', '2026-01-01 09:00:00', '2026-03-01 17:00:00', 'COMPLETED', 2),
+  ('Phát triển giao diện người dùng', 'Phát triển giao diện người dùng cho sản phẩm', '2026-02-01 09:00:00', '2026-04-01 17:00:00', 'ON_HOLD', 3),
+  ('Tối ưu hóa hiệu suất', 'Tối ưu hóa hiệu suất hệ thống cho công ty', '2026-03-01 09:00:00', '2026-05-01 17:00:00', 'OVER_DUE', 2),
+  ('Phát triển công cụ mới', 'Phát triển công cụ tự động hóa công việc', '2026-04-01 09:00:00', '2026-06-01 17:00:00', 'IN_PROGRESS', 3),
+  ('Đào tạo công nghệ', 'Đào tạo nhân viên về công nghệ mới', '2026-05-01 09:00:00', '2026-07-01 17:00:00', 'NOT_STARTED', 2),
+  ('Hợp tác quốc tế', 'Thực hiện hợp tác quốc tế với các đối tác', '2026-06-01 09:00:00', '2026-08-01 17:00:00', 'IN_PROGRESS', 3);
+
 
 -- Chèn dữ liệu vào bảng `tasks`
 INSERT INTO tasks (name, description, start_date, due_date, status, priority, project_id, created_by)
 VALUES
-  ('Task 1', 'Task description 1', '2025-01-01 10:00:00', '2025-01-02 10:00:00', 'IN_PROGRESS', 'HIGH', 2, 1),
-  ('Task 2', 'Task description 2', '2025-02-01 10:00:00', '2025-02-02 10:00:00', 'NOT_STARTED', 'MEDIUM', 2, 2),
-  ('Task 3', 'Task description 3', '2025-03-01 10:00:00', '2025-03-02 10:00:00', 'COMPLETED', 'LOW', 3, 3),
-  ('Task 4', 'Task description 4', '2025-04-01 10:00:00', '2025-04-02 10:00:00', 'OVER_DUE', 'HIGH', 4, 4),
-  ('Task 5', 'Task description 5', '2025-05-01 10:00:00', '2025-05-02 10:00:00', 'IN_PROGRESS', 'MEDIUM', 5, 5),
-  ('Task 6', 'Task description 6', '2025-06-01 10:00:00', '2025-06-02 10:00:00', 'IN_PROGRESS', 'LOW', 6, 6),
-  ('Task 7', 'Task description 7', '2025-07-01 10:00:00', '2025-07-02 10:00:00', 'NOT_STARTED', 'HIGH', 7, 7),
-  ('Task 8', 'Task description 8', '2025-08-01 10:00:00', '2025-08-02 10:00:00', 'COMPLETED', 'MEDIUM', 8, 8),
-  ('Task 9', 'Task description 9', '2025-09-01 10:00:00', '2025-09-02 10:00:00', 'IN_PROGRESS', 'HIGH', 9, 9),
-  ('Task 10', 'Task description 10', '2025-10-01 10:00:00', '2025-10-02 10:00:00', 'ON_HOLD', 'LOW', 10, 10);
-
+  ('Xây dựng hệ thống cơ sở dữ liệu', 'Xây dựng cơ sở dữ liệu cho hệ thống quản lý', '2025-01-01 09:00:00', '2025-01-15 17:00:00', 'IN_PROGRESS', 'HIGH', 1, 1),
+  ('Phát triển ứng dụng mobile', 'Phát triển ứng dụng di động cho khách hàng', '2025-01-15 09:00:00', '2025-02-01 17:00:00', 'NOT_STARTED', 'MEDIUM', 2, 2),
+  ('Thiết kế giao diện website', 'Thiết kế giao diện trang web cho công ty', '2025-02-01 09:00:00', '2025-02-15 17:00:00', 'ON_HOLD', 'LOW', 3, 3),
+  ('Kiểm thử phần mềm', 'Kiểm thử phần mềm quản lý doanh nghiệp', '2025-03-01 09:00:00', '2025-03-15 17:00:00', 'COMPLETED', 'HIGH', 4, 4),
+  ('Cải tiến giao diện người dùng', 'Cải tiến giao diện người dùng cho hệ thống', '2025-04-01 09:00:00', '2025-04-15 17:00:00', 'OVER_DUE', 'MEDIUM', 5, 5),
+  ('Nghiên cứu và phát triển', 'Nghiên cứu và phát triển các tính năng mới cho ứng dụng', '2025-05-01 09:00:00', '2025-05-15 17:00:00', 'IN_PROGRESS', 'HIGH', 6, 6),
+  ('Marketing sản phẩm', 'Chiến dịch marketing sản phẩm mới', '2025-06-01 09:00:00', '2025-06-15 17:00:00', 'IN_PROGRESS', 'MEDIUM', 7, 7),
+  ('Đào tạo nhân viên', 'Tổ chức khóa đào tạo cho nhân viên mới', '2025-07-01 09:00:00', '2025-07-15 17:00:00', 'NOT_STARTED', 'LOW', 8, 8),
+  ('Nâng cấp hệ thống', 'Nâng cấp hệ thống phần mềm hiện tại', '2025-08-01 09:00:00', '2025-08-15 17:00:00', 'COMPLETED', 'HIGH', 9, 9),
+  ('Hỗ trợ khách hàng', 'Hỗ trợ khách hàng sử dụng sản phẩm', '2025-09-01 09:00:00', '2025-09-15 17:00:00', 'ON_HOLD', 'LOW', 10, 10),
+  ('Tổ chức sự kiện ra mắt sản phẩm', 'Tổ chức sự kiện ra mắt sản phẩm công nghệ mới', '2025-10-01 09:00:00', '2025-10-15 17:00:00', 'IN_PROGRESS', 'MEDIUM', 1, 1),
+  ('Phân tích dữ liệu thị trường', 'Phân tích dữ liệu thị trường và xu hướng tiêu dùng', '2025-11-01 09:00:00', '2025-11-15 17:00:00', 'NOT_STARTED', 'HIGH', 2, 2),
+  ('Tạo báo cáo tiến độ dự án', 'Tạo báo cáo tiến độ và kết quả công việc dự án', '2025-12-01 09:00:00', '2025-12-15 17:00:00', 'COMPLETED', 'LOW', 3, 3),
+  ('Xây dựng công cụ quản lý', 'Phát triển công cụ quản lý công việc cho đội ngũ nhân viên', '2026-01-01 09:00:00', '2026-01-15 17:00:00', 'IN_PROGRESS', 'HIGH', 4, 4),
+  ('Phát triển website e-commerce', 'Phát triển website thương mại điện tử cho công ty', '2026-02-01 09:00:00', '2026-02-15 17:00:00', 'IN_PROGRESS', 'MEDIUM', 5, 5),
+  ('Chạy chiến dịch quảng cáo', 'Chạy chiến dịch quảng cáo trên mạng xã hội', '2026-03-01 09:00:00', '2026-03-15 17:00:00', 'NOT_STARTED', 'LOW', 6, 6),
+  ('Tối ưu hóa SEO', 'Tối ưu hóa công cụ tìm kiếm cho website', '2026-04-01 09:00:00', '2026-04-15 17:00:00', 'COMPLETED', 'HIGH', 7, 7),
+  ('Hỗ trợ khách hàng trực tuyến', 'Cung cấp dịch vụ hỗ trợ khách hàng qua chat trực tuyến', '2026-05-01 09:00:00', '2026-05-15 17:00:00', 'ON_HOLD', 'LOW', 8, 8),
+  ('Kiểm thử sản phẩm', 'Kiểm thử và đánh giá chất lượng sản phẩm trước khi phát hành', '2026-06-01 09:00:00', '2026-06-15 17:00:00', 'IN_PROGRESS', 'HIGH', 9, 9),
+  ('Tổ chức sự kiện ra mắt sản phẩm', 'Lên kế hoạch và tổ chức sự kiện ra mắt sản phẩm mới', '2026-07-01 09:00:00', '2026-07-15 17:00:00', 'NOT_STARTED', 'MEDIUM', 10, 10);
 
 -- Chèn dữ liệu vào bảng `subtasks`
 INSERT INTO subtasks (name, task_id, completed, assignee_id)
 VALUES
-  ('Subtask 1', 1, TRUE, 4),
-  ('Subtask 2', 2, FALSE, 5),
-  ('Subtask 3', 3, TRUE, 6),
-  ('Subtask 4', 4, FALSE, 7),
-  ('Subtask 5', 5, TRUE, 8),
-  ('Subtask 6', 6, TRUE, 9),
-  ('Subtask 7', 7, FALSE, 10),
-  ('Subtask 8', 8, TRUE, 4),
-  ('Subtask 9', 9, FALSE, 5),
-  ('Subtask 10', 10, TRUE, 6);
+  ('Thiết kế cơ sở dữ liệu', 1, TRUE, 2),
+  ('Phát triển ứng dụng di động', 2, FALSE, 3),
+  ('Thiết kế giao diện website', 3, TRUE, 4),
+  ('Kiểm thử phần mềm', 4, FALSE, 5),
+  ('Cải tiến giao diện người dùng', 5, TRUE, 6),
+  ('Nghiên cứu và phát triển tính năng mới', 6, TRUE, 7),
+  ('Chiến dịch marketing sản phẩm', 7, FALSE, 8),
+  ('Đào tạo nhân viên mới', 8, TRUE, 9),
+  ('Nâng cấp hệ thống phần mềm', 9, FALSE, 10),
+  ('Hỗ trợ khách hàng sử dụng sản phẩm', 10, TRUE, 2),
+  ('Phân tích thị trường', 11, TRUE, 3),
+  ('Tạo báo cáo tiến độ dự án', 12, TRUE, 4),
+  ('Phát triển công cụ quản lý công việc', 13, FALSE, 5),
+  ('Phát triển website thương mại điện tử', 14, TRUE, 6),
+  ('Chạy chiến dịch quảng cáo', 15, FALSE, 7),
+  ('Tối ưu hóa SEO cho website', 16, TRUE, 8),
+  ('Hỗ trợ khách hàng qua chat trực tuyến', 17, FALSE, 9),
+  ('Lập kế hoạch sản phẩm', 18, TRUE, 10);
+
 
 -- Chèn dữ liệu vào bảng `comments`
 INSERT INTO comments (text, author_id, task_id)
 VALUES
-  ('Comment for Task 1', 1, 1),
-  ('Comment for Task 2', 2, 2),
-  ('Comment for Task 3', 3, 3),
-  ('Comment for Task 4', 4, 4),
-  ('Comment for Task 5', 5, 5),
-  ('Comment for Task 6', 6, 6),
-  ('Comment for Task 7', 7, 7),
-  ('Comment for Task 8', 8, 8),
-  ('Comment for Task 9', 9, 9),
-  ('Comment for Task 10', 10, 10);
+  ('Cần điều chỉnh lại cơ sở dữ liệu cho phù hợp', 2, 1),
+  ('Cập nhật tiến độ phát triển ứng dụng di động', 3, 2),
+  ('Đã hoàn thành thiết kế giao diện, cần duyệt lại', 4, 3),
+  ('Cần kiểm tra lại phần mềm trước khi phát hành', 5, 4),
+  ('Đang tiến hành cải tiến giao diện người dùng', 6, 5),
+  ('Đã bắt đầu nghiên cứu tính năng mới', 7, 6),
+  ('Marketing sản phẩm đã sẵn sàng, chờ phê duyệt', 8, 7),
+  ('Khóa đào tạo cho nhân viên mới đã hoàn tất', 9, 8),
+  ('Hệ thống phần mềm đã được nâng cấp', 10, 9),
+  ('Hỗ trợ khách hàng đang được giải quyết, chờ phản hồi', 2, 10),
+  ('Đã phân tích xong dữ liệu thị trường', 3, 11),
+  ('Báo cáo tiến độ dự án đã được hoàn thành', 4, 12),
+  ('Công cụ quản lý công việc đã phát triển xong, chờ kiểm tra', 5, 13),
+  ('Website thương mại điện tử đã hoàn thiện, sẵn sàng chạy thử', 6, 14),
+  ('Chiến dịch quảng cáo đang chạy tốt', 7, 15),
+  ('SEO cho website đã tối ưu xong', 8, 16),
+  ('Hỗ trợ khách hàng qua chat đang hoạt động hiệu quả', 9, 17),
+  ('Sản phẩm đã được lập kế hoạch xong', 10, 18),
+  ('Kiểm thử sản phẩm đã hoàn thành, cần feedback', 2, 19),
+  ('Chương trình sự kiện ra mắt sản phẩm đã sẵn sàng', 3, 20);
+
 
 -- Chèn dữ liệu vào bảng `project_users`
 INSERT INTO project_users (project_id, user_id)
 VALUES
   (1, 1),
   (1, 2),
+  (1, 3),
+  (1, 4),
+  (1, 5),
+  (1, 6),
+  (1, 7),
+  (2, 2),
   (2, 3),
   (2, 4),
+  (2, 5),
+  (2, 6),
+  (2, 7),
+  (3, 3),
+  (3, 4),
   (3, 5),
   (3, 6),
-  (4, 7),
+  (3, 7),
   (4, 8),
-  (5, 9),
+  (4, 9),
   (5, 10);
+
 
 -- Chèn dữ liệu vào bảng `tags`
 INSERT INTO tags (name, color) VALUES
@@ -193,10 +254,26 @@ INSERT INTO tags (name, color) VALUES
   ('Documentation', '#6B7280');
 
 -- Chèn dữ liệu vào bảng `project_tags`
-INSERT INTO project_tags (project_id, tag_id) VALUES
+INSERT INTO project_tags (project_id, tag_id)
+VALUES
   (1, 1),  -- Project 1 với Tag 1 (Development)
   (1, 2),  -- Project 1 với Tag 2 (Research)
-  (2, 3),  -- Project 2 với Tag 3 (Design)
+  (1, 3),  -- Project 1 với Tag 3 (Design)
+  (2, 1),  -- Project 2 với Tag 1 (Development)
   (2, 4),  -- Project 2 với Tag 4 (Marketing)
-  (3, 5),  -- Project 3 với Tag 5 (Testing)
-  (4, 6);  -- Project 4 với Tag 6 (Documentation)
+  (2, 5),  -- Project 2 với Tag 5 (Testing)
+  (3, 3),  -- Project 3 với Tag 3 (Design)
+  (3, 6),  -- Project 3 với Tag 6 (Documentation)
+  (4, 2),  -- Project 4 với Tag 2 (Research)
+  (4, 4),  -- Project 4 với Tag 4 (Marketing)
+  (5, 5),  -- Project 5 với Tag 5 (Testing)
+  (6, 1),  -- Project 6 với Tag 1 (Development)
+  (6, 2),  -- Project 6 với Tag 2 (Research)
+  (7, 3),  -- Project 7 với Tag 3 (Design)
+  (7, 6),  -- Project 7 với Tag 6 (Documentation)
+  (8, 4),  -- Project 8 với Tag 4 (Marketing)
+  (8, 5),  -- Project 8 với Tag 5 (Testing)
+  (9, 2),  -- Project 9 với Tag 2 (Research)
+  (9, 6),  -- Project 9 với Tag 6 (Documentation)
+  (10, 1);  -- Project 10 với Tag 1 (Development)
+
