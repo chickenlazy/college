@@ -107,84 +107,102 @@ const DashboardUI = ({ onLogout }) => {
         <nav className="flex-1 mt-4">
           <ul>
             <li className="px-2">
-              <button
-                onClick={() => {
-                  setActiveComponent("dashboard");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
-                  activeComponent === "dashboard"
-                    ? "bg-purple-600 text-white"
-                    : "hover:bg-gray-800"
-                }`}
-              >
-                <LayoutDashboard size={20} />
-                <span>Dashboard</span>
-              </button>
+              {/* Dashboard menu item */}
+              {(user?.role === "ROLE_ADMIN" ||
+                user?.role === "ROLE_MANAGER") && (
+                <button
+                  onClick={() => {
+                    setActiveComponent("dashboard");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                    activeComponent === "dashboard"
+                      ? "bg-purple-600 text-white"
+                      : "hover:bg-gray-800"
+                  }`}
+                >
+                  <LayoutDashboard size={20} />
+                  <span>Dashboard</span>
+                </button>
+              )}
             </li>
             <li className="px-2 mt-2">
-              <button
-                onClick={() => {
-                  setActiveComponent("project");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
-                  activeComponent === "project"
-                    ? "bg-purple-600 text-white"
-                    : "hover:bg-gray-800"
-                }`}
-              >
-                <FolderKanban size={20} />
-                <span>Project</span>
-              </button>
+              {/* Project menu item */}
+              {(user?.role === "ROLE_ADMIN" ||
+                user?.role === "ROLE_MANAGER") && (
+                <button
+                  onClick={() => {
+                    setActiveComponent("project");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                    activeComponent === "project"
+                      ? "bg-purple-600 text-white"
+                      : "hover:bg-gray-800"
+                  }`}
+                >
+                  <FolderKanban size={20} />
+                  <span>Project</span>
+                </button>
+              )}
             </li>
             <li className="px-2 mt-2">
-              <button
-                onClick={() => {
-                  setActiveComponent("subTask");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
-                  activeComponent === "subTask"
-                    ? "bg-purple-600 text-white"
-                    : "hover:bg-gray-800"
-                }`}
-              >
-                <ClipboardList size={20} />
-                <span>Sub Task</span>
-              </button>
+              {/* Team Task menu item */}
+              {(user?.role === "ROLE_ADMIN" ||
+                user?.role === "ROLE_MANAGER") && (
+                <button
+                  onClick={() => {
+                    setActiveComponent("teamTask");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                    activeComponent === "teamTask"
+                      ? "bg-purple-600 text-white"
+                      : "hover:bg-gray-800"
+                  }`}
+                >
+                  <ListChecks size={20} />
+                  <span>Team Task</span>
+                </button>
+              )}
             </li>
             <li className="px-2 mt-2">
-              <button
-                onClick={() => {
-                  setActiveComponent("teamTask");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
-                  activeComponent === "teamTask"
-                    ? "bg-purple-600 text-white"
-                    : "hover:bg-gray-800"
-                }`}
-              >
-                <ListChecks size={20} />
-                <span>Team Task</span>
-              </button>
+              {/* Sub Task menu item */}
+              {user?.role === "ROLE_USER" && (
+                <button
+                  onClick={() => {
+                    setActiveComponent("subTask");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                    activeComponent === "subTask"
+                      ? "bg-purple-600 text-white"
+                      : "hover:bg-gray-800"
+                  }`}
+                >
+                  <ClipboardList size={20} />
+                  <span>Sub Task</span>
+                </button>
+              )}
             </li>
             <li className="px-2 mt-2">
-              <button
-                onClick={() => {
-                  setActiveComponent("userManagement");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
-                  activeComponent === "userManagement"
-                    ? "bg-purple-600 text-white"
-                    : "hover:bg-gray-800"
-                }`}
-              >
-                <User size={20} />
-                <span>User Management</span>
-              </button>
+              {/* User Management menu item */}
+              {user?.role === "ROLE_ADMIN" && (
+                <button
+                  onClick={() => {
+                    setActiveComponent("userManagement");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                    activeComponent === "userManagement"
+                      ? "bg-purple-600 text-white"
+                      : "hover:bg-gray-800"
+                  }`}
+                >
+                  <User size={20} />
+                  <span>User Management</span>
+                </button>
+              )}
             </li>
           </ul>
         </nav>
@@ -203,9 +221,6 @@ const DashboardUI = ({ onLogout }) => {
             </button>
 
             <div className="flex items-center ml-auto gap-4">
-              <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
-                <Search size={20} />
-              </button>
               <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
                 <Bell size={20} />
               </button>

@@ -109,7 +109,6 @@ CREATE TABLE project_tags (
 -- Cập nhật câu lệnh INSERT vào bảng `users`
 INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position, status)
 VALUES
-  ('Nguyễn Trường Giang', 'admin', '$2a$10$/bkNd5hWTUVjSo8AFKa1VujE/U2vr.kI59dsNNC0phnKWw.zJ1f/C', 'admin@gmail.com', '0975076123', 'ROLE_ADMIN', 'IT', '123 Main St', 'Admin', 'ACTIVE'),
   ('Nguyễn Văn A', 'nguyenvana', 'password123', 'nguyenvana@example.com', '0912345678', 'ROLE_ADMIN', 'IT', '123 Main St', 'Manager', 'ACTIVE'),
   ('Trần Thị B', 'tranthib', 'password123', 'tranthib@example.com', '0912345679', 'ROLE_MANAGER', 'Marketing', '456 Oak St', 'Coordinator', 'ACTIVE'),
   ('Lê Minh C', 'leminhc', 'password123', 'leminhc@example.com', '0912345680', 'ROLE_MANAGER', 'Sales', '789 Pine St', 'Supervisor', 'ACTIVE'),

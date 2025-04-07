@@ -20,4 +20,18 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler({
+            BadCredentialsException.class,
+            InvalidPasswordException.class
+    })
+    public ResponseEntity<ErrorResponse> handlePasswordExceptions(Exception ex) {
+        ErrorResponse errorResponse = new ErrorResponse();
+
+        errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        errorResponse.setMessage(ex.getMessage());
+        errorResponse.setTimestamp(new Date());
+
+        return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
 }

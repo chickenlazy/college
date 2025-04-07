@@ -58,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
         User user = UserMapper.INSTANCE.userReqToUser(userRequest);
         user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
 
-        user.setRole(Role.ROLE_USER);
+//        user.setRole(Role.ROLE_USER);
 
         user = userRepository.save(user);
         return "Người dùng đã được đăng ký thành công với ID " + user.getId();

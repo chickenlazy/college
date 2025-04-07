@@ -1,5 +1,6 @@
 package com.college.backend.college.project.controller;
 
+import com.college.backend.college.project.request.PasswordUpdateRequest;
 import com.college.backend.college.project.request.UserRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
@@ -51,6 +52,28 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')") // Restrict to admin access
     public ResponseEntity<UserResponse> toggleUserStatus(@PathVariable Integer userId) {
         UserResponse updatedUser = userService.toggleUserStatus(userId);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    /**
+     * API để cập nhật thông tin người dùng
+     */
+    @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Integer userId,
+            @RequestBody UserRequest userRequest) {
+        UserResponse updatedUser = userService.updateUser(userId, userRequest);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    /**
+     * API để cập nhật password
+     */
+    @PutMapping("/update-password")
+    public ResponseEntity<UserResponse> updatePassword(
+            @RequestBody PasswordUpdateRequest passwordUpdateRequest) {
+        UserResponse updatedUser = userService.updatePassword(passwordUpdateRequest);
         return ResponseEntity.ok(updatedUser);
     }
 

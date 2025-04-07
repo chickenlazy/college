@@ -3,9 +3,12 @@ package com.college.backend.college.project.service.impl;
 import com.college.backend.college.project.entity.User;
 import com.college.backend.college.project.enums.Role;
 import com.college.backend.college.project.enums.UserStatus;
+import com.college.backend.college.project.exception.BadCredentialsException;
+import com.college.backend.college.project.exception.InvalidPasswordException;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
 import com.college.backend.college.project.mapper.UserMapper;
 import com.college.backend.college.project.repository.UserRepository;
+import com.college.backend.college.project.request.PasswordUpdateRequest;
 import com.college.backend.college.project.request.UserRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
@@ -122,5 +125,84 @@ public class UserServiceImpl implements UserService {
 
         // Convert and return the updated user response
         return UserMapper.INSTANCE.userToUserRes(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUser(Integer userId, UserRequest userRequest) {
+        // Tìm người dùng theo ID
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        // Chuẩn bị thông tin cập nhật từ userRequest
+        User updatedInfo = UserMapper.INSTANCE.userReqToUser(userRequest);
+
+        // Cập nhật các trường (giữ lại mật khẩu hiện tại nếu không có mật khẩu mới)
+        if (StringUtils.hasText(updatedInfo.getFullName())) {
+            user.setFullName(updatedInfo.getFullName());
+        }
+
+        if (StringUtils.hasText(updatedInfo.getEmail())) {
+            user.setEmail(updatedInfo.getEmail());
+        }
+
+        if (StringUtils.hasText(updatedInfo.getPhoneNumber())) {
+            user.setPhoneNumber(updatedInfo.getPhoneNumber());
+        }
+
+        if (StringUtils.hasText(updatedInfo.getDepartment())) {
+            user.setDepartment(updatedInfo.getDepartment());
+        }
+
+        if (StringUtils.hasText(updatedInfo.getAddress())) {
+            user.setAddress(updatedInfo.getAddress());
+        }
+
+        if (StringUtils.hasText(updatedInfo.getPosition())) {
+            user.setPosition(updatedInfo.getPosition());
+        }
+
+        // Nếu có mật khẩu mới, mã hóa và cập nhật
+        if (StringUtils.hasText(userRequest.getPassword())) {
+            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+        }
+
+        if (userRequest.getStatus() != null) {
+            user.setStatus(userRequest.getStatus());
+        }
+
+        // Thêm vào phương thức updateUser trong UserServiceImpl
+        if (userRequest.getRole() != null) {
+            user.setRole(userRequest.getRole());
+        }
+
+        // Lưu thay đổi
+        User savedUser = userRepository.save(user);
+
+        // Chuyển đổi và trả về user đã cập nhật
+        return UserMapper.INSTANCE.userToUserRes(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updatePassword(PasswordUpdateRequest passwordUpdateRequest) {
+        // Find the user by username
+        User user = userRepository.findByEmail(passwordUpdateRequest.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Validate current password
+        if (!passwordEncoder.matches(passwordUpdateRequest.getCurrentPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Current password is incorrect");
+        }
+
+        // Validate new password (optional: add password strength checks)
+        if (passwordUpdateRequest.getNewPassword() == null || passwordUpdateRequest.getNewPassword().length() < 6) {
+            throw new InvalidPasswordException("Password must be at least 6 characters long");
+        }
+
+        // Encode and set new password
+        user.setPassword(passwordEncoder.encode(passwordUpdateRequest.getNewPassword()));
+
+        return UserMapper.INSTANCE.userToUserRes(userRepository.save(user));
     }
 }

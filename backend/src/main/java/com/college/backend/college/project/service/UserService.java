@@ -1,5 +1,6 @@
 package com.college.backend.college.project.service;
 
+import com.college.backend.college.project.request.PasswordUpdateRequest;
 import com.college.backend.college.project.request.UserRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
@@ -15,4 +16,8 @@ public interface UserService {
     UserResponse getUserById(Integer userId);
 
     UserResponse toggleUserStatus(Integer userId);
+
+    UserResponse updateUser(Integer userId, UserRequest userRequest);
+
+    UserResponse updatePassword(PasswordUpdateRequest passwordUpdateRequest);
 }

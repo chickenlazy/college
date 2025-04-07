@@ -57,7 +57,7 @@ public class ProjectController {
     }
 
     // Phương thức GET để lấy tất cả các dự án với phân trang, tìm kiếm và lọc
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER')")
     @GetMapping
     public ResponseEntity<PagedResponse<ProjectResponse>> getAllProjects(
             @RequestParam(defaultValue = "1") int pageNo,
