@@ -47,29 +47,11 @@ public class UserController {
         return ResponseEntity.ok(userResponse);
     }
 
-    /**
-     * API để cập nhật thông tin người dùng
-     * Người dùng chỉ có thể cập nhật thông tin của chính họ hoặc phải là ADMIN
-     */
-    @PutMapping("/{userId}")
-    @PreAuthorize("@userSecurity.isUserOrAdmin(#userId)")
-    public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Integer userId,
-            @RequestBody UserRequest userRequest) {
-
-        UserResponse updatedUser = userService.updateUser(userId, userRequest);
+    @PutMapping("/{userId}/toggle-status")
+    @PreAuthorize("hasRole('ADMIN')") // Restrict to admin access
+    public ResponseEntity<UserResponse> toggleUserStatus(@PathVariable Integer userId) {
+        UserResponse updatedUser = userService.toggleUserStatus(userId);
         return ResponseEntity.ok(updatedUser);
-    }
-
-    /**
-     * API để xóa người dùng
-     * Chỉ ADMIN mới có quyền xóa người dùng
-     */
-    @DeleteMapping("/{userId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<ApiResponse> deleteUser(@PathVariable Integer userId) {
-        ApiResponse apiResponse = userService.deleteUser(userId);
-        return ResponseEntity.ok(apiResponse);
     }
 
 }

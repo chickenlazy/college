@@ -1,6 +1,7 @@
 package com.college.backend.college.project.response;
 
 import com.college.backend.college.project.enums.Role;
+import com.college.backend.college.project.enums.UserStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,7 +18,8 @@ public class UserResponse {
     private Role role;
     private Date createdDate;
     private Date lastModifiedDate;
-    private String department;  // New field for department
-    private String address;     // New field for address
-    private String position;    // New field for position
+    private String department;
+    private String address;
+    private String position;
+    private UserStatus status;
 }

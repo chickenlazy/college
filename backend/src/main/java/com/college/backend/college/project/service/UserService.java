@@ -13,6 +13,6 @@ public interface UserService {
     PagedResponse<UserResponse> getAllUsers(int pageNo, int pageSize, String search, String role);
 
     UserResponse getUserById(Integer userId);
-    UserResponse updateUser(Integer userId, UserRequest userRequest);
-    ApiResponse deleteUser(Integer userId);
+
+    UserResponse toggleUserStatus(Integer userId);
 }

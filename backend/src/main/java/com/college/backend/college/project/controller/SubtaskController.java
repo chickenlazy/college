@@ -2,12 +2,15 @@ package com.college.backend.college.project.controller;
 
 import com.college.backend.college.project.request.SubtaskRequest;
 import com.college.backend.college.project.response.ApiResponse;
+import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.SubtaskResponse;
 import com.college.backend.college.project.service.SubtaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/subtasks")
@@ -39,5 +42,16 @@ public class SubtaskController {
     public ResponseEntity<SubtaskResponse> toggleSubtaskStatus(@PathVariable Integer subtaskId) {
         SubtaskResponse subtaskResponse = subtaskService.toggleSubtaskStatus(subtaskId);
         return ResponseEntity.ok(subtaskResponse);
+    }
+
+    // Trong SubtaskController.java
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<PagedResponse<SubtaskResponse>> getSubtasksByAssignee(
+            @PathVariable Integer userId,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        PagedResponse<SubtaskResponse> subtasks = subtaskService.getSubtasksByAssigneeWithPagination(userId, page, size);
+        return ResponseEntity.ok(subtasks);
     }
 }

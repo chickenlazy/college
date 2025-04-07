@@ -12,7 +12,6 @@ SHOW GRANTS FOR 'admin'@'localhost';
 -- End creating Admin user
 
 -- Xóa và tạo lại bảng `users`
--- Xóa và tạo lại bảng `users` với các trường mới
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -22,9 +21,10 @@ CREATE TABLE users (
   email VARCHAR(255) UNIQUE,
   phone_number VARCHAR(20),
   role ENUM('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_USER'),
-  department VARCHAR(255),  -- Mới thêm
-  address VARCHAR(255),     -- Mới thêm
-  position VARCHAR(255),    -- Mới thêm
+  department VARCHAR(255), 
+  address VARCHAR(255),  
+  position VARCHAR(255),   
+  status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -66,7 +66,11 @@ CREATE TABLE subtasks (
   name VARCHAR(255),
   task_id INT,
   assignee_id INT,
-  completed BOOLEAN DEFAULT FALSE
+  completed BOOLEAN DEFAULT FALSE,
+  start_date DATETIME,
+  due_date DATETIME,
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Xóa và tạo lại bảng `comments`
@@ -103,29 +107,28 @@ CREATE TABLE project_tags (
 
 
 -- Cập nhật câu lệnh INSERT vào bảng `users`
-INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position)
+INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position, status)
 VALUES
-  ('Nguyễn Trường Giang', 'admin', '$2a$10$/bkNd5hWTUVjSo8AFKa1VujE/U2vr.kI59dsNNC0phnKWw.zJ1f/C', 'admin@gmail.com', '0975076123', 'ROLE_ADMIN', 'IT', '123 Main St', 'Admin'),
-  ('Nguyễn Văn A', 'nguyenvana', 'password123', 'nguyenvana@example.com', '0912345678', 'ROLE_ADMIN', 'IT', '123 Main St', 'Manager'),
-  ('Trần Thị B', 'tranthib', 'password123', 'tranthib@example.com', '0912345679', 'ROLE_MANAGER', 'Marketing', '456 Oak St', 'Coordinator'),
-  ('Lê Minh C', 'leminhc', 'password123', 'leminhc@example.com', '0912345680', 'ROLE_MANAGER', 'Sales', '789 Pine St', 'Supervisor'),
-  ('Phan Thi D', 'phanthid', 'password123', 'phanthid@example.com', '0912345681', 'ROLE_USER', 'HR', '101 Maple St', 'Staff'),
-  ('Vũ Văn E', 'vuvan', 'password123', 'vuvan@example.com', '0912345682', 'ROLE_USER', 'Finance', '102 Birch St', 'Accountant'),
-  ('Hoàng Thị F', 'hoangthif', 'password123', 'hoangthif@example.com', '0912345683', 'ROLE_USER', 'IT', '103 Cedar St', 'Developer'),
-  ('Đoàn Minh G', 'doanming', 'password123', 'doanming@example.com', '0912345684', 'ROLE_USER', 'Marketing', '104 Elm St', 'Designer'),
-  ('Nguyễn Thị H', 'nguyenh', 'password123', 'nguyenh@example.com', '0912345685', 'ROLE_USER', 'Operations', '105 Birch St', 'Coordinator'),
-  ('Trần Minh I', 'tranminhi', 'password123', 'tranminhi@example.com', '0912345686', 'ROLE_USER', 'Sales', '106 Oak St', 'Representative'),
-  ('Phạm Văn J', 'phamvanj', 'password123', 'phamvanj@example.com', '0912345687', 'ROLE_USER', 'IT', '107 Pine St', 'Technician'),
-  ('Lý Minh K', 'lyminhk', 'password123', 'lyminhk@example.com', '0912345688', 'ROLE_USER', 'HR', '108 Cedar St', 'Recruiter'),
-  ('Hồ Thi L', 'hothil', 'password123', 'hothil@example.com', '0912345689', 'ROLE_USER', 'Finance', '109 Elm St', 'Analyst'),
-  ('Tôn Thị M', 'tonthim', 'password123', 'tonthim@example.com', '0912345690', 'ROLE_USER', 'Marketing', '110 Birch St', 'Manager'),
-  ('Ngô Minh N', 'ngominhn', 'password123', 'ngominhn@example.com', '0912345691', 'ROLE_USER', 'Operations', '111 Oak St', 'Administrator'),
-  ('Vũ Thi O', 'vuthio', 'password123', 'vuthio@example.com', '0912345692', 'ROLE_USER', 'Sales', '112 Pine St', 'Assistant'),
-  ('Mai Văn P', 'maivanp', 'password123', 'maivanp@example.com', '0912345693', 'ROLE_USER', 'Finance', '113 Cedar St', 'Controller'),
-  ('Phan Minh Q', 'phanminhq', 'password123', 'phanminhq@example.com', '0912345694', 'ROLE_USER', 'HR', '114 Elm St', 'Manager'),
-  ('Đặng Thị R', 'dangthir', 'password123', 'dangthir@example.com', '0912345695', 'ROLE_USER', 'Marketing', '115 Birch St', 'Assistant'),
-  ('Bùi Minh S', 'buiminhs', 'password123', 'buiminhs@example.com', '0912345696', 'ROLE_USER', 'IT', '116 Oak St', 'Developer');
-
+  ('Nguyễn Trường Giang', 'admin', '$2a$10$/bkNd5hWTUVjSo8AFKa1VujE/U2vr.kI59dsNNC0phnKWw.zJ1f/C', 'admin@gmail.com', '0975076123', 'ROLE_ADMIN', 'IT', '123 Main St', 'Admin', 'ACTIVE'),
+  ('Nguyễn Văn A', 'nguyenvana', 'password123', 'nguyenvana@example.com', '0912345678', 'ROLE_ADMIN', 'IT', '123 Main St', 'Manager', 'ACTIVE'),
+  ('Trần Thị B', 'tranthib', 'password123', 'tranthib@example.com', '0912345679', 'ROLE_MANAGER', 'Marketing', '456 Oak St', 'Coordinator', 'ACTIVE'),
+  ('Lê Minh C', 'leminhc', 'password123', 'leminhc@example.com', '0912345680', 'ROLE_MANAGER', 'Sales', '789 Pine St', 'Supervisor', 'ACTIVE'),
+  ('Phan Thi D', 'phanthid', 'password123', 'phanthid@example.com', '0912345681', 'ROLE_USER', 'HR', '101 Maple St', 'Staff', 'ACTIVE'),
+  ('Vũ Văn E', 'vuvan', 'password123', 'vuvan@example.com', '0912345682', 'ROLE_USER', 'Finance', '102 Birch St', 'Accountant', 'ACTIVE'),
+  ('Hoàng Thị F', 'hoangthif', 'password123', 'hoangthif@example.com', '0912345683', 'ROLE_USER', 'IT', '103 Cedar St', 'Developer', 'ACTIVE'),
+  ('Đoàn Minh G', 'doanming', 'password123', 'doanming@example.com', '0912345684', 'ROLE_USER', 'Marketing', '104 Elm St', 'Designer', 'ACTIVE'),
+  ('Nguyễn Thị H', 'nguyenh', 'password123', 'nguyenh@example.com', '0912345685', 'ROLE_USER', 'Operations', '105 Birch St', 'Coordinator', 'ACTIVE'),
+  ('Trần Minh I', 'tranminhi', 'password123', 'tranminhi@example.com', '0912345686', 'ROLE_USER', 'Sales', '106 Oak St', 'Representative', 'ACTIVE'),
+  ('Phạm Văn J', 'phamvanj', 'password123', 'phamvanj@example.com', '0912345687', 'ROLE_USER', 'IT', '107 Pine St', 'Technician', 'INACTIVE'),
+  ('Lý Minh K', 'lyminhk', 'password123', 'lyminhk@example.com', '0912345688', 'ROLE_USER', 'HR', '108 Cedar St', 'Recruiter', 'ACTIVE'),
+  ('Hồ Thi L', 'hothil', 'password123', 'hothil@example.com', '0912345689', 'ROLE_USER', 'Finance', '109 Elm St', 'Analyst', 'ACTIVE'),
+  ('Tôn Thị M', 'tonthim', 'password123', 'tonthim@example.com', '0912345690', 'ROLE_USER', 'Marketing', '110 Birch St', 'Manager', 'ACTIVE'),
+  ('Ngô Minh N', 'ngominhn', 'password123', 'ngominhn@example.com', '0912345691', 'ROLE_USER', 'Operations', '111 Oak St', 'Administrator', 'INACTIVE'),
+  ('Vũ Thi O', 'vuthio', 'password123', 'vuthio@example.com', '0912345692', 'ROLE_USER', 'Sales', '112 Pine St', 'Assistant', 'ACTIVE'),
+  ('Mai Văn P', 'maivanp', 'password123', 'maivanp@example.com', '0912345693', 'ROLE_USER', 'Finance', '113 Cedar St', 'Controller', 'ACTIVE'),
+  ('Phan Minh Q', 'phanminhq', 'password123', 'phanminhq@example.com', '0912345694', 'ROLE_USER', 'HR', '114 Elm St', 'Manager', 'ACTIVE'),
+  ('Đặng Thị R', 'dangthir', 'password123', 'dangthir@example.com', '0912345695', 'ROLE_USER', 'Marketing', '115 Birch St', 'Assistant', 'INACTIVE'),
+  ('Bùi Minh S', 'buiminhs', 'password123', 'buiminhs@example.com', '0912345696', 'ROLE_USER', 'IT', '116 Oak St', 'Developer', 'ACTIVE');
 -- Chèn dữ liệu vào bảng `projects`
 INSERT INTO projects (name, description, start_date, due_date, status, manager_id)
 VALUES
@@ -174,27 +177,27 @@ VALUES
   ('Kiểm thử sản phẩm', 'Kiểm thử và đánh giá chất lượng sản phẩm trước khi phát hành', '2026-06-01 09:00:00', '2026-06-15 17:00:00', 'IN_PROGRESS', 'HIGH', 9, 9),
   ('Tổ chức sự kiện ra mắt sản phẩm', 'Lên kế hoạch và tổ chức sự kiện ra mắt sản phẩm mới', '2026-07-01 09:00:00', '2026-07-15 17:00:00', 'NOT_STARTED', 'MEDIUM', 10, 10);
 
--- Chèn dữ liệu vào bảng `subtasks`
-INSERT INTO subtasks (name, task_id, completed, assignee_id)
+-- Chèn dữ liệu vào bảng `subtasks` với các cột mới
+INSERT INTO subtasks (name, task_id, completed, assignee_id, start_date, due_date)
 VALUES
-  ('Thiết kế cơ sở dữ liệu', 1, TRUE, 2),
-  ('Phát triển ứng dụng di động', 2, FALSE, 3),
-  ('Thiết kế giao diện website', 3, TRUE, 4),
-  ('Kiểm thử phần mềm', 4, FALSE, 5),
-  ('Cải tiến giao diện người dùng', 5, TRUE, 6),
-  ('Nghiên cứu và phát triển tính năng mới', 6, TRUE, 7),
-  ('Chiến dịch marketing sản phẩm', 7, FALSE, 8),
-  ('Đào tạo nhân viên mới', 8, TRUE, 9),
-  ('Nâng cấp hệ thống phần mềm', 9, FALSE, 10),
-  ('Hỗ trợ khách hàng sử dụng sản phẩm', 10, TRUE, 2),
-  ('Phân tích thị trường', 11, TRUE, 3),
-  ('Tạo báo cáo tiến độ dự án', 12, TRUE, 4),
-  ('Phát triển công cụ quản lý công việc', 13, FALSE, 5),
-  ('Phát triển website thương mại điện tử', 14, TRUE, 6),
-  ('Chạy chiến dịch quảng cáo', 15, FALSE, 7),
-  ('Tối ưu hóa SEO cho website', 16, TRUE, 8),
-  ('Hỗ trợ khách hàng qua chat trực tuyến', 17, FALSE, 9),
-  ('Lập kế hoạch sản phẩm', 18, TRUE, 10);
+  ('Thiết kế cơ sở dữ liệu', 1, TRUE, 2, '2025-01-01 09:00:00', '2025-01-10 17:00:00'),
+  ('Phát triển ứng dụng di động', 2, FALSE, 3, '2025-01-15 09:00:00', '2025-01-25 17:00:00'),
+  ('Thiết kế giao diện website', 3, TRUE, 4, '2025-02-01 09:00:00', '2025-02-10 17:00:00'),
+  ('Kiểm thử phần mềm', 4, FALSE, 5, '2025-03-01 09:00:00', '2025-03-10 17:00:00'),
+  ('Cải tiến giao diện người dùng', 5, TRUE, 6, '2025-04-01 09:00:00', '2025-04-10 17:00:00'),
+  ('Nghiên cứu và phát triển tính năng mới', 6, TRUE, 7, '2025-05-01 09:00:00', '2025-05-10 17:00:00'),
+  ('Chiến dịch marketing sản phẩm', 7, FALSE, 8, '2025-06-01 09:00:00', '2025-06-10 17:00:00'),
+  ('Đào tạo nhân viên mới', 8, TRUE, 9, '2025-07-01 09:00:00', '2025-07-10 17:00:00'),
+  ('Nâng cấp hệ thống phần mềm', 9, FALSE, 10, '2025-08-01 09:00:00', '2025-08-10 17:00:00'),
+  ('Hỗ trợ khách hàng sử dụng sản phẩm', 10, TRUE, 2, '2025-09-01 09:00:00', '2025-09-10 17:00:00'),
+  ('Phân tích thị trường', 11, TRUE, 3, '2025-10-01 09:00:00', '2025-10-10 17:00:00'),
+  ('Tạo báo cáo tiến độ dự án', 12, TRUE, 4, '2025-11-01 09:00:00', '2025-11-10 17:00:00'),
+  ('Phát triển công cụ quản lý công việc', 13, FALSE, 5, '2025-12-01 09:00:00', '2025-12-10 17:00:00'),
+  ('Phát triển website thương mại điện tử', 14, TRUE, 6, '2026-01-01 09:00:00', '2026-01-10 17:00:00'),
+  ('Chạy chiến dịch quảng cáo', 15, FALSE, 7, '2026-02-01 09:00:00', '2026-02-10 17:00:00'),
+  ('Tối ưu hóa SEO cho website', 16, TRUE, 8, '2026-03-01 09:00:00', '2026-03-10 17:00:00'),
+  ('Hỗ trợ khách hàng qua chat trực tuyến', 17, FALSE, 9, '2026-04-01 09:00:00', '2026-04-10 17:00:00'),
+  ('Lập kế hoạch sản phẩm', 18, TRUE, 10, '2026-05-01 09:00:00', '2026-05-10 17:00:00');
 
 
 -- Chèn dữ liệu vào bảng `comments`

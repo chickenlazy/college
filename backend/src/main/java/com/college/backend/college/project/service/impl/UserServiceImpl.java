@@ -2,6 +2,7 @@ package com.college.backend.college.project.service.impl;
 
 import com.college.backend.college.project.entity.User;
 import com.college.backend.college.project.enums.Role;
+import com.college.backend.college.project.enums.UserStatus;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
 import com.college.backend.college.project.mapper.UserMapper;
 import com.college.backend.college.project.repository.UserRepository;
@@ -20,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -109,57 +109,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateUser(Integer userId, UserRequest userRequest) {
-        // Kiểm tra user có tồn tại không
+    public UserResponse toggleUserStatus(Integer userId) {
+        // Find the user or throw ResourceNotFoundException
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-        // Cập nhật thông tin cơ bản
-        if (userRequest.getFullName() != null) {
-            user.setFullName(userRequest.getFullName());
-        }
+        // Toggle the user status
+        user.setStatus(user.getStatus() == UserStatus.ACTIVE ? UserStatus.INACTIVE : UserStatus.ACTIVE);
 
-        if (userRequest.getEmail() != null) {
-            // Kiểm tra email mới có trùng với email đã tồn tại không
-            if (!user.getEmail().equals(userRequest.getEmail()) &&
-                    userRepository.existsByEmail(userRequest.getEmail())) {
-                throw new RuntimeException("Email already exists");
-            }
-            user.setEmail(userRequest.getEmail());
-        }
-
-        if (userRequest.getPhoneNumber() != null) {
-            user.setPhoneNumber(userRequest.getPhoneNumber());
-        }
-
-        // Cập nhật password nếu có
-        if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-        }
-
-        // Cập nhật thời gian chỉnh sửa
-        if (user.getLastModifiedDate() != null) {
-            user.setLastModifiedDate(new Date());
-        }
-
-        // Lưu thông tin đã cập nhật
+        // Save the updated user
         User updatedUser = userRepository.save(user);
 
-        // Chuyển đổi và trả về response
+        // Convert and return the updated user response
         return UserMapper.INSTANCE.userToUserRes(updatedUser);
-    }
-
-    @Override
-    @Transactional
-    public ApiResponse deleteUser(Integer userId) {
-        // Kiểm tra user có tồn tại không
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-
-        // Xóa user
-        userRepository.delete(user);
-
-        // Trả về phản hồi thành công
-        return new ApiResponse(Boolean.TRUE, "User deleted successfully");
     }
 }

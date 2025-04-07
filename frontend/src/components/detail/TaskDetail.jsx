@@ -390,6 +390,8 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [subtaskStartDate, setSubtaskStartDate] = useState(""); // Thêm state cho startDate
+  const [subtaskDueDate, setSubtaskDueDate] = useState(""); // Thêm state cho dueDate
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({
@@ -464,10 +466,15 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
   }
 
   // Thêm subtask
-  // Thêm subtask
   const handleAddSubtask = async () => {
     if (!newSubtask.trim() || !selectedAssignee) {
       showToast("Please enter subtask name and select an assignee", "error");
+      return;
+    }
+
+    // Kiểm tra các trường ngày tháng
+    if (!subtaskStartDate || !subtaskDueDate) {
+      showToast("Please select start date and due date", "error");
       return;
     }
 
@@ -486,6 +493,8 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
           completed: false,
           taskId: task.id,
           assigneeId: selectedAssignee.id,
+          startDate: subtaskStartDate,
+          dueDate: subtaskDueDate,
         },
         {
           headers: {
@@ -505,11 +514,12 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
       );
 
       // Cập nhật cả task và subtasks
-      // Trong hàm handleAddSubtask
       setTask(taskResponse.data);
       setSubtasks(taskResponse.data.subTasks || []);
       setNewSubtask("");
       setSelectedAssignee(null);
+      setSubtaskStartDate(""); // Reset startDate
+      setSubtaskDueDate(""); // Reset dueDate
       setShowAddSubtask(false);
       showToast("Subtask added successfully", "success");
     } catch (error) {
@@ -869,6 +879,31 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                       onChange={(e) => setNewSubtask(e.target.value)}
                     />
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-1">
+                          Start Date
+                        </label>
+                        <input
+                          type="datetime-local"
+                          className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
+                          value={subtaskStartDate}
+                          onChange={(e) => setSubtaskStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-1">
+                          Due Date
+                        </label>
+                        <input
+                          type="datetime-local"
+                          className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
+                          value={subtaskDueDate}
+                          onChange={(e) => setSubtaskDueDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
                     <div className="relative">
                       <button
                         className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md flex items-center justify-between text-left"
@@ -956,8 +991,10 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
                         onClick={() => {
                           setShowAddSubtask(false);
-                          setNewSubtask("");
-                          setSelectedAssignee(null);
+            setNewSubtask("");
+            setSelectedAssignee(null);
+            setSubtaskStartDate("");
+            setSubtaskDueDate("");
                         }}
                       >
                         Cancel
@@ -965,7 +1002,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                       <button
                         className="flex-1 bg-purple-600 hover:bg-purple-700 py-3 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleAddSubtask}
-                        disabled={!newSubtask.trim() || !selectedAssignee}
+                        disabled={!newSubtask.trim() || !selectedAssignee || !subtaskStartDate || !subtaskDueDate}
                       >
                         Add Subtask
                       </button>
@@ -980,44 +1017,49 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {subtasks.map((subtask) => (
-                    <div
-                      key={subtask.id}
-                      className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
-                    >
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={subtask.completed}
-                          onChange={() => handleToggleSubtask(subtask.id)}
-                          className="mr-3 h-4 w-4"
-                        />
-                        <div>
-                          <span
-                            className={
-                              subtask.completed
-                                ? "line-through text-gray-400"
-                                : ""
-                            }
-                          >
-                            {subtask.name}
-                          </span>
-                          {subtask.assigneeName && (
-                            <div className="text-xs text-gray-400 flex items-center mt-1">
-                              <User size={12} className="mr-1" />
-                              {subtask.assigneeName}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        className="text-gray-400 hover:text-red-500"
-                        onClick={() => handleDeleteSubtask(subtask.id)}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
+{subtasks.map((subtask) => (
+  <div
+    key={subtask.id}
+    className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
+  >
+    <div className="flex items-center">
+      <input
+        type="checkbox"
+        checked={subtask.completed}
+        onChange={() => handleToggleSubtask(subtask.id)}
+        className="mr-3 h-4 w-4"
+      />
+      <div>
+        <span
+          className={
+            subtask.completed
+              ? "line-through text-gray-400"
+              : ""
+          }
+        >
+          {subtask.name}
+        </span>
+        {subtask.assigneeName && (
+          <div className="text-xs text-gray-400 flex items-center mt-1">
+            <User size={12} className="mr-1" />
+            {subtask.assigneeName}
+          </div>
+        )}
+        {/* Hiển thị thông tin ngày tháng */}
+        <div className="text-xs text-gray-400 flex items-center mt-1">
+          <Calendar size={12} className="mr-1" />
+          {formatDate(subtask.startDate)} - {formatDate(subtask.dueDate)}
+        </div>
+      </div>
+    </div>
+    <button
+      className="text-gray-400 hover:text-red-500"
+      onClick={() => handleDeleteSubtask(subtask.id)}
+    >
+      <X size={16} />
+    </button>
+  </div>
+))}
                 </div>
               )}
             </div>

@@ -9,12 +9,17 @@ import Sumary from "./Sumary";
 import ProjectEdit from "../edit/ProjectEdit";
 import TaskEdit from "../edit/TaskEdit";
 import UserProfile from "../utils/UserProfile";
+import UserManagement from "./UserManagement";
+import Subtask from "./SubTask";
 
 import {
   Menu,
-  Users,
+  ClipboardList,
+  UserCog,
   Search,
   Settings,
+  ListChecks,
+  Kanban,
   Bell,
   User,
   LayoutDashboard,
@@ -23,21 +28,19 @@ import {
   File,
   LogIn,
 } from "lucide-react";
-import UserManagement from "./UserManagement";
 
 const DashboardUI = ({ onLogout }) => {
-
   const [user, setUser] = useState(null);
-  
+
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
   }, []);
 
-console.log(user);
-  
+  console.log(user);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeComponent, setActiveComponent] = useState("dashboard");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -59,21 +62,12 @@ console.log(user);
         return <Project />;
       case "task":
         return <TaskOverview />;
-      case "selfTask":
-        return <SelfTask />;
+      case "subTask":
+        return <Subtask />;
       case "teamTask":
         return <TeamTask />;
       case "userManagement":
         return <UserManagement />;
-      case "files":
-        return (
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-6">FILES MANAGEMENT</h2>
-            <div className="h-96 flex items-center justify-center text-gray-500">
-              <p>Files management content will be displayed here</p>
-            </div>
-          </div>
-        );
       case "userProfile":
         return <UserProfile user={user} />;
       default:
@@ -94,7 +88,7 @@ console.log(user);
 
   const handleLogout = () => {
     // Xóa thông tin người dùng khỏi localStorage khi đăng xuất
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
     onLogout(); // Gọi hàm onLogout để chuyển hướng về màn hình đăng nhập
   };
 
@@ -147,48 +141,32 @@ console.log(user);
             <li className="px-2 mt-2">
               <button
                 onClick={() => {
-                  setActiveComponent("task");
+                  setActiveComponent("subTask");
                   setIsMenuOpen(false);
                 }}
                 className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
-                  activeComponent === "task"
+                  activeComponent === "subTask"
                     ? "bg-purple-600 text-white"
                     : "hover:bg-gray-800"
                 }`}
               >
-                <FileText size={20} />
-                <span>Task</span>
+                <ClipboardList size={20} />
+                <span>Sub Task</span>
               </button>
             </li>
-            <li className="ml-6 mt-1">
-              <button
-                onClick={() => {
-                  setActiveComponent("selfTask");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-2 p-2 w-full text-left rounded-md ${
-                  activeComponent === "selfTask"
-                    ? "bg-purple-600 text-white"
-                    : "hover:bg-gray-800"
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-white"></div>
-                <span>Self Task</span>
-              </button>
-            </li>
-            <li className="ml-6 mt-1">
+            <li className="px-2 mt-2">
               <button
                 onClick={() => {
                   setActiveComponent("teamTask");
                   setIsMenuOpen(false);
                 }}
-                className={`flex items-center gap-2 p-2 w-full text-left rounded-md ${
+                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
                   activeComponent === "teamTask"
                     ? "bg-purple-600 text-white"
                     : "hover:bg-gray-800"
                 }`}
               >
-                <div className="w-2 h-2 rounded-full bg-white"></div>
+                <ListChecks size={20} />
                 <span>Team Task</span>
               </button>
             </li>
@@ -204,24 +182,8 @@ console.log(user);
                     : "hover:bg-gray-800"
                 }`}
               >
-                <Users size={20} />
+                <User size={20} />
                 <span>User Management</span>
-              </button>
-            </li>
-            <li className="px-2 mt-2">
-              <button
-                onClick={() => {
-                  setActiveComponent("files");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
-                  activeComponent === "files"
-                    ? "bg-purple-600 text-white"
-                    : "hover:bg-gray-800"
-                }`}
-              >
-                <File size={20} />
-                <span>Files</span>
               </button>
             </li>
           </ul>
@@ -251,7 +213,9 @@ console.log(user);
                 <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
                   <User size={20} />
                 </button>
-                <span className="hidden md:inline">{user ? user.fullName : ''}</span>
+                <span className="hidden md:inline">
+                  {user ? user.fullName : ""}
+                </span>
               </div>
               <button
                 className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white"

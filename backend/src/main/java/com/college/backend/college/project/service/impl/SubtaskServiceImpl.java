@@ -13,14 +13,19 @@ import com.college.backend.college.project.repository.TaskRepository;
 import com.college.backend.college.project.repository.UserRepository;
 import com.college.backend.college.project.request.SubtaskRequest;
 import com.college.backend.college.project.response.ApiResponse;
+import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.SubtaskResponse;
 import com.college.backend.college.project.service.SubtaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SubtaskServiceImpl implements SubtaskService {
@@ -109,6 +114,12 @@ public class SubtaskServiceImpl implements SubtaskService {
         response.setName(updatedSubtask.getName());
         response.setCompleted(updatedSubtask.getCompleted());
 
+        // Thêm các trường mới vào response
+        response.setStartDate(updatedSubtask.getStartDate());
+        response.setDueDate(updatedSubtask.getDueDate());
+        response.setCreatedDate(updatedSubtask.getCreatedDate());
+        response.setLastModifiedDate(updatedSubtask.getLastModifiedDate());
+
         // Thêm thông tin assignee vào response
         if (updatedSubtask.getAssignee() != null) {
             response.setAssigneeId(updatedSubtask.getAssignee().getId());
@@ -116,9 +127,22 @@ public class SubtaskServiceImpl implements SubtaskService {
             response.setAssigneeEmail(updatedSubtask.getAssignee().getEmail());
         }
 
+        // Thêm thông tin task và project vào response
+        if (task != null) {
+            response.setTaskId(task.getId());
+            response.setTaskName(task.getName());
+            response.setTaskStatus(task.getStatus().toString());
+
+            // Thêm thông tin project
+            Project project = task.getProject();
+            if (project != null) {
+                response.setProjectId(project.getId());
+                response.setProjectName(project.getName());
+            }
+        }
+
         return response;
     }
-
     /**
      * Kiểm tra và cập nhật trạng thái của project nếu cần
      */
@@ -155,7 +179,7 @@ public class SubtaskServiceImpl implements SubtaskService {
         Task task = taskRepository.findById(subtaskRequest.getTaskId())
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + subtaskRequest.getTaskId()));
 
-        // Tìm User theo ID (thêm dòng này)
+        // Tìm User theo ID
         User assignee = null;
         if (subtaskRequest.getAssigneeId() != null) {
             assignee = userRepository.findById(subtaskRequest.getAssigneeId())
@@ -167,7 +191,11 @@ public class SubtaskServiceImpl implements SubtaskService {
         subtask.setName(subtaskRequest.getName());
         subtask.setCompleted(subtaskRequest.getCompleted() != null ? subtaskRequest.getCompleted() : false);
         subtask.setTask(task);
-        subtask.setAssignee(assignee); // Thêm dòng này
+        subtask.setAssignee(assignee);
+
+        // Thêm các trường mới
+        subtask.setStartDate(subtaskRequest.getStartDate());
+        subtask.setDueDate(subtaskRequest.getDueDate());
 
         // Cập nhật thời gian chỉnh sửa của task
         task.setLastModifiedDate(new Date());
@@ -182,6 +210,12 @@ public class SubtaskServiceImpl implements SubtaskService {
         response.setName(savedSubtask.getName());
         response.setCompleted(savedSubtask.getCompleted());
 
+        // Thêm các trường mới vào response
+        response.setStartDate(savedSubtask.getStartDate());
+        response.setDueDate(savedSubtask.getDueDate());
+        response.setCreatedDate(savedSubtask.getCreatedDate());
+        response.setLastModifiedDate(savedSubtask.getLastModifiedDate());
+
         // Thêm thông tin assignee vào response
         if (assignee != null) {
             response.setAssigneeId(assignee.getId());
@@ -190,5 +224,113 @@ public class SubtaskServiceImpl implements SubtaskService {
         }
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public List<SubtaskResponse> getSubtasksByAssignee(Integer userId) {
+        // Kiểm tra xem user có tồn tại không
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        // Tìm tất cả subtasks được gán cho user này
+        List<Subtask> subtasks = subtaskRepository.findByAssigneeId(userId);
+
+        // Chuyển đổi danh sách subtasks thành danh sách SubtaskResponse
+        return subtasks.stream().map(subtask -> {
+            SubtaskResponse response = new SubtaskResponse();
+            response.setId(subtask.getId());
+            response.setName(subtask.getName());
+            response.setCompleted(subtask.getCompleted());
+
+            // Thêm các trường mới
+            response.setStartDate(subtask.getStartDate());
+            response.setDueDate(subtask.getDueDate());
+            response.setCreatedDate(subtask.getCreatedDate());
+            response.setLastModifiedDate(subtask.getLastModifiedDate());
+
+            // Thêm thông tin của task
+            Task task = subtask.getTask();
+            if (task != null) {
+                response.setTaskId(task.getId());
+                response.setTaskName(task.getName());
+                response.setTaskStatus(task.getStatus().toString());
+
+                // Thêm thông tin của project
+                Project project = task.getProject();
+                if (project != null) {
+                    response.setProjectId(project.getId());
+                    response.setProjectName(project.getName());
+                }
+            }
+
+            // Thêm thông tin assignee
+            User assignee = subtask.getAssignee();
+            if (assignee != null) {
+                response.setAssigneeId(assignee.getId());
+                response.setAssigneeName(assignee.getFullName());
+                response.setAssigneeEmail(assignee.getEmail());
+            }
+
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<SubtaskResponse> getSubtasksByAssigneeWithPagination(Integer userId, int pageNo, int pageSize) {
+        // Kiểm tra xem user có tồn tại không
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        // Tạo Pageable để phân trang
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
+
+        // Tìm tất cả subtasks được gán cho user này với phân trang
+        Page<Subtask> subtaskPage = subtaskRepository.findByAssigneeId(userId, pageable);
+
+        // Chuyển đổi danh sách subtasks thành danh sách SubtaskResponse
+        List<SubtaskResponse> subtaskResponses = subtaskPage.getContent().stream().map(subtask -> {
+            SubtaskResponse response = new SubtaskResponse();
+            response.setId(subtask.getId());
+            response.setName(subtask.getName());
+            response.setCompleted(subtask.getCompleted());
+
+            // Thêm các trường mới
+            response.setStartDate(subtask.getStartDate());
+            response.setDueDate(subtask.getDueDate());
+            response.setCreatedDate(subtask.getCreatedDate());
+            response.setLastModifiedDate(subtask.getLastModifiedDate());
+
+            // Thêm thông tin của task
+            Task task = subtask.getTask();
+            if (task != null) {
+                response.setTaskId(task.getId());
+                response.setTaskName(task.getName());
+                response.setTaskStatus(task.getStatus().toString());
+
+                // Thêm thông tin của project
+                Project project = task.getProject();
+                if (project != null) {
+                    response.setProjectId(project.getId());
+                    response.setProjectName(project.getName());
+                }
+            }
+
+            // Thêm thông tin assignee
+            User assignee = subtask.getAssignee();
+            if (assignee != null) {
+                response.setAssigneeId(assignee.getId());
+                response.setAssigneeName(assignee.getFullName());
+                response.setAssigneeEmail(assignee.getEmail());
+            }
+
+            return response;
+        }).collect(Collectors.toList());
+
+        // Tạo và trả về PagedResponse
+        return new PagedResponse<>(subtaskResponses, pageNo, pageSize,
+                subtaskPage.getTotalElements(), subtaskPage.getTotalPages(),
+                subtaskPage.isLast());
     }
 }

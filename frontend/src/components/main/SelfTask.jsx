@@ -273,65 +273,6 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
       <div className="p-4 flex flex-col h-full">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-semibold text-white line-clamp-1">{task.name}</h3>
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="p-1.5 rounded-full hover:bg-gray-700 transition-colors"
-            >
-              <MoreHorizontal size={18} className="text-gray-400" />
-            </button>
-
-            {showMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-gray-900 rounded-md shadow-lg z-10 border border-gray-700 animate-fade-in">
-                <ul className="py-1 text-sm">
-                  <li>
-                    <button
-                      className="flex w-full items-center gap-2 text-left px-4 py-2 hover:bg-gray-800 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMenu(false);
-                        onEdit(task);
-                      }}
-                    >
-                      <Edit size={16} className="text-blue-500" />
-                      Edit Task
-                    </button>
-                  </li>
-                  {task.status !== "COMPLETED" && (
-                    <li>
-                      <button
-                        className="flex w-full items-center gap-2 text-left px-4 py-2 hover:bg-gray-800 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMenu(false);
-                          onMarkAsCompleted(task.id);
-                        }}
-                      >
-                        <CheckCircle size={16} className="text-green-500" />
-                        Mark as Completed
-                      </button>
-                    </li>
-                  )}
-                  <li>
-                    <button
-                      className="flex w-full items-center gap-2 text-left px-4 py-2 hover:bg-gray-800 transition-colors text-red-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMenu(false);
-                        onDelete(task.id);
-                      }}
-                    >
-                      <Trash2 size={16} />
-                      Delete Task
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
         </div>
 
         <p className="text-gray-400 text-sm mb-3 line-clamp-2">
@@ -361,7 +302,7 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <FolderOpen size={14} className="text-gray-400" />
-              <span className="text-gray-400 text-xs">{task.project}</span>
+              <span className="text-gray-400 text-xs">{task.projectName}</span>
             </div>
             <div className="flex items-center">
               <Calendar size={14} className="text-gray-400 mr-1" />
@@ -479,25 +420,25 @@ const SelfTask = () => {
       
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        userId = parsedUser.id; // Thay đổi từ user.id sang parsedUser.id
+        userId = parsedUser.id;
         token = parsedUser.accessToken;
       }
-
+  
       const params = {
-        page: page, // Chuyển từ 1-based sang 0-based
-        size,
+        pageNo: page,
+        pageSize: size,
       };
-
+  
       // Thêm tham số tìm kiếm nếu có
       if (searchTerm) {
         params.search = searchTerm;
       }
-
+  
       // Thêm tham số lọc status nếu không phải "all"
       if (filterStatus !== "all") {
         params.status = filterStatus;
       }
-
+  
       const response = await axios.get(`http://localhost:8080/api/tasks/user/${userId}`, {
         params,
         headers: {
@@ -566,12 +507,30 @@ const SelfTask = () => {
     setDeleteConfirm({ show: true, taskId });
   };
 
-  const confirmDeleteTask = () => {
-    const updatedTasks = tasks.filter(
-      (task) => task.id !== deleteConfirm.taskId
-    );
-    setTasks(updatedTasks);
-    showToast("Task deleted successfully", "success");
+  const confirmDeleteTask = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      await axios.delete(
+        `http://localhost:8080/api/tasks/${deleteConfirm.taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      showToast("Task deleted successfully", "success");
+      fetchTasks(currentPage, itemsPerPage); // Refresh data
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      showToast("Failed to delete task", "error");
+    }
   };
 
   const handleEditTask = (task) => {
@@ -605,17 +564,17 @@ const SelfTask = () => {
     }
   };
 
-  <Pagination
-    currentPage={apiData.pageNo}
-    totalPages={apiData.totalPages}
-    onPageChange={handlePageChange}
-    itemsPerPage={apiData.pageSize}
-    totalItems={apiData.totalElements}
-    onItemsPerPageChange={(newSize) => {
-      setItemsPerPage(newSize);
-      fetchTasks(1, newSize);
-    }}
-  />;
+<Pagination
+  currentPage={apiData.pageNo}
+  totalPages={apiData.totalPages}
+  onPageChange={handlePageChange}
+  itemsPerPage={apiData.pageSize}
+  totalItems={apiData.totalElements}
+  onItemsPerPageChange={(newSize) => {
+    setItemsPerPage(newSize);
+    fetchTasks(1, newSize);
+  }}
+/>
 
   // Filter tasks based on active filter and search
   const filteredTasks = tasks.filter((task) => {

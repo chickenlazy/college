@@ -1,5 +1,6 @@
 package com.college.backend.college.project.request;
 
+import com.college.backend.college.project.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +16,8 @@ public class UserRequest {
     private String password;
     private String email;
     private String phoneNumber;
-    private String department;  // New field for department
-    private String address;     // New field for address
-    private String position;    // New field for position
+    private String department;
+    private String address;
+    private String position;
+    private UserStatus status;
 }

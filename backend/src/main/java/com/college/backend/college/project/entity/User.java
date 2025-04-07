@@ -1,6 +1,7 @@
 package com.college.backend.college.project.entity;
 
 import com.college.backend.college.project.enums.Role;
+import com.college.backend.college.project.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -40,13 +41,17 @@ public class User {
     private String phoneNumber;
 
     @Column(name = "department")
-    private String department;  // New field for department
+    private String department;
 
     @Column(name = "address")
-    private String address;  // New field for address
+    private String address;
 
     @Column(name = "position")
-    private String position;  // New field for position
+    private String position;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
