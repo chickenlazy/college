@@ -78,4 +78,8 @@ public class Project {
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     private Set<Tag> tags;
+
+    // Thêm vào lớp Project
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Attachment> attachments;
 }
