@@ -108,8 +108,7 @@ const DashboardUI = ({ onLogout }) => {
           <ul>
             <li className="px-2">
               {/* Dashboard menu item */}
-              {(user?.role === "ROLE_ADMIN" ||
-                user?.role === "ROLE_MANAGER") && (
+              {(user?.role === "ROLE_ADMIN") && (
                 <button
                   onClick={() => {
                     setActiveComponent("dashboard");

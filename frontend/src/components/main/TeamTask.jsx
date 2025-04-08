@@ -426,53 +426,66 @@ const TeamTask = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchTasks = async (
-    page = currentPage,
-    size = itemsPerPage,
-    searchTerm = search,
-    filterStatus = activeFilter
-  ) => {
-    setLoading(true);
-    try {
-      // Lấy token từ localStorage
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
-
-      const params = {
-        page: page,
-        size: size,
-      };
-
-      // Thêm tham số tìm kiếm nếu có
-      if (searchTerm) {
-        params.search = searchTerm;
-      }
-
-      // Thêm tham số lọc status nếu không phải "all"
-      if (filterStatus !== "all") {
-        params.status = filterStatus;
-      }
-
-      const response = await axios.get(`http://localhost:8080/api/tasks`, {
-        params: params,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setApiData(response.data);
-      setTasks(response.data.content);
-      setError(null); // Reset error
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-      setError("Failed to load tasks. Please try again later.");
-      setLoading(false);
+// Cập nhật hàm fetchTasks để xử lý khác biệt cho ROLE_USER
+const fetchTasks = async (
+  page = currentPage,
+  size = itemsPerPage,
+  searchTerm = search,
+  filterStatus = activeFilter
+) => {
+  setLoading(true);
+  try {
+    // Lấy thông tin user từ localStorage
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    let userId = null;
+    let userRole = null;
+    
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
+      userId = user.id;
+      userRole = user.role;
     }
-  };
+
+    const params = {
+      page: page,
+      size: size,
+    };
+
+    // Thêm tham số tìm kiếm nếu có
+    if (searchTerm) {
+      params.search = searchTerm;
+    }
+
+    // Thêm tham số lọc status nếu không phải "all"
+    if (filterStatus !== "all") {
+      params.status = filterStatus;
+    }
+
+    // Xác định URL API dựa trên vai trò người dùng
+    let apiUrl = "http://localhost:8080/api/tasks";
+    if (userRole === "ROLE_MANAGER") {
+      apiUrl = `http://localhost:8080/api/tasks/user/${userId}`;
+    }
+
+    const response = await axios.get(apiUrl, {
+      params: params,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    setApiData(response.data);
+    setTasks(response.data.content);
+    setError(null); // Reset error
+    setLoading(false);
+  } catch (err) {
+    console.error("Error fetching tasks:", err);
+    setError("Failed to load tasks. Please try again later.");
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

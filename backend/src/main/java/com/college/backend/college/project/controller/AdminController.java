@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    private final ProjectTaskScheduler scheduler; // Đã đổi tên từ TaskScheduler
+    private final ProjectTaskScheduler scheduler;
 
     @Autowired
     public AdminController(ProjectTaskScheduler scheduler) {

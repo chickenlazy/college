@@ -409,12 +409,22 @@ const Project = () => {
 
       const storedUser = localStorage.getItem("user");
       let token = null;
+      let userId = null;
+    let userRole = null;
+
       if (storedUser) {
         const user = JSON.parse(storedUser);
-        token = user.accessToken;
+         token = user.accessToken;
+      userId = user.id;
+      userRole = user.role;
       }
 
-      const response = await axios.get(`http://localhost:8080/api/projects`, {
+      let apiUrl = "http://localhost:8080/api/projects";
+      if (userRole === "ROLE_MANAGER") {
+        apiUrl = `http://localhost:8080/api/projects/manager/${userId}`;
+      }
+  
+      const response = await axios.get(apiUrl, {
         params: params,
         headers: {
           Authorization: `Bearer ${token}`,

@@ -6,35 +6,13 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  AlertTriangle,
   User,
-  BarChart4 as BarIcon,
-  LineChart as LineIcon,
-  PieChart as PieIcon,
   ListChecks,
   FolderKanban,
-  Bell,
   ChevronRight,
-  ArrowUpRight,
-  ArrowDownRight,
-  TrendingUp,
   Flame,
+  TrendingUp,
 } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -95,12 +73,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // Stats Card Component
-const StatsCard = ({ title, value, icon, trend }) => {
-  // Generate random trend percentage between 3 and 15
-  const randomTrend = Math.floor(Math.random() * 13) + 3;
-  const showTrend = trend !== undefined ? trend : randomTrend;
-  const isPositive = showTrend > 0;
-
+const StatsCard = ({ title, value, icon }) => {
   return (
     <div className="bg-gray-800 rounded-lg p-4 transition-all duration-300 hover:shadow-lg hover:shadow-purple-900/20">
       <div className="flex justify-between items-start mb-2">
@@ -108,14 +81,6 @@ const StatsCard = ({ title, value, icon, trend }) => {
         <div className="p-2 bg-gray-700 rounded-full">{icon}</div>
       </div>
       <div className="text-2xl font-bold mb-2">{value}</div>
-      <div
-        className={`flex items-center text-xs ${
-          isPositive ? "text-green-500" : "text-red-500"
-        }`}
-      >
-        {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-        <span>{Math.abs(showTrend)}% from last month</span>
-      </div>
     </div>
   );
 };
@@ -234,163 +199,12 @@ const TeamWorkloadRow = ({ member }) => (
   </div>
 );
 
-// Project Status Chart component
-const ProjectStatusChart = ({ data }) => {
-  // Define colors for different status
-  const statusColors = {
-    inProgress: "#3B82F6", // blue
-    notStarted: "#6B7280", // gray
-    onHold: "#F59E0B", // amber
-    completed: "#10B981", // green
-    overDue: "#EF4444", // red
-  };
-
-  // Prepare data for the pie chart
-  const chartData = Object.entries(data).map(([key, value]) => ({
-    name: key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase()),
-    value: value,
-    fill: statusColors[key] || "#6B7280",
-  }));
-
-  return (
-    <div className="bg-gray-800 rounded-lg p-4 h-64">
-      <h3 className="text-sm font-medium mb-3">Project Status</h3>
-      <div className="h-52 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-              nameKey="name"
-              label={({ name, percent }) =>
-                `${name}: ${(percent * 100).toFixed(0)}%`
-              }
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip formatter={(value) => [`${value} projects`, "Count"]} />
-            <Legend verticalAlign="bottom" height={36} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-};
-
-// Task Status Chart component
-const TaskStatusChart = ({ data }) => {
-  // Define colors for different status
-  const statusColors = {
-    completed: "#10B981", // green
-    inProgress: "#3B82F6", // blue
-    notStarted: "#6B7280", // gray
-    overDue: "#EF4444", // red
-    onHold: "#F59E0B", // amber
-  };
-
-  // Prepare data for the bar chart
-  const chartData = Object.entries(data).map(([key, value]) => ({
-    name: key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase()),
-    value: value,
-    fill: statusColors[key] || "#6B7280",
-  }));
-
-  return (
-    <div className="bg-gray-800 rounded-lg p-4 h-64">
-      <h3 className="text-sm font-medium mb-3">Task Status</h3>
-      <div className="h-52 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip
-              formatter={(value) => [`${value} tasks`, "Count"]}
-              contentStyle={{ backgroundColor: "#374151", border: "none" }}
-              labelStyle={{ color: "white" }}
-            />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-};
-
-// Progress Trend Chart Component
-const ProgressTrendChart = () => {
-  // Sample data for project completion trend
-  const trendData = [
-    { name: "Jan", completed: 5, total: 12 },
-    { name: "Feb", completed: 8, total: 15 },
-    { name: "Mar", completed: 12, total: 18 },
-    { name: "Apr", completed: 7, total: 10 },
-    { name: "May", completed: 9, total: 14 },
-    { name: "Jun", completed: 11, total: 16 },
-  ];
-
-  return (
-    <div className="bg-gray-800 rounded-lg p-4 h-64">
-      <h3 className="text-sm font-medium mb-3">Completion Trend</h3>
-      <div className="h-52 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={trendData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip
-              contentStyle={{ backgroundColor: "#374151", border: "none" }}
-              labelStyle={{ color: "white" }}
-            />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="completed"
-              stroke="#10B981"
-              strokeWidth={2}
-              activeDot={{ r: 8 }}
-              name="Completed"
-            />
-            <Line
-              type="monotone"
-              dataKey="total"
-              stroke="#6366F1"
-              strokeWidth={2}
-              name="Total"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-};
+// Component này đã được loại bỏ theo yêu cầu
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [exporting, setExporting] = useState(false);
 
   // Fetch dashboard data from API
   useEffect(() => {
@@ -459,37 +273,19 @@ const Dashboard = () => {
     );
   }
 
-  const {
-    stats,
-    projectStatus,
-    taskStatus,
-    recentProjects,
-    upcomingDeadlines,
-    teamWorkload,
-  } = dashboardData.data;
+  const { stats, recentProjects, upcomingDeadlines, teamWorkload } = dashboardData.data;
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6">
+    <div className="bg-gray-900 text-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-xl font-bold">DASHBOARD SUMMARY</h1>
 
         <div className="flex items-center space-x-4">
           <ExportExcelButton dashboardData={dashboardData} />
-
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="py-2 pl-4 pr-10 rounded-md bg-gray-700 text-white w-64"
-            />
-            <button className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400">
-              <Search size={18} />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Stats Overview */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard
           title="Total Projects"
@@ -513,106 +309,113 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Second Row - Projects and Deadlines */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div>
-          <SectionHeader title="Recent Projects" viewAllLink="/projects" />
-          <div className="grid grid-cols-1 gap-4">
-            {recentProjects && recentProjects.length > 0 ? (
-              recentProjects
-                .slice(0, 3)
-                .map((project) => (
-                  <ProjectCard key={project.id} project={project} />
-                ))
-            ) : (
-              <div className="bg-gray-800 rounded-lg p-4 text-center text-gray-400">
-                No recent projects
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <SectionHeader title="Upcoming Deadlines" viewAllLink="/tasks" />
-          <div className="bg-gray-800 rounded-lg p-4">
-            {upcomingDeadlines && upcomingDeadlines.length > 0 ? (
-              upcomingDeadlines.map((item) => (
-                <DeadlineItem key={`${item.type}-${item.id}`} item={item} />
-              ))
-            ) : (
-              <div className="text-center text-gray-400 py-4">
-                No upcoming deadlines
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Third Row - Status Charts and Team */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <ProjectStatusChart data={projectStatus} />
-        <TaskStatusChart data={taskStatus} />
-
-        <div>
-          <SectionHeader title="Team Workload" viewAllLink="/users" />
-          <div className="bg-gray-800 rounded-lg p-4 h-64 overflow-auto">
-            {teamWorkload && teamWorkload.length > 0 ? (
-              teamWorkload.map((member) => (
-                <TeamWorkloadRow key={member.userId} member={member} />
-              ))
-            ) : (
-              <div className="text-center text-gray-400 py-4">
-                No team workload data
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Fourth Row - Additional Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProgressTrendChart />
-
-        <div className="bg-gray-800 rounded-lg p-4 h-64">
-          <h3 className="text-sm font-medium mb-3">Hot Projects</h3>
-          <div className="space-y-4 overflow-auto h-52 pr-2">
-            {recentProjects && recentProjects.length > 0 ? (
-              recentProjects.slice(0, 4).map((project, index) => (
-                <div
-                  key={project.id}
-                  className="flex items-center bg-gray-700/50 p-3 rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 flex items-center justify-center text-white font-bold mr-3">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {project.name}
-                    </p>
-                    <div className="flex items-center mt-1">
-                      <StatusBadge status={project.status} />
-                      <div className="ml-2 text-xs text-gray-400">
-                        <Flame className="h-3 w-3 inline mr-1 text-amber-500" />
-                        {project.progress.toFixed(0)}% complete
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-2">
-                    <TrendingUp
-                      className={`h-5 w-5 ${
-                        project.progress > 50
-                          ? "text-green-500"
-                          : "text-amber-500"
-                      }`}
-                    />
-                  </div>
+      {/* Main Dashboard Layout */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left Column - 6 columns wide */}
+        <div className="col-span-12 lg:col-span-6">
+          {/* Recent Projects */}
+          <div className="mb-6">
+            <SectionHeader title="Recent Projects" viewAllLink="/projects" />
+            <div className="space-y-4">
+              {recentProjects && recentProjects.length > 0 ? (
+                recentProjects
+                  .slice(0, 3)
+                  .map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))
+              ) : (
+                <div className="bg-gray-800 rounded-lg p-4 text-center text-gray-400">
+                  No recent projects
                 </div>
-              ))
-            ) : (
-              <div className="text-center text-gray-400 py-4">
-                No projects data
+              )}
+            </div>
+          </div>
+          
+          {/* Team Workload - Auto height with no scrolling */}
+          <div>
+            <SectionHeader title="Team Workload" viewAllLink="/users" />
+            <div className="bg-gray-800 rounded-lg p-4">
+              {teamWorkload && teamWorkload.length > 0 ? (
+                teamWorkload.map((member) => (
+                  <TeamWorkloadRow key={member.userId} member={member} />
+                ))
+              ) : (
+                <div className="text-center text-gray-400 py-4">
+                  No team workload data
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - 6 columns wide */}
+        <div className="col-span-12 lg:col-span-6">
+          {/* Upcoming Deadlines - Auto height with no scrolling */}
+          <div className="mb-6">
+            <SectionHeader title="Upcoming Deadlines" viewAllLink="/tasks" />
+            <div className="bg-gray-800 rounded-lg p-4">
+              {upcomingDeadlines && upcomingDeadlines.length > 0 ? (
+                upcomingDeadlines.map((item) => (
+                  <DeadlineItem key={`${item.type}-${item.id}`} item={item} />
+                ))
+              ) : (
+                <div className="text-center text-gray-400 py-4">
+                  No upcoming deadlines
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Project Status Summary */}
+          <div>
+            <SectionHeader title="Status Summary" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-base font-medium mb-4">Project Status</h3>
+                <div className="space-y-3">
+                  {Object.entries(dashboardData.data.projectStatus).map(([status, count]) => (
+                    <div key={status} className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${
+                          status === 'completed' ? 'bg-green-500' :
+                          status === 'inProgress' ? 'bg-blue-500' :
+                          status === 'notStarted' ? 'bg-gray-500' :
+                          status === 'onHold' ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}></div>
+                        <span className="text-sm capitalize">
+                          {status.replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                      </div>
+                      <span className="font-medium">{count}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            )}
+              
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-base font-medium mb-4">Task Status</h3>
+                <div className="space-y-3">
+                  {Object.entries(dashboardData.data.taskStatus).map(([status, count]) => (
+                    <div key={status} className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${
+                          status === 'completed' ? 'bg-green-500' :
+                          status === 'inProgress' ? 'bg-blue-500' :
+                          status === 'notStarted' ? 'bg-gray-500' :
+                          status === 'onHold' ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}></div>
+                        <span className="text-sm capitalize">
+                          {status.replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                      </div>
+                      <span className="font-medium">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
