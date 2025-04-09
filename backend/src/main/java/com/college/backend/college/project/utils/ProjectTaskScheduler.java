@@ -1,6 +1,7 @@
 package com.college.backend.college.project.utils;
 
 import com.college.backend.college.project.entity.Project;
+import com.college.backend.college.project.entity.Subtask;
 import com.college.backend.college.project.entity.Task;
 import com.college.backend.college.project.enums.ProjectStatus;
 import com.college.backend.college.project.enums.TaskStatus;
@@ -84,6 +85,97 @@ public class ProjectTaskScheduler {
             // Chỉ cập nhật nếu trạng thái hiện tại không phải là OVER_DUE
             if (task.getStatus() != TaskStatus.OVER_DUE) {
                 task.setStatus(TaskStatus.OVER_DUE);
+                task.setLastModifiedDate(now);
+                taskRepository.save(task);
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Chạy mỗi giờ để kiểm tra và cập nhật trạng thái COMPLETED cho các project và task
+     * Cron expression: "0 15 * * * *" = chạy vào phút thứ 15 của mỗi giờ
+     */
+    @Scheduled(cron = "0 15 * * * *")
+    @Transactional
+    public void updateCompletedStatus() {
+        Date now = new Date();
+
+        // Cập nhật task thành COMPLETED nếu tất cả subtask đã completed
+        int updatedTasks = updateTasksWithCompletedSubtasks(now);
+
+        // Cập nhật project thành COMPLETED nếu tất cả task đã completed
+        int updatedProjects = updateProjectsWithCompletedTasks(now);
+
+        logger.info("Scheduled task completed: {} projects and {} tasks updated to COMPLETED status",
+                updatedProjects, updatedTasks);
+    }
+
+    /**
+     * Cập nhật trạng thái COMPLETED cho các project có tất cả task đã completed
+     * @param now Thời gian hiện tại
+     * @return Số lượng project đã được cập nhật
+     */
+    private int updateProjectsWithCompletedTasks(Date now) {
+        // Lấy tất cả project không ở trạng thái COMPLETED
+        List<Project> projects = projectRepository.findByStatusNot(ProjectStatus.COMPLETED);
+        int count = 0;
+
+        for (Project project : projects) {
+            List<Task> tasks = taskRepository.findByProjectId(project.getId());
+
+            // Skip dự án không có task nào
+            if (tasks.isEmpty()) {
+                continue;
+            }
+
+            boolean allTasksCompleted = true;
+            for (Task task : tasks) {
+                if (task.getStatus() != TaskStatus.COMPLETED) {
+                    allTasksCompleted = false;
+                    break;
+                }
+            }
+
+            if (allTasksCompleted) {
+                project.setStatus(ProjectStatus.COMPLETED);
+                project.setLastModifiedDate(now);
+                projectRepository.save(project);
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Cập nhật trạng thái COMPLETED cho các task có tất cả subtask đã completed
+     * @param now Thời gian hiện tại
+     * @return Số lượng task đã được cập nhật
+     */
+    private int updateTasksWithCompletedSubtasks(Date now) {
+        // Lấy tất cả task không ở trạng thái COMPLETED
+        List<Task> tasks = taskRepository.findByStatusNot(TaskStatus.COMPLETED);
+        int count = 0;
+
+        for (Task task : tasks) {
+            // Skip task không có subtask nào
+            if (task.getSubtasks() == null || task.getSubtasks().isEmpty()) {
+                continue;
+            }
+
+            boolean allSubtasksCompleted = true;
+            for (Subtask subtask : task.getSubtasks()) {
+                if (!subtask.getCompleted()) {
+                    allSubtasksCompleted = false;
+                    break;
+                }
+            }
+
+            if (allSubtasksCompleted) {
+                task.setStatus(TaskStatus.COMPLETED);
                 task.setLastModifiedDate(now);
                 taskRepository.save(task);
                 count++;

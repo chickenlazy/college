@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -49,7 +50,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public PagedResponse<UserResponse> getAllUsers(int pageNo, int pageSize, String search, String roleString) {
         // Tạo Pageable để phân trang
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending()); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
 
         // Tạo Specification để tìm kiếm và lọc
         Specification<User> spec = Specification.where(null);
@@ -99,6 +100,18 @@ public class UserServiceImpl implements UserService {
                 userPage.getTotalPages(),
                 userPage.isLast()
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> getAllActiveUsers() {
+        // Tìm tất cả người dùng có trạng thái ACTIVE
+        List<User> activeUsers = userRepository.findByStatus(UserStatus.ACTIVE);
+
+        // Chuyển đổi danh sách User thành danh sách UserResponse
+        return activeUsers.stream()
+                .map(UserMapper.INSTANCE::userToUserRes)
+                .collect(Collectors.toList());
     }
 
     @Override

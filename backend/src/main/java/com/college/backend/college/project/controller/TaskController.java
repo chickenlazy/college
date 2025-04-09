@@ -79,9 +79,10 @@ public class TaskController {
             @PathVariable Integer userId,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "status", required = false) TaskStatus status) {
 
-        PagedResponse<TaskResponse> taskResponse = taskService.getTasksByCreatedBy(userId, page, size, status);
+        PagedResponse<TaskResponse> taskResponse = taskService.getTasksByCreatedBy(userId, page, size, search, status);
         return ResponseEntity.ok(taskResponse);
     }
 

@@ -420,12 +420,15 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
           token = user.accessToken;
         }
 
-        const response = await axios.get("http://localhost:8080/api/users", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setAllUsers(response.data.content || []);
+        const response = await axios.get(
+          "http://localhost:8080/api/users/active",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setAllUsers(response.data || []);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -682,10 +685,10 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
               {statusMenuOpen && (
                 <div className="absolute left-0 mt-1 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700 min-w-[171px] w-auto">
                   {[
-                    "COMPLETED",
+                    // "COMPLETED",
                     "IN_PROGRESS",
                     "NOT_STARTED",
-                    "OVER_DUE",
+                    // "OVER_DUE",
                     "ON_HOLD",
                   ].map((status) => (
                     <div
@@ -794,7 +797,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                 <p className="font-medium">{formatDate(task.dueDate)}</p>
                 <p
                   className={`text-xs ${
-                    daysRemaining < 0
+                    daysRemaining < 0 && task.status !== "COMPLETED"
                       ? "text-red-500"
                       : daysRemaining < 3
                       ? "text-yellow-500"
@@ -805,6 +808,8 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                     ? `${daysRemaining} days left`
                     : daysRemaining === 0
                     ? "Due today"
+                    : task.status === "COMPLETED"
+                    ? "Completed"
                     : `${Math.abs(daysRemaining)} days overdue`}
                 </p>
               </div>
@@ -991,10 +996,10 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
                         onClick={() => {
                           setShowAddSubtask(false);
-            setNewSubtask("");
-            setSelectedAssignee(null);
-            setSubtaskStartDate("");
-            setSubtaskDueDate("");
+                          setNewSubtask("");
+                          setSelectedAssignee(null);
+                          setSubtaskStartDate("");
+                          setSubtaskDueDate("");
                         }}
                       >
                         Cancel
@@ -1002,7 +1007,12 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                       <button
                         className="flex-1 bg-purple-600 hover:bg-purple-700 py-3 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleAddSubtask}
-                        disabled={!newSubtask.trim() || !selectedAssignee || !subtaskStartDate || !subtaskDueDate}
+                        disabled={
+                          !newSubtask.trim() ||
+                          !selectedAssignee ||
+                          !subtaskStartDate ||
+                          !subtaskDueDate
+                        }
                       >
                         Add Subtask
                       </button>
@@ -1017,49 +1027,50 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                 </div>
               ) : (
                 <div className="space-y-2">
-{subtasks.map((subtask) => (
-  <div
-    key={subtask.id}
-    className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
-  >
-    <div className="flex items-center">
-      <input
-        type="checkbox"
-        checked={subtask.completed}
-        onChange={() => handleToggleSubtask(subtask.id)}
-        className="mr-3 h-4 w-4"
-      />
-      <div>
-        <span
-          className={
-            subtask.completed
-              ? "line-through text-gray-400"
-              : ""
-          }
-        >
-          {subtask.name}
-        </span>
-        {subtask.assigneeName && (
-          <div className="text-xs text-gray-400 flex items-center mt-1">
-            <User size={12} className="mr-1" />
-            {subtask.assigneeName}
-          </div>
-        )}
-        {/* Hiển thị thông tin ngày tháng */}
-        <div className="text-xs text-gray-400 flex items-center mt-1">
-          <Calendar size={12} className="mr-1" />
-          {formatDate(subtask.startDate)} - {formatDate(subtask.dueDate)}
-        </div>
-      </div>
-    </div>
-    <button
-      className="text-gray-400 hover:text-red-500"
-      onClick={() => handleDeleteSubtask(subtask.id)}
-    >
-      <X size={16} />
-    </button>
-  </div>
-))}
+                  {subtasks.map((subtask) => (
+                    <div
+                      key={subtask.id}
+                      className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={subtask.completed}
+                          onChange={() => handleToggleSubtask(subtask.id)}
+                          className="mr-3 h-4 w-4"
+                        />
+                        <div>
+                          <span
+                            className={
+                              subtask.completed
+                                ? "line-through text-gray-400"
+                                : ""
+                            }
+                          >
+                            {subtask.name}
+                          </span>
+                          {subtask.assigneeName && (
+                            <div className="text-xs text-gray-400 flex items-center mt-1">
+                              <User size={12} className="mr-1" />
+                              {subtask.assigneeName}
+                            </div>
+                          )}
+                          {/* Hiển thị thông tin ngày tháng */}
+                          <div className="text-xs text-gray-400 flex items-center mt-1">
+                            <Calendar size={12} className="mr-1" />
+                            {formatDate(subtask.startDate)} -{" "}
+                            {formatDate(subtask.dueDate)}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        className="text-gray-400 hover:text-red-500"
+                        onClick={() => handleDeleteSubtask(subtask.id)}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -373,7 +374,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional(readOnly = true)
     public PagedResponse<TaskResponse> getAllTasks(int pageNo, int pageSize, String search, TaskStatus status) {
         // Tạo Pageable để phân trang
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending()); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
 
         // Tạo Specification để tìm kiếm và lọc
         Specification<Task> spec = Specification.where(null);
@@ -518,17 +519,27 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<TaskResponse> getTasksByCreatedBy(Integer userId, int pageNo, int pageSize, TaskStatus status) {
+    public PagedResponse<TaskResponse> getTasksByCreatedBy(Integer userId, int pageNo, int pageSize, String search, TaskStatus status) {
         // Kiểm tra xem User có tồn tại hay không
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         // Tạo Pageable để phân trang
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending());
 
-        // Tạo Specification để lọc theo người tạo và status (nếu có)
+        // Tạo Specification để lọc theo người tạo
         Specification<Task> spec = (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("createdBy").get("id"), userId);
+
+        // Thêm điều kiện tìm kiếm theo tên nếu có
+        if (StringUtils.hasText(search)) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(root.get("name")),
+                            "%" + search.toLowerCase() + "%"
+                    )
+            );
+        }
 
         // Thêm điều kiện lọc theo status nếu có
         if (status != null) {

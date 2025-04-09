@@ -79,7 +79,4 @@ public class Project {
     )
     private Set<Tag> tags;
 
-    // Thêm vào lớp Project
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Attachment> attachments;
 }

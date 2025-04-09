@@ -3,10 +3,8 @@ package com.college.backend.college.project.controller;
 import com.college.backend.college.project.enums.ProjectStatus;
 import com.college.backend.college.project.request.ProjectRequest;
 import com.college.backend.college.project.response.ApiResponse;
-import com.college.backend.college.project.response.AttachmentResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.ProjectResponse;
-import com.college.backend.college.project.service.AttachmentService;
 import com.college.backend.college.project.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,12 +22,10 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
-    private final AttachmentService attachmentService;
 
     @Autowired
-    public ProjectController(ProjectService projectService, AttachmentService attachmentService) {
+    public ProjectController(ProjectService projectService) {
         this.projectService = projectService;
-        this.attachmentService = attachmentService;
     }
 
     @PostMapping
@@ -189,22 +185,5 @@ public class ProjectController {
                 userId, pageNo, pageSize, search, projectStatus);
 
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping(value = "/{id}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AttachmentResponse> uploadProjectAttachment(
-            @PathVariable Integer id,
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("uploadedBy") Integer uploadedBy,
-            @RequestParam(value = "description", required = false) String description) {
-
-        AttachmentResponse response = attachmentService.uploadFile(id, uploadedBy, file, description);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
-
-    @GetMapping("/{id}/attachments")
-    public ResponseEntity<List<AttachmentResponse>> getProjectAttachments(@PathVariable Integer id) {
-        List<AttachmentResponse> responses = attachmentService.getAttachmentsByProjectId(id);
-        return ResponseEntity.ok(responses);
     }
 }

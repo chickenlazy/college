@@ -639,7 +639,6 @@ const Project = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-900 text-left">
-                    <th className="p-4 border-b border-gray-800">ID</th>
                     <th className="p-4 border-b border-gray-800">Name</th>
                     <th className="p-4 border-b border-gray-800">
                       Assigned To
@@ -654,9 +653,6 @@ const Project = () => {
                 <tbody>
                   {currentProjects.map((project) => (
                     <tr key={project.id} className="hover:bg-gray-900">
-                      <td className="p-4 border-b border-gray-800">
-                        {project.id}
-                      </td>
                       <td className="p-4 border-b border-gray-800">
                         {formatName(project.name)}
                       </td>

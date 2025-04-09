@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,7 +76,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     public PagedResponse<ProjectResponse> getAllProjects(int pageNo, int pageSize, String search, ProjectStatus status) {
         // Tạo Pageable để phân trang
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending()); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
 
         // Tạo Specification để tìm kiếm và lọc
         Specification<Project> spec = Specification.where(null);
@@ -371,7 +372,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + managerId));
 
         // Tạo Pageable để phân trang
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending());
 
         // Tạo Specification để tìm kiếm và lọc
         Specification<Project> spec = (root, query, criteriaBuilder) ->
@@ -416,7 +417,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         // Tạo Pageable để phân trang
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending());
 
         // Tạo Specification để tìm kiếm và lọc
         Specification<Project> spec = (root, query, criteriaBuilder) -> {

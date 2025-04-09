@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -284,7 +285,7 @@ public class SubtaskServiceImpl implements SubtaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         // Tạo Pageable để phân trang
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending()); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
 
         // Tìm tất cả subtasks được gán cho user này với phân trang
         Page<Subtask> subtaskPage = subtaskRepository.findByAssigneeId(userId, pageable);

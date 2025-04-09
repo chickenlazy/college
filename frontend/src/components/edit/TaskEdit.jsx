@@ -338,7 +338,7 @@ const TaskEdit = ({
         setProjects(projectsData.content);
 
         // Fetch users
-        const usersResponse = await fetch("http://localhost:8080/api/users", {
+        const usersResponse = await fetch("http://localhost:8080/api/users/active", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -347,7 +347,7 @@ const TaskEdit = ({
           throw new Error("Failed to fetch users");
         }
         const usersData = await usersResponse.json();
-        setUsers(usersData.content);
+        setUsers(usersData);
 
         // If editing existing task, fetch task data
         if (!isNew && taskId) {
@@ -445,25 +445,29 @@ const TaskEdit = ({
 
   const validateForm = () => {
     const errors = {};
-
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chỉ theo ngày
+  
     if (!task.name.trim()) {
       errors.name = "Task name is required";
     }
-
+  
     if (!task.projectId) {
       errors.projectId = "Project is required";
     }
-
+  
     if (!task.startDate) {
       errors.startDate = "Start date is required";
+    } else if (new Date(task.startDate) < today) {
+      errors.startDate = "Start date cannot be in the past";
     }
-
+  
     if (!task.dueDate) {
       errors.dueDate = "Due date is required";
     } else if (new Date(task.dueDate) <= new Date(task.startDate)) {
       errors.dueDate = "Due date must be after start date";
     }
-
+  
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -697,6 +701,7 @@ const TaskEdit = ({
                         name="startDate"
                         value={task.startDate}
                         onChange={handleChange}
+                        min={new Date().toISOString().split("T")[0]}
                         className={`w-full bg-gray-700 border ${
                           formErrors.startDate
                             ? "border-red-500"
@@ -756,7 +761,7 @@ const TaskEdit = ({
                       <option value="NOT_STARTED">Not Started</option>
                       <option value="IN_PROGRESS">In Progress</option>
                       <option value="ON_HOLD">On Hold</option>
-                      <option value="COMPLETED">Completed</option>
+                      {/* <option value="COMPLETED">Completed</option> */}
                     </select>
                   </div>
 

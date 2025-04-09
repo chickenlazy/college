@@ -527,12 +527,12 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
           token = user.accessToken;
         }
 
-        const response = await axios.get("http://localhost:8080/api/users", {
+        const response = await axios.get("http://localhost:8080/api/users/active", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        setAllUsers(response.data.content || []);
+        setAllUsers(response.data || []);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -930,25 +930,25 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             </div>
 
             <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
-                  <p className="font-medium">
-                    {daysRemaining > 0
-                      ? `${daysRemaining} days left`
-                      : daysRemaining === 0
-                      ? "Due today"
-                      : `${Math.abs(daysRemaining)} days overdue`}
-                  </p>
-                </div>
-                <Clock
-                  size={20}
-                  className={
-                    daysRemaining < 0 ? "text-red-500" : "text-purple-500"
-                  }
-                />
-              </div>
-            </div>
+  <div className="flex justify-between items-start">
+    <div>
+      <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
+      <p className="font-medium">
+        {daysRemaining > 0
+          ? `${daysRemaining} days left`
+          : daysRemaining === 0
+          ? "Due today"
+          : project.status === "COMPLETED"
+          ? "Completed"
+          : `${Math.abs(daysRemaining)} days overdue`}
+      </p>
+    </div>
+    <Clock
+      size={20}
+      className={daysRemaining < 0 && project.status !== "COMPLETED" ? "text-red-500" : "text-purple-500"}
+    />
+  </div>
+</div>
 
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-start">

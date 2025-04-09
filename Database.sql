@@ -105,22 +105,6 @@ CREATE TABLE project_tags (
   PRIMARY KEY (project_id, tag_id)
 );
 
--- Tạo bảng `attachments` để lưu trữ tài liệu đính kèm cho dự án
-CREATE TABLE attachments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  file_name VARCHAR(255) NOT NULL,
-  file_path VARCHAR(512) NOT NULL,
-  file_type VARCHAR(100),
-  file_size BIGINT,
-  project_id INT,
-  uploaded_by INT,
-  description TEXT,
-  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-  FOREIGN KEY (uploaded_by) REFERENCES users(id)
-);
-
 -- Cập nhật câu lệnh INSERT vào bảng `users`
 INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position, status)
 VALUES

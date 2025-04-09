@@ -17,6 +17,8 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
     // Đếm số lượng task theo trạng thái
     long countByStatus(TaskStatus status);
 
+    List<Task> findByStatusNot(TaskStatus status);
+
     // Đếm số lượng task theo project
     int countByProjectId(Integer projectId);
 

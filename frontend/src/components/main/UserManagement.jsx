@@ -622,7 +622,6 @@ const UserManagement = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-900 text-left">
-                    <th className="p-4 border-b border-gray-800">ID</th>
                     <th className="p-4 border-b border-gray-800">Name</th>
                     <th className="p-4 border-b border-gray-800">Department</th>
                     <th className="p-4 border-b border-gray-800">Position</th>
@@ -637,9 +636,6 @@ const UserManagement = () => {
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-900">
-                      <td className="p-4 border-b border-gray-800">
-                        {user.id}
-                      </td>
                       <td className="p-4 border-b border-gray-800">
                         {formatName(user.fullName)}
                       </td>

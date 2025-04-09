@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -75,6 +77,15 @@ public class UserController {
             @RequestBody PasswordUpdateRequest passwordUpdateRequest) {
         UserResponse updatedUser = userService.updatePassword(passwordUpdateRequest);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    /**
+     * API để lấy tất cả người dùng có trạng thái ACTIVE
+     */
+    @GetMapping("/active")
+    public ResponseEntity<List<UserResponse>> getAllActiveUsers() {
+        List<UserResponse> activeUsers = userService.getAllActiveUsers();
+        return ResponseEntity.ok(activeUsers);
     }
 
 }
