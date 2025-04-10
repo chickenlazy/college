@@ -646,25 +646,6 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
           <ChevronLeft size={20} className="mr-1" />
           <span>Back</span>
         </button>
-
-        <div className="flex space-x-2">
-          {/* Replace the "Mark Complete" button */}
-          <div className="relative"></div>
-          <button
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
-            onClick={handleEdit}
-          >
-            <Edit size={16} className="mr-2" />
-            Edit Task
-          </button>
-          <button
-            className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center"
-            onClick={() => setDeleteConfirm({ show: true, taskId: task.id })}
-          >
-            <Trash2 size={16} className="mr-2" />
-            Delete
-          </button>
-        </div>
       </div>
 
       {/* Task Title and Status */}

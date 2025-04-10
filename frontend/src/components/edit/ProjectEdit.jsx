@@ -5,8 +5,8 @@ import {
   X,
   Calendar,
   Users,
-  Tag,
-  Trash2,
+  CheckCircle,
+  XCircle,
   Plus,
   ChevronLeft,
 } from "lucide-react";
@@ -78,37 +78,6 @@ const TagBadge = ({ tag, onRemove, isSelectable = false, onSelect }) => {
   );
 };
 
-// Confirmation Dialog Component
-const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">{title}</h2>
-        <p className="text-gray-300 mb-6">{message}</p>
-        <div className="flex justify-end space-x-3">
-          <button
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md"
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          <button
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md"
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Dropdown Menu Component
 const DropdownMenu = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
@@ -125,6 +94,31 @@ const DropdownMenu = ({ isOpen, onClose, title, children }) => {
         </button>
       </div>
       <div className="p-3 max-h-96 overflow-y-auto">{children}</div>
+    </div>
+  );
+};
+
+// Sửa component Toast để nhận onClose từ props thay vì gọi trực tiếp setToast
+const Toast = ({ message, type, onClose }) => {
+  const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
+  const icon = type === "success" ? (
+    <CheckCircle size={20} />
+  ) : (
+    <XCircle size={20} />
+  );
+
+  return (
+    <div
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+    >
+      {icon}
+      <span>{message}</span>
+      <button
+        onClick={onClose}
+        className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
+      >
+        <X size={16} />
+      </button>
     </div>
   );
 };
@@ -147,13 +141,13 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       : null
   );
 
+  const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(!isNew);
   const [savingData, setSavingData] = useState(false);
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [tagsMenuOpen, setTagsMenuOpen] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [allTags, setAllTags] = useState([]);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [apiError, setApiError] = useState(null);
 
@@ -266,6 +260,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     }
   };
 
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleAddMember = (user) => {
     // Thêm kiểm tra project tồn tại
     if (project && !project.userIds.includes(user.id)) {
@@ -312,23 +311,57 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     const errors = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chỉ theo ngày
-  
-    if (!project.name.trim()) {
+
+    // Validate project name
+    if (!project?.name?.trim()) {
       errors.name = "Project name is required";
+    } else if (project.name.length > 100) {
+      errors.name = "Project name cannot exceed 100 characters";
     }
-  
+
+    // Validate description (không bắt buộc nhưng giới hạn độ dài)
+    if (project.description && project.description.length > 500) {
+      errors.description = "Description cannot exceed 500 characters";
+    }
+
+    // Validate manager
+    if (!project.managerId) {
+      errors.managerId = "Manager is required";
+    }
+
+    // Validate dates
     if (!project.startDate) {
       errors.startDate = "Start date is required";
     } else if (new Date(project.startDate) < today) {
       errors.startDate = "Start date cannot be in the past";
     }
-  
+
     if (!project.dueDate) {
       errors.dueDate = "Due date is required";
     } else if (new Date(project.dueDate) <= new Date(project.startDate)) {
       errors.dueDate = "Due date must be after start date";
     }
-  
+
+    // Validate maximum project duration (2 years)
+    if (project.startDate && project.dueDate) {
+      const timeDiff = new Date(project.dueDate) - new Date(project.startDate);
+      const daysDiff = timeDiff / (1000 * 3600 * 24);
+      if (daysDiff > 730) {
+        // ~2 years
+        errors.dueDate = "Project duration cannot exceed 2 years";
+      }
+    }
+
+    // Validate team members limit
+    if (project.userIds && project.userIds.length > 20) {
+      errors.userIds = "Project cannot have more than 20 team members";
+    }
+
+    // Validate tags limit
+    if (project.tagIds && project.tagIds.length > 10) {
+      errors.tagIds = "Project cannot have more than 10 tags";
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -382,20 +415,19 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
 
       if (isNew) {
         // Create new project
-        const response = await axios.post(
-          "http://localhost:8080/api/projects",
-          apiProject,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await axios.post("http://localhost:8080/api/projects", apiProject, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        onBack(true); // Truyền true để báo cần refresh dữ liệu
+        showToast("Project created successfully", "success");
+
+        // Truyền true để báo cần refresh dữ liệu
+        onBack(true);
       } else {
         // Update existing project
-        const response = await axios.put(
+        await axios.put(
           `http://localhost:8080/api/projects/${id}`,
           apiProject,
           {
@@ -405,7 +437,12 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
           }
         );
 
-        onBack(true); // Truyền true để báo cần refresh dữ liệu
+        showToast("Project updated successfully", "success");
+    
+        // Truyền true để báo cần refresh dữ liệu
+        setTimeout(() => {
+          onBack(true);
+        }, 1500);
       }
     } catch (error) {
       console.error("Error saving project:", error);
@@ -415,42 +452,6 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
           "Please check your input and try again."
         }`
       );
-    } finally {
-      setSavingData(false);
-    }
-  };
-
-  // Cập nhật hàm handleDelete
-  const handleDelete = async () => {
-    if (!project || !project.id) return;
-
-    setSavingData(true);
-    setApiError(null);
-
-    try {
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
-
-      await axios.delete(`http://localhost:8080/api/projects/${project.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      alert("Project deleted successfully!");
-      onBack(); // Gọi onBack để quay lại và refresh dữ liệu
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      setApiError(
-        `Failed to delete project. ${
-          error.response?.data?.message || "Please try again later."
-        }`
-      );
-      setShowDeleteConfirm(false);
-    } finally {
       setSavingData(false);
     }
   };
@@ -500,15 +501,6 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
             <Save size={18} className="mr-2" />
             {savingData ? "Saving..." : "Save"}
           </button>
-          {!isNew && project && (
-            <button
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md flex items-center"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 size={18} className="mr-2" />
-              Delete
-            </button>
-          )}
         </div>
       </div>
 
@@ -528,13 +520,17 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 mb-1">
-                    Project Name *
+                    Project Name *{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 100 characters)
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="name"
                     value={project ? project.name : ""}
                     onChange={handleChange}
+                    maxLength={100}
                     className={`w-full bg-gray-700 border ${
                       formErrors.name ? "border-red-500" : "border-gray-600"
                     } rounded-md py-2 px-3 text-white`}
@@ -545,19 +541,34 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                       {formErrors.name}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {project?.name ? project.name.length : 0}/100
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-gray-400 mb-1">
-                    Description
+                    Description{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 500 characters)
+                    </span>
                   </label>
                   <textarea
                     name="description"
-                    value={project.description}
+                    value={project?.description || ""}
                     onChange={handleChange}
+                    maxLength={500}
                     className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white h-32 resize-none"
                     placeholder="Enter project description"
                   ></textarea>
+                  {formErrors.description && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.description}
+                    </p>
+                  )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {project?.description ? project.description.length : 0}/500
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -634,14 +645,17 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     <option value="OVER_DUE">Over Due</option> */}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-gray-400 mb-1">Manager</label>
+                  <label className="block text-gray-400 mb-1">Manager *</label>
                   <select
                     name="managerId"
                     value={project.managerId || ""}
                     onChange={handleChange}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                    className={`w-full bg-gray-700 border ${
+                      formErrors.managerId
+                        ? "border-red-500"
+                        : "border-gray-600"
+                    } rounded-md py-2 px-3 text-white`}
                   >
                     <option value="">Select a manager</option>
                     {allUsers.map((user) => (
@@ -650,6 +664,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                       </option>
                     ))}
                   </select>
+                  {formErrors.managerId && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.managerId}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -768,14 +787,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
         </div>
       </form>
 
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title="Delete Project"
-        message="Are you sure you want to delete this project? This action cannot be undone and all associated tasks will be deleted."
-      />
+      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };

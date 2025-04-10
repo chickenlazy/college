@@ -25,4 +25,6 @@ public interface UserService {
     UserResponse updateUser(Integer userId, UserRequest userRequest);
 
     UserResponse updatePassword(PasswordUpdateRequest passwordUpdateRequest);
+
+    boolean isFieldValueUnique(String field, String value, Integer excludeId);
 }

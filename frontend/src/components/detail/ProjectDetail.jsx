@@ -527,11 +527,14 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
           token = user.accessToken;
         }
 
-        const response = await axios.get("http://localhost:8080/api/users/active", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axios.get(
+          "http://localhost:8080/api/users/active",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setAllUsers(response.data || []);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -542,32 +545,34 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
   }, []);
 
   // Thêm hàm xử lý Delete Project
-  const handleDeleteProject = async () => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
+  // Trong ProjectDetail.jsx
 
-      await axios.delete(`http://localhost:8080/api/projects/${project.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      showToast("Project deleted successfully", "success");
-
-      // Đổi cách xử lý: force reload dữ liệu khi quay về màn hình chính
-      setTimeout(() => {
-        onBack(true); // Truyền tham số true để báo hiệu cần refresh dữ liệu
-      }, 1000);
-    } catch (err) {
-      console.error("Error deleting project:", err);
-      showToast("Failed to delete project", "error");
+const handleDeleteProject = async () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
     }
-  };
+
+    await axios.delete(`http://localhost:8080/api/projects/${project.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    showToast("Project deleted successfully", "success");
+
+    // Thay đổi ở đây: chuyển trực tiếp về trang Project
+    setTimeout(() => {
+      navigateBack(true); // Truyền tham số true để báo hiệu cần refresh dữ liệu
+    }, 1000);
+  } catch (err) {
+    console.error("Error deleting project:", err);
+    showToast("Failed to delete project", "error");
+  }
+};
 
   // Hàm hiển thị toast
   const showToast = (message, type = "success") => {
@@ -796,26 +801,24 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
   const statusInfo = getStatusInfo(project.status);
   const daysRemaining = getDaysRemaining(project.dueDate);
 
-  if (showProjectEdit) {
-    return (
-      <ProjectEdit
-        project={project}
-        onBack={() => setShowProjectEdit(false)}
-        isNew={false}
-      />
-    );
-  }
+// Trong ProjectDetail.jsx - phần render TaskEdit
 
-  if (showTaskEdit) {
-    return (
-      <TaskEdit
-        isNew={true}
-        projectId={project.id}
-        projectName={project.name}
-        onBack={() => setShowTaskEdit(false)}
-      />
-    );
-  }
+if (showTaskEdit) {
+  return (
+    <TaskEdit
+      isNew={true}
+      projectId={project.id}
+      projectName={project.name}
+      onBack={(needRefresh) => {
+        setShowTaskEdit(false);
+        if (needRefresh) {
+          // Fetch lại dữ liệu project khi task được thêm thành công
+          fetchProjectData();
+        }
+      }}
+    />
+  );
+}
 
   return (
     <>
@@ -873,23 +876,6 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
               <ChevronLeft size={20} className="mr-1" />
               <span>Back</span>
             </button>
-
-            <div className="flex space-x-2">
-              <button
-                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center"
-                onClick={() => setShowProjectEdit(true)}
-              >
-                <Edit size={16} className="mr-2" />
-                Edit Project
-              </button>
-              <button
-                className="px-3 py-2 bg-red-600 hover:bg-red-700 rounded flex items-center"
-                onClick={() => setDeleteConfirm(true)}
-              >
-                <Trash2 size={16} className="mr-2" />
-                Delete
-              </button>
-            </div>
           </div>
 
           {/* Project Title and Status */}
@@ -930,25 +916,29 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             </div>
 
             <div className="bg-gray-800 p-4 rounded-lg">
-  <div className="flex justify-between items-start">
-    <div>
-      <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
-      <p className="font-medium">
-        {daysRemaining > 0
-          ? `${daysRemaining} days left`
-          : daysRemaining === 0
-          ? "Due today"
-          : project.status === "COMPLETED"
-          ? "Completed"
-          : `${Math.abs(daysRemaining)} days overdue`}
-      </p>
-    </div>
-    <Clock
-      size={20}
-      className={daysRemaining < 0 && project.status !== "COMPLETED" ? "text-red-500" : "text-purple-500"}
-    />
-  </div>
-</div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
+                  <p className="font-medium">
+                    {daysRemaining > 0
+                      ? `${daysRemaining} days left`
+                      : daysRemaining === 0
+                      ? "Due today"
+                      : project.status === "COMPLETED"
+                      ? "Completed"
+                      : `${Math.abs(daysRemaining)} days overdue`}
+                  </p>
+                </div>
+                <Clock
+                  size={20}
+                  className={
+                    daysRemaining < 0 && project.status !== "COMPLETED"
+                      ? "text-red-500"
+                      : "text-purple-500"
+                  }
+                />
+              </div>
+            </div>
 
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-start">
@@ -994,14 +984,12 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                 active={activeTab === "team"}
                 onClick={() => setActiveTab("team")}
               />
-              {project.tags && project.tags.length > 0 && (
-                <Tab
-                  icon={<Tag size={18} />}
-                  label="Tags"
-                  active={activeTab === "tags"}
-                  onClick={() => setActiveTab("tags")}
-                />
-              )}
+              <Tab
+                icon={<Tag size={18} />}
+                label="Tags"
+                active={activeTab === "tags"}
+                onClick={() => setActiveTab("tags")}
+              />
               <Tab
                 icon={<PieChart size={18} />}
                 label="Analytics"
@@ -1218,7 +1206,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
               </div>
             )}
 
-            {activeTab === "tags" && project.tags && (
+            {activeTab === "tags" && (
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Project Tags</h2>
@@ -1241,7 +1229,9 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                       onClose={() => setTagsMenuOpen(false)}
                       tags={allTags}
                       onSelect={handleAddTag}
-                      usedTagIds={project.tags.map((tag) => tag.id)}
+                      usedTagIds={
+                        project.tags ? project.tags.map((tag) => tag.id) : []
+                      }
                     />
                   </div>
                 </div>
@@ -1252,7 +1242,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                   </div>
                 )}
 
-                {project.tags.length === 0 ? (
+                {!project.tags || project.tags.length === 0 ? (
                   <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                     <Tag size={48} className="mx-auto mb-3 opacity-50" />
                     <p>No tags assigned to this project yet.</p>

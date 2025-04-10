@@ -4,6 +4,7 @@ import com.college.backend.college.project.request.PasswordUpdateRequest;
 import com.college.backend.college.project.request.UserRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
+import com.college.backend.college.project.response.UniqueCheckResponse;
 import com.college.backend.college.project.response.UserResponse;
 import com.college.backend.college.project.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +87,26 @@ public class UserController {
     public ResponseEntity<List<UserResponse>> getAllActiveUsers() {
         List<UserResponse> activeUsers = userService.getAllActiveUsers();
         return ResponseEntity.ok(activeUsers);
+    }
+
+    /**
+     * API để kiểm tra tính unique của username hoặc email
+     */
+    @GetMapping("/check-unique")
+    public ResponseEntity<UniqueCheckResponse> checkUniqueField(
+            @RequestParam String field,
+            @RequestParam String value,
+            @RequestParam(required = false) Integer excludeId) {
+
+        boolean isUnique = userService.isFieldValueUnique(field, value, excludeId);
+
+        UniqueCheckResponse response = new UniqueCheckResponse(
+                true,
+                "Field uniqueness check completed",
+                isUnique
+        );
+
+        return ResponseEntity.ok(response);
     }
 
 }

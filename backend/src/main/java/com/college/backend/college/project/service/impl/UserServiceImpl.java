@@ -218,4 +218,17 @@ public class UserServiceImpl implements UserService {
 
         return UserMapper.INSTANCE.userToUserRes(userRepository.save(user));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isFieldValueUnique(String field, String value, Integer excludeId) {
+        if ("username".equals(field)) {
+            User user = userRepository.findByUsername(value).orElse(null);
+            return user == null || (user.getId().equals(excludeId));
+        } else if ("email".equals(field)) {
+            User user = userRepository.findByEmail(value).orElse(null);
+            return user == null || (user.getId().equals(excludeId));
+        }
+        return true; // Mặc định trả về true nếu field không phải là username hoặc email
+    }
 }

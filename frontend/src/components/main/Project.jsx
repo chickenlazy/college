@@ -410,20 +410,20 @@ const Project = () => {
       const storedUser = localStorage.getItem("user");
       let token = null;
       let userId = null;
-    let userRole = null;
+      let userRole = null;
 
       if (storedUser) {
         const user = JSON.parse(storedUser);
-         token = user.accessToken;
-      userId = user.id;
-      userRole = user.role;
+        token = user.accessToken;
+        userId = user.id;
+        userRole = user.role;
       }
 
       let apiUrl = "http://localhost:8080/api/projects";
       if (userRole === "ROLE_MANAGER") {
         apiUrl = `http://localhost:8080/api/projects/manager/${userId}`;
       }
-  
+
       const response = await axios.get(apiUrl, {
         params: params,
         headers: {
@@ -495,7 +495,7 @@ const Project = () => {
     setSelectedProject(null);
 
     if (needRefresh) {
-      refreshData();
+      refreshData(); // Gọi refreshData để cập nhật dữ liệu
     }
   };
 
@@ -640,9 +640,7 @@ const Project = () => {
                 <thead>
                   <tr className="bg-gray-900 text-left">
                     <th className="p-4 border-b border-gray-800">Name</th>
-                    <th className="p-4 border-b border-gray-800">
-                      Assigned To
-                    </th>
+                    <th className="p-4 border-b border-gray-800">Manager</th>
                     <th className="p-4 border-b border-gray-800">Tasks</th>
                     <th className="p-4 border-b border-gray-800">Progress</th>
                     <th className="p-4 border-b border-gray-800">Status</th>
@@ -657,7 +655,12 @@ const Project = () => {
                         {formatName(project.name)}
                       </td>
                       <td className="p-4 border-b border-gray-800">
-                        {getAssignedUsers(project.users)}
+                        {project.managerName || (
+                          <span className="italic text-gray-400 flex items-center">
+                            <X size={14} className="text-red-400 mr-1" />
+                            No manager assigned
+                          </span>
+                        )}
                       </td>
                       <td className="p-4 border-b border-gray-800">
                         {project.totalCompletedTasks}/{project.totalTasks}

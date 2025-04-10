@@ -69,7 +69,7 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
       ...formData,
       [name]: value,
     });
-
+  
     // Clear validation error when field is changed
     if (validationErrors[name]) {
       setValidationErrors({
@@ -77,50 +77,117 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
         [name]: null,
       });
     }
+    
+    // Kiểm tra unique sau khi người dùng ngừng nhập
+    if ((name === 'username' || name === 'email') && value.trim().length > 0) {
+      const timeoutId = setTimeout(async () => {
+        const isUnique = await checkUniqueField(name, value);
+        if (!isUnique) {
+          setValidationErrors(prev => ({
+            ...prev,
+            [name]: `This ${name} is already in use`
+          }));
+        }
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    }
   };
 
-  const validateForm = () => {
+  const validateForm = async  () => {
     const errors = {};
 
     // Validate required fields
     if (!formData.fullName) errors.fullName = "Full name is required";
+    else if (formData.fullName.length > 100)
+      errors.fullName = "Full name cannot exceed 100 characters";
+
     if (!formData.email) errors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = "Email is invalid";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      errors.email = "Email is invalid";
+    else if (formData.email.length > 100)
+      errors.email = "Email cannot exceed 100 characters";
+
+    if (!formData.username) errors.username = "Username is required";
+    else if (formData.username.length < 3)
+      errors.username = "Username must be at least 3 characters";
+    else if (formData.username.length > 50)
+      errors.username = "Username cannot exceed 50 characters";
+    else if (!/^[a-zA-Z0-9_]+$/.test(formData.username))
+      errors.username =
+        "Username can only contain letters, numbers and underscore";
 
     // Validate phone format
-    if (formData.phoneNumber && !/^[0-9]{10,15}$/.test(formData.phoneNumber)) {
-      errors.phoneNumber = "Phone number format is invalid";
+    if (formData.phoneNumber) {
+      if (!/^[0-9]{10,15}$/.test(formData.phoneNumber)) {
+        errors.phoneNumber = "Phone number must be 10-15 digits";
+      }
     }
+
+    // Validate department, position and address length
+    if (formData.department && formData.department.length > 100)
+      errors.department = "Department name cannot exceed 100 characters";
+
+    if (formData.position && formData.position.length > 100)
+      errors.position = "Position cannot exceed 100 characters";
+
+    if (formData.address && formData.address.length > 255)
+      errors.address = "Address cannot exceed 255 characters";
 
     // Validate password for new users
     if (isNew) {
       if (!formData.password) errors.password = "Password is required";
-      else if (formData.password.length < 6) 
+      else if (formData.password.length < 6)
         errors.password = "Password must be at least 6 characters";
+      else if (formData.password.length > 50)
+        errors.password = "Password cannot exceed 50 characters";
 
-      if (!formData.confirmPassword) errors.confirmPassword = "Please confirm password";
+      if (!formData.confirmPassword)
+        errors.confirmPassword = "Please confirm password";
       else if (formData.password !== formData.confirmPassword)
         errors.confirmPassword = "Passwords do not match";
     } else {
       // For existing users, validate passwords only if they're provided
-      if (formData.password && formData.password.length < 6) 
-        errors.password = "Password must be at least 6 characters";
+      if (formData.password) {
+        if (formData.password.length < 6)
+          errors.password = "Password must be at least 6 characters";
+        else if (formData.password.length > 50)
+          errors.password = "Password cannot exceed 50 characters";
 
-      if (formData.password && formData.password !== formData.confirmPassword)
-        errors.confirmPassword = "Passwords do not match";
+        if (!formData.confirmPassword)
+          errors.confirmPassword = "Please confirm new password";
+        else if (formData.password !== formData.confirmPassword)
+          errors.confirmPassword = "Passwords do not match";
+      }
     }
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (formData.email && !validationErrors.email) {
+      const isEmailUnique = await checkUniqueField('email', formData.email);
+      if (!isEmailUnique) {
+        errors.email = "This email is already in use";
+      }
+    }
+  
+    
+    if (formData.username && !validationErrors.username) {
+      const isUsernameUnique = await checkUniqueField('username', formData.username);
+      if (!isUsernameUnique) {
+        errors.username = "This username is already in use";
+      }
+    }
+
+    setValidationErrors(prev => ({...prev, ...errors}));
+  return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      showToast("Please correct the form errors", "error");
-      return;
-    }
+  const isFormValid = await validateForm();
+  if (!isFormValid) {
+    showToast("Please correct the form errors", "error");
+    return;
+  }
 
     setSaving(true);
     setError(null);
@@ -172,18 +239,21 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
         `User ${isNew ? "created" : "updated"} successfully`,
         "success"
       );
-      
+
       // Wait a moment for the toast to be seen before navigating back
       setTimeout(() => {
         onBack(true);
       }, 1500);
     } catch (err) {
       console.error(`Error ${isNew ? "creating" : "updating"} user:`, err);
-      
+
       // Extract error message from API response if available
-      const errorMsg = err.response?.data?.message || 
-        `Failed to ${isNew ? "create" : "update"} user. Username or email already exists.`;
-      
+      const errorMsg =
+        err.response?.data?.message ||
+        `Failed to ${
+          isNew ? "create" : "update"
+        } user. Username or email already exists.`;
+
       setError(errorMsg);
       setSaving(false);
       showToast(errorMsg, "error");
@@ -195,14 +265,51 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // Thêm hàm kiểm tra unique
+const checkUniqueField = async (field, value) => {
+  if (!value) return true;
+  
+  try {
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    if (storedUser) {
+      const userObj = JSON.parse(storedUser);
+      token = userObj.accessToken;
+    }
+
+    // Chuẩn bị tham số cho API
+    const params = new URLSearchParams();
+    params.append('field', field);
+    params.append('value', value);
+    
+    // Thêm excludeId nếu đang edit user
+    if (!isNew && user) {
+      params.append('excludeId', user.id);
+    }
+
+    // Gọi API kiểm tra unique
+    const response = await axios.get(
+      `http://localhost:8080/api/users/check-unique?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // Phân tích kết quả từ response mới
+    return response.data.unique;
+  } catch (err) {
+    console.error(`Error checking unique ${field}:`, err);
+    return true; // Mặc định là unique nếu có lỗi
+  }
+};
+
   // Toast notification component
   const Toast = ({ message, type }) => {
     const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
-    const icon = type === "success" ? (
-      <CheckCircle size={20} />
-    ) : (
-      <XCircle size={20} />
-    );
+    const icon =
+      type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />;
 
     return (
       <div
@@ -259,13 +366,17 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Full Name *
+                    Full Name *{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 100 characters)
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
+                    maxLength={100}
                     className={`w-full bg-gray-800 rounded-md p-2 border ${
                       validationErrors.fullName
                         ? "border-red-500"
@@ -277,17 +388,24 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                       {validationErrors.fullName}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {formData.fullName ? formData.fullName.length : 0}/100
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Email *
+                    Email *{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 100 characters)
+                    </span>
                   </label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    maxLength={100}
                     className={`w-full bg-gray-800 rounded-md p-2 border ${
                       validationErrors.email
                         ? "border-red-500"
@@ -303,26 +421,29 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Username *
+                    Username *{" "}
+                    <span className="text-xs text-gray-500">
+                      (3-50 characters, alphanumeric)
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
+                    maxLength={50}
                     className={`w-full bg-gray-800 rounded-md p-2 border ${
                       validationErrors.username
                         ? "border-red-500"
                         : "border-gray-700"
                     }`}
                   />
-                  {validationErrors.email && (
+                  {validationErrors.username && (
                     <p className="text-red-500 text-xs mt-1">
-                      {validationErrors.email}
+                      {validationErrors.username}
                     </p>
                   )}
                 </div>
-
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
                     Phone Number
@@ -360,7 +481,6 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                     <option value="ROLE_USER">User</option>
                   </select>
                 </div>
-
               </div>
             </div>
 
@@ -373,41 +493,80 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Department
+                    Department{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 100 characters)
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="department"
                     value={formData.department || ""}
                     onChange={handleChange}
-                    className="w-full bg-gray-800 rounded-md p-2 border border-gray-700"
+                    maxLength={100}
+                    className={`w-full bg-gray-800 rounded-md p-2 border ${
+                      validationErrors.department
+                        ? "border-red-500"
+                        : "border-gray-700"
+                    }`}
                   />
+                  {validationErrors.department && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationErrors.department}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Position
+                    Position{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 100 characters)
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="position"
                     value={formData.position || ""}
                     onChange={handleChange}
-                    className="w-full bg-gray-800 rounded-md p-2 border border-gray-700"
+                    maxLength={100}
+                    className={`w-full bg-gray-800 rounded-md p-2 border ${
+                      validationErrors.position
+                        ? "border-red-500"
+                        : "border-gray-700"
+                    }`}
                   />
+                  {validationErrors.position && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationErrors.position}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Address
+                    Address{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 255 characters)
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="address"
                     value={formData.address || ""}
                     onChange={handleChange}
-                    className="w-full bg-gray-800 rounded-md p-2 border border-gray-700"
+                    maxLength={255}
+                    className={`w-full bg-gray-800 rounded-md p-2 border ${
+                      validationErrors.address
+                        ? "border-red-500"
+                        : "border-gray-700"
+                    }`}
                   />
+                  {validationErrors.address && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationErrors.address}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -436,13 +595,17 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    {isNew ? "Password *" : "New Password"}
+                    {isNew ? "Password *" : "New Password"}{" "}
+                    <span className="text-xs text-gray-500">
+                      (6-50 characters)
+                    </span>
                   </label>
                   <input
                     type="password"
                     name="password"
                     value={formData.password || ""}
                     onChange={handleChange}
+                    maxLength={50}
                     className={`w-full bg-gray-800 rounded-md p-2 border ${
                       validationErrors.password
                         ? "border-red-500"

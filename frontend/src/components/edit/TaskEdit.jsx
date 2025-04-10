@@ -3,7 +3,7 @@ import {
   Save,
   X,
   Calendar,
-  ChevronDown,
+  CheckCircle, XCircle,
   User,
   Flag,
   ListChecks,
@@ -271,7 +271,6 @@ const Subtask = ({ subtask, onChange, onRemove, users }) => {
   );
 };
 
-
 const TaskEdit = ({
   task: initialTask = null, // Sử dụng initialTask với giá trị mặc định là null
   isNew = false,
@@ -310,6 +309,7 @@ const TaskEdit = ({
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
+  const [toast, setToast] = useState(null);
 
   // Load task data when editing existing task
   useEffect(() => {
@@ -338,11 +338,14 @@ const TaskEdit = ({
         setProjects(projectsData.content);
 
         // Fetch users
-        const usersResponse = await fetch("http://localhost:8080/api/users/active", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const usersResponse = await fetch(
+          "http://localhost:8080/api/users/active",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (!usersResponse.ok) {
           throw new Error("Failed to fetch users");
         }
@@ -399,6 +402,36 @@ const TaskEdit = ({
     fetchData();
   }, [isNew, projectId, taskId]);
 
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+  
+  // Thêm component Toast
+  const Toast = ({ message, type }) => {
+    const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
+    const icon = type === "success" ? (
+      <CheckCircle size={20} />
+    ) : (
+      <XCircle size={20} /> 
+    );
+  
+    return (
+      <div
+        className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+      >
+        {icon}
+        <span>{message}</span>
+        <button
+          onClick={() => setToast(null)}
+          className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    );
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setTask({
@@ -447,31 +480,49 @@ const TaskEdit = ({
     const errors = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chỉ theo ngày
-  
+
+    // Validate task name
     if (!task.name.trim()) {
       errors.name = "Task name is required";
+    } else if (task.name.length > 100) {
+      errors.name = "Task name cannot exceed 100 characters";
     }
-  
+
+    // Validate description (không bắt buộc nhưng giới hạn độ dài)
+    if (task.description && task.description.length > 500) {
+      errors.description = "Description cannot exceed 500 characters";
+    }
+
+    // Validate project selection
     if (!task.projectId) {
       errors.projectId = "Project is required";
     }
-  
+
+    // Validate start date
     if (!task.startDate) {
       errors.startDate = "Start date is required";
     } else if (new Date(task.startDate) < today) {
       errors.startDate = "Start date cannot be in the past";
     }
-  
+
+    // Validate due date
     if (!task.dueDate) {
       errors.dueDate = "Due date is required";
     } else if (new Date(task.dueDate) <= new Date(task.startDate)) {
       errors.dueDate = "Due date must be after start date";
     }
-  
+
+    // Tính thời gian giữa startDate và dueDate (giới hạn tối đa là 1 năm)
+    const timeDiff = new Date(task.dueDate) - new Date(task.startDate);
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+    if (daysDiff > 365) {
+      errors.dueDate = "Task duration cannot exceed 1 year";
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -498,6 +549,7 @@ const TaskEdit = ({
         status: task.status,
         priority: task.priority,
         projectId: task.projectId,
+        assigneeId: task.assigneeId || null,
       };
 
       const url = isNew
@@ -510,7 +562,7 @@ const TaskEdit = ({
         method,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Add token to headers
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -522,11 +574,12 @@ const TaskEdit = ({
       const result = await response.json();
       console.log(`Task ${isNew ? "created" : "updated"}:`, result);
 
-      alert(`Task ${isNew ? "created" : "updated"} successfully!`);
-      onBack();
+      showToast(`Task ${isNew ? "created" : "updated"} successfully!`, "success");
+
+      // Truyền true để báo hiệu component cha cần refresh dữ liệu
+      onBack(true);
     } catch (error) {
-      console.error(`Error ${isNew ? "creating" : "updating"} task:`, error);
-      alert(`Error: ${error.message}`);
+      showToast(`Error: ${error.message}`, "error");
     } finally {
       setSubmitting(false);
     }
@@ -548,7 +601,7 @@ const TaskEdit = ({
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${token}`, // Thêm token vào headers
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -558,7 +611,9 @@ const TaskEdit = ({
       }
 
       alert("Task deleted successfully!");
-      onBack();
+
+      // Truyền true để báo hiệu component cha cần refresh dữ liệu
+      onBack(true);
     } catch (error) {
       console.error("Error deleting task:", error);
       alert(`Error: ${error.message}`);
@@ -594,19 +649,18 @@ const TaskEdit = ({
           <button
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center"
             onClick={handleSubmit}
+            disabled={submitting}
           >
             <Save size={18} className="mr-2" />
-            Save
+            {submitting ? (
+              <>
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                Saving...
+              </>
+            ) : (
+              "Save"
+            )}
           </button>
-          {!isNew && (
-            <button
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md flex items-center"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 size={18} className="mr-2" />
-              Delete
-            </button>
-          )}
         </div>
       </div>
 
@@ -620,7 +674,10 @@ const TaskEdit = ({
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 mb-1">
-                    Task Name *
+                    Task Name *{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 100 characters)
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -631,25 +688,45 @@ const TaskEdit = ({
                       formErrors.name ? "border-red-500" : "border-gray-600"
                     } rounded-md py-2 px-3 text-white`}
                     placeholder="Enter task name"
+                    maxLength={100}
                   />
                   {formErrors.name && (
                     <p className="text-red-500 text-sm mt-1">
                       {formErrors.name}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {task.name ? task.name.length : 0}/100
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-gray-400 mb-1">
-                    Description
+                    Description{" "}
+                    <span className="text-xs text-gray-500">
+                      (Max 500 characters)
+                    </span>
                   </label>
                   <textarea
                     name="description"
-                    value={task.description}
+                    value={task.description || ""}
                     onChange={handleChange}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white h-32 resize-none"
+                    className={`w-full bg-gray-700 border ${
+                      formErrors.description
+                        ? "border-red-500"
+                        : "border-gray-600"
+                    } rounded-md py-2 px-3 text-white h-32 resize-none`}
                     placeholder="Enter task description"
+                    maxLength={500}
                   ></textarea>
+                  {formErrors.description && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.description}
+                    </p>
+                  )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {task.description ? task.description.length : 0}/500
+                  </div>
                 </div>
 
                 <div>
@@ -794,9 +871,7 @@ const TaskEdit = ({
                     size={16}
                     className="text-green-500 mt-0.5 mr-2 shrink-0"
                   />
-                  <p>
-                    Set realistic due dates to ensure timely completion.
-                  </p>
+                  <p>Set realistic due dates to ensure timely completion.</p>
                 </div>
               </div>
             </div>
@@ -836,6 +911,8 @@ const TaskEdit = ({
         title="Delete Task"
         message="Are you sure you want to delete this task? This action cannot be undone."
       />
+
+{toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };
