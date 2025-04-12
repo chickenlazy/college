@@ -379,6 +379,7 @@ const MemberDropdownMenu = ({ isOpen, onClose, users, onSelect }) => {
 };
 
 const TaskDetail = ({ task: initialTask, onBack }) => {
+  const [subtaskErrors, setSubtaskErrors] = useState({});
   const [task, setTask] = useState(initialTask);
   const [activeTab, setActiveTab] = useState("details");
   const [showAddComment, setShowAddComment] = useState(false);
@@ -468,16 +469,51 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
     );
   }
 
-  // Thêm subtask
   const handleAddSubtask = async () => {
-    if (!newSubtask.trim() || !selectedAssignee) {
-      showToast("Please enter subtask name and select an assignee", "error");
-      return;
+    // Reset error state
+    const errors = {};
+
+    // Validate subtask name
+    if (!newSubtask.trim()) {
+      errors.name = "Subtask name cannot be empty";
+    } else if (newSubtask.length > 100) {
+      errors.name = "Subtask name cannot exceed 100 characters";
     }
 
-    // Kiểm tra các trường ngày tháng
-    if (!subtaskStartDate || !subtaskDueDate) {
-      showToast("Please select start date and due date", "error");
+    // Validate assignee
+    if (!selectedAssignee) {
+      errors.assignee = "Please select an assignee";
+    }
+
+    // Validate start date
+    if (!subtaskStartDate) {
+      errors.startDate = "Start date is required";
+    }
+
+    // Validate due date
+    if (!subtaskDueDate) {
+      errors.dueDate = "Due date is required";
+    }
+
+    // Validate date logic
+    if (subtaskStartDate && subtaskDueDate) {
+      const startDate = new Date(subtaskStartDate);
+      const dueDate = new Date(subtaskDueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (startDate < today) {
+        errors.startDate = "Start date cannot be in the past";
+      }
+
+      if (dueDate < startDate) {
+        errors.dueDate = "Due date must be after start date";
+      }
+    }
+
+    // If there are errors, stop and show them
+    if (Object.keys(errors).length > 0) {
+      setSubtaskErrors(errors);
       return;
     }
 
@@ -521,9 +557,10 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
       setSubtasks(taskResponse.data.subTasks || []);
       setNewSubtask("");
       setSelectedAssignee(null);
-      setSubtaskStartDate(""); // Reset startDate
-      setSubtaskDueDate(""); // Reset dueDate
+      setSubtaskStartDate("");
+      setSubtaskDueDate("");
       setShowAddSubtask(false);
+      setSubtaskErrors({}); // Reset errors
       showToast("Subtask added successfully", "success");
     } catch (error) {
       console.error("Error adding subtask:", error);
@@ -857,13 +894,37 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                 <div className="bg-gray-800 rounded-lg p-5 mb-4 border border-gray-700">
                   <h4 className="text-sm font-medium mb-4">New Subtask</h4>
                   <div className="flex flex-col gap-4">
-                    <input
-                      type="text"
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
-                      placeholder="Enter subtask name"
-                      value={newSubtask}
-                      onChange={(e) => setNewSubtask(e.target.value)}
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        className={`w-full bg-gray-700 border ${
+                          subtaskErrors.name
+                            ? "border-red-500"
+                            : "border-gray-600"
+                        } rounded-md py-3 px-4 text-white`}
+                        placeholder="Enter subtask name"
+                        value={newSubtask}
+                        maxLength={100} // Thêm thuộc tính maxLength
+                        onChange={(e) => {
+                          setNewSubtask(e.target.value);
+                          // Xóa lỗi khi người dùng bắt đầu nhập
+                          if (subtaskErrors.name) {
+                            setSubtaskErrors((prev) => ({
+                              ...prev,
+                              name: null,
+                            }));
+                          }
+                        }}
+                      />
+                      {subtaskErrors.name && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {subtaskErrors.name}
+                        </p>
+                      )}
+                      <div className="text-xs text-right mt-1 text-gray-400">
+                        {newSubtask.length}/100
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -871,57 +932,88 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                           Start Date
                         </label>
                         <input
-                          type="datetime-local"
-                          className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
+                          type="date"
+                          className={`w-full bg-gray-700 border ${
+                            subtaskErrors.startDate
+                              ? "border-red-500"
+                              : "border-gray-600"
+                          } rounded-md py-3 px-4 text-white`}
                           value={subtaskStartDate}
-                          onChange={(e) => setSubtaskStartDate(e.target.value)}
+                          onChange={(e) => {
+                            setSubtaskStartDate(e.target.value);
+                            // Xóa lỗi khi người dùng chọn ngày
+                            if (subtaskErrors.startDate) {
+                              setSubtaskErrors((prev) => ({
+                                ...prev,
+                                startDate: null,
+                              }));
+                            }
+                          }}
+                          min={new Date().toISOString().split("T")[0]} // Chỉ cho phép chọn từ ngày hiện tại
                         />
+                        {subtaskErrors.startDate && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {subtaskErrors.startDate}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm text-gray-400 mb-1">
                           Due Date
                         </label>
                         <input
-                          type="datetime-local"
-                          className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
+                          type="date"
+                          className={`w-full bg-gray-700 border ${
+                            subtaskErrors.dueDate
+                              ? "border-red-500"
+                              : "border-gray-600"
+                          } rounded-md py-3 px-4 text-white`}
                           value={subtaskDueDate}
-                          onChange={(e) => setSubtaskDueDate(e.target.value)}
+                          onChange={(e) => {
+                            setSubtaskDueDate(e.target.value);
+                            // Xóa lỗi khi người dùng chọn ngày
+                            if (subtaskErrors.dueDate) {
+                              setSubtaskErrors((prev) => ({
+                                ...prev,
+                                dueDate: null,
+                              }));
+                            }
+                          }}
+                          min={
+                            subtaskStartDate ||
+                            new Date().toISOString().split("T")[0]
+                          }
                         />
+                        {subtaskErrors.dueDate && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {subtaskErrors.dueDate}
+                          </p>
+                        )}
                       </div>
                     </div>
 
+                    {/* Phần chọn assignee */}
                     <div className="relative">
-                      <button
-                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md flex items-center justify-between text-left"
+                      <div
+                        className={`w-full bg-gray-700 border ${
+                          subtaskErrors.assignee
+                            ? "border-red-500"
+                            : "border-gray-600"
+                        } rounded-md py-3 px-4 text-white cursor-pointer flex justify-between items-center`}
                         onClick={() => setMembersMenuOpen(!membersMenuOpen)}
                       >
-                        {selectedAssignee ? (
-                          <div className="flex items-center overflow-hidden">
-                            <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm mr-3 flex-shrink-0">
-                              {selectedAssignee.fullName
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .substring(0, 2)}
-                            </div>
-                            <div className="truncate">
-                              <div className="font-medium">
-                                {selectedAssignee.fullName}
-                              </div>
-                              <div className="text-xs text-gray-400 truncate">
-                                {selectedAssignee.position} •{" "}
-                                {selectedAssignee.department}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">Select Assignee</span>
-                        )}
-                        <ChevronDown
-                          size={16}
-                          className="text-gray-400 flex-shrink-0"
-                        />
-                      </button>
+                        <span>
+                          {selectedAssignee
+                            ? selectedAssignee.fullName
+                            : "Select Assignee"}
+                        </span>
+                        <ChevronDown size={16} />
+                      </div>
+                      {subtaskErrors.assignee && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {subtaskErrors.assignee}
+                        </p>
+                      )}
 
                       {membersMenuOpen && (
                         <div className="absolute left-0 right-0 mt-2 bg-gray-800 rounded-lg border border-gray-700 shadow-lg z-30 max-h-80 overflow-y-auto">
@@ -981,19 +1073,14 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                           setSelectedAssignee(null);
                           setSubtaskStartDate("");
                           setSubtaskDueDate("");
+                          setSubtaskErrors({}); // Reset errors
                         }}
                       >
                         Cancel
                       </button>
                       <button
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 py-3 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 py-3 px-4 rounded-md transition-colors"
                         onClick={handleAddSubtask}
-                        disabled={
-                          !newSubtask.trim() ||
-                          !selectedAssignee ||
-                          !subtaskStartDate ||
-                          !subtaskDueDate
-                        }
                       >
                         Add Subtask
                       </button>

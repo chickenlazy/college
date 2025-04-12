@@ -61,6 +61,12 @@ public class TaskServiceImpl implements TaskService {
         // Sử dụng mapper để cập nhật các thông tin cơ bản
         TaskMapper.INSTANCE.updateTaskFromRequest(taskRequest, task);
 
+        if (taskRequest.getProjectId() != null) {
+            Project project = projectRepository.findById(taskRequest.getProjectId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + taskRequest.getProjectId()));
+            task.setProject(project);
+        }
+
         // Kiểm tra nếu deadline được cập nhật dài hơn và trạng thái hiện tại là OVER_DUE
         if (taskRequest.getDueDate() != null
                 && oldStatus == TaskStatus.OVER_DUE

@@ -27,6 +27,23 @@ import {
 import ProjectDetail from "../detail/ProjectDetail";
 import ProjectEdit from "../edit/ProjectEdit";
 
+const formatDescription = (description) => {
+  if (!description) return null;
+
+  if (description.length > 50) {
+    return (
+      <div className="text-sm text-gray-400 group relative cursor-pointer">
+        <span>{description.substring(0, 50)}...</span>
+        <div className="absolute top-full left-0 mt-1 bg-gray-800 text-white p-2 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-64 text-sm">
+          {description}
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="text-sm text-gray-400">{description}</div>;
+};
+
 // Format date to show in the table
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -40,22 +57,52 @@ const formatDate = (dateString) => {
   })}`;
 };
 
-// Thêm hàm formatName để giới hạn độ dài tên project
-const formatName = (name) => {
+// Component hiển thị thông báo thành công ở giữa màn hình và tự động đóng
+const SuccessDialog = ({ isOpen, message, onClose }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Tự động đóng dialog sau 2 giây
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1000);
+
+      // Cleanup timer khi component unmount hoặc isOpen thay đổi
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in flex flex-col items-center">
+        <CheckCircle size={50} className="text-green-500 mb-4" />
+        <h2 className="text-xl font-bold mb-2 text-center">{message}</h2>
+      </div>
+    </div>
+  );
+};
+
+const formatName = (name, description) => {
   if (!name) return "";
 
-  if (name.length > 25) {
-    return (
-      <div className="group relative cursor-pointer">
-        <span>{name.substring(0, 25)}...</span>
-        <div className="absolute top-full left-0 mt-1 bg-gray-800 text-white p-2 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-64 text-sm">
-          {name}
-        </div>
+  return (
+    <div>
+      <div className="font-medium">
+        {name.length > 25 ? (
+          <div className="group relative cursor-pointer">
+            <span>{name.substring(0, 25)}...</span>
+            <div className="absolute top-full left-0 mt-1 bg-gray-800 text-white p-2 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 w-64 text-sm">
+              {name}
+            </div>
+          </div>
+        ) : (
+          name
+        )}
       </div>
-    );
-  }
-
-  return name;
+      {formatDescription(description)}
+    </div>
+  );
 };
 
 // Get assigned users as a comma-separated string
@@ -135,6 +182,7 @@ const Toast = ({ message, type, onClose }) => {
       : type === "error"
       ? "bg-red-600"
       : "bg-blue-600";
+
   const icon =
     type === "success" ? (
       <Check size={20} />
@@ -146,16 +194,10 @@ const Toast = ({ message, type, onClose }) => {
 
   return (
     <div
-      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 transform transition-all duration-300 ease-in-out opacity-0 translate-y-6 animate-toast`}
     >
       {icon}
       <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
-      >
-        <X size={16} />
-      </button>
     </div>
   );
 };
@@ -382,6 +424,11 @@ const Project = () => {
     last: true,
   });
 
+  const [successDialog, setSuccessDialog] = useState({
+    show: false,
+    message: "",
+  });
+
   // Load data from API
   // 1. Cập nhật hàm fetchProjects để gửi các tham số tìm kiếm và lọc
   const fetchProjects = async (
@@ -536,7 +583,10 @@ const Project = () => {
         }
       );
 
-      showToast("Project deleted successfully", "success");
+      setSuccessDialog({
+        show: true,
+        message: "Project deleted successfully!",
+      });
       refreshData();
     } catch (err) {
       console.error("Error deleting project:", err);
@@ -547,7 +597,6 @@ const Project = () => {
   // Toast notification
   const showToast = (message, type = "success") => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
   };
 
   return (
@@ -651,9 +700,9 @@ const Project = () => {
                 <tbody>
                   {currentProjects.map((project) => (
                     <tr key={project.id} className="hover:bg-gray-900">
-                      <td className="p-4 border-b border-gray-800">
-                        {formatName(project.name)}
-                      </td>
+<td className="p-4 border-b border-gray-800">
+  {formatName(project.name, project.description)}
+</td>
                       <td className="p-4 border-b border-gray-800">
                         {project.managerName || (
                           <span className="italic text-gray-400 flex items-center">
@@ -708,6 +757,12 @@ const Project = () => {
         onConfirm={confirmDeleteProject}
         title="Delete Project"
         message="Are you sure you want to delete this project? This action cannot be undone."
+      />
+
+      <SuccessDialog
+        isOpen={successDialog.show}
+        message={successDialog.message}
+        onClose={() => setSuccessDialog({ show: false, message: "" })}
       />
 
       {/* Toast Notification */}

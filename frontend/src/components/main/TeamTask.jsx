@@ -319,6 +319,32 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
   );
 };
 
+// Component SuccessDialog để hiển thị thông báo thành công ở giữa màn hình
+const SuccessDialog = ({ isOpen, message, onClose }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Tự động đóng dialog sau 1.5 giây
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1500);
+      
+      // Cleanup timer khi component unmount hoặc isOpen thay đổi
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in flex flex-col items-center">
+        <CheckCircle size={50} className="text-green-500 mb-4" />
+        <h2 className="text-xl font-bold mb-2 text-center">{message}</h2>
+      </div>
+    </div>
+  );
+};
+
 const TeamTask = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -339,6 +365,18 @@ const TeamTask = () => {
     show: false,
     taskId: null,
   });
+
+  const [successDialog, setSuccessDialog] = useState({
+    show: false,
+    message: "",
+  });
+
+  const showSuccessDialog = (message) => {
+    setSuccessDialog({
+      show: true,
+      message: message
+    });
+  };
 
   const handleEditTask = (task) => {
     setSelectedTask(task);
@@ -412,7 +450,7 @@ const TeamTask = () => {
         }
       );
 
-      showToast("Task deleted successfully", "success");
+      showSuccessDialog("Task deleted successfully!");
       refreshData();
     } catch (err) {
       console.error("Error deleting task:", err);
@@ -421,7 +459,7 @@ const TeamTask = () => {
   };
 
   // Thêm hàm showToast
-  const showToast = (message, type = "success") => {
+ const showToast = (message, type = "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
@@ -740,16 +778,22 @@ const fetchTasks = async (
         </>
       )}
 
-      {/* Confirmation Dialog for Deleting Task */}
-      <ConfirmationDialog
+<ConfirmationDialog
         isOpen={deleteConfirm.show}
         onClose={() => setDeleteConfirm({ show: false, taskId: null })}
         onConfirm={confirmDeleteTask}
         title="Delete Task"
         message="Are you sure you want to delete this task? This action cannot be undone."
       />
+      
+      {/* Success Dialog */}
+      <SuccessDialog
+        isOpen={successDialog.show}
+        message={successDialog.message}
+        onClose={() => setSuccessDialog({ show: false, message: "" })}
+      />
 
-      {/* Toast Notification */}
+      {/* Toast Notification - chỉ dùng cho lỗi */}
       {toast && (
         <Toast
           message={toast.message}

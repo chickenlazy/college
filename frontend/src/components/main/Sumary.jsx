@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ExportExcelButton from "../utils/export-excel";
 import axios from "axios";
 import {
-  Search,
+  Loader,
   Calendar,
   Clock,
   CheckCircle,
@@ -241,13 +241,15 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
+// Thay thế đoạn loading hiện tại trong Dashboard
+if (loading) {
+  return (
+    <div className="flex flex-col justify-center items-center h-screen">
+      <Loader size={36} className="text-purple-500 animate-spin mb-4" />
+      <p className="text-gray-400">Loading dashboard data...</p>
+    </div>
+  );
+}
 
   if (error) {
     return (

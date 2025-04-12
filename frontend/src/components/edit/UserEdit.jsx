@@ -1,6 +1,40 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { ArrowLeft, Loader, Save, X, CheckCircle, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  Loader,
+  Save,
+  X,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+
+// Component SuccessDialog để hiển thị thông báo thành công ở giữa màn hình
+const SuccessDialog = ({ isOpen, message, onClose }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Tự động đóng dialog sau 1.5 giây
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1500);
+
+      // Cleanup timer khi component unmount hoặc isOpen thay đổi
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in flex flex-col items-center">
+        <CheckCircle size={50} className="text-green-500 mb-4" />
+        <h2 className="text-xl font-bold mb-2 text-center">{message}</h2>
+      </div>
+    </div>
+  );
+};
 
 const UserEdit = ({ user, onBack, isNew = false }) => {
   const [formData, setFormData] = useState({
@@ -22,6 +56,18 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+  const [successDialog, setSuccessDialog] = useState({
+    show: false,
+    message: "",
+  });
+
+  // Thêm hàm hiển thị dialog thành công
+  const showSuccessDialog = (message) => {
+    setSuccessDialog({
+      show: true,
+      message: message,
+    });
+  };
 
   useEffect(() => {
     if (!isNew && user) {
@@ -69,7 +115,7 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
       ...formData,
       [name]: value,
     });
-  
+
     // Clear validation error when field is changed
     if (validationErrors[name]) {
       setValidationErrors({
@@ -77,24 +123,24 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
         [name]: null,
       });
     }
-    
+
     // Kiểm tra unique sau khi người dùng ngừng nhập
-    if ((name === 'username' || name === 'email') && value.trim().length > 0) {
+    if ((name === "username" || name === "email") && value.trim().length > 0) {
       const timeoutId = setTimeout(async () => {
         const isUnique = await checkUniqueField(name, value);
         if (!isUnique) {
-          setValidationErrors(prev => ({
+          setValidationErrors((prev) => ({
             ...prev,
-            [name]: `This ${name} is already in use`
+            [name]: `This ${name} is already in use`,
           }));
         }
       }, 500);
-      
+
       return () => clearTimeout(timeoutId);
     }
   };
 
-  const validateForm = async  () => {
+  const validateForm = async () => {
     const errors = {};
 
     // Validate required fields
@@ -162,32 +208,34 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
     }
 
     if (formData.email && !validationErrors.email) {
-      const isEmailUnique = await checkUniqueField('email', formData.email);
+      const isEmailUnique = await checkUniqueField("email", formData.email);
       if (!isEmailUnique) {
         errors.email = "This email is already in use";
       }
     }
-  
-    
+
     if (formData.username && !validationErrors.username) {
-      const isUsernameUnique = await checkUniqueField('username', formData.username);
+      const isUsernameUnique = await checkUniqueField(
+        "username",
+        formData.username
+      );
       if (!isUsernameUnique) {
         errors.username = "This username is already in use";
       }
     }
 
-    setValidationErrors(prev => ({...prev, ...errors}));
-  return Object.keys(errors).length === 0;
+    setValidationErrors((prev) => ({ ...prev, ...errors }));
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-  const isFormValid = await validateForm();
-  if (!isFormValid) {
-    showToast("Please correct the form errors", "error");
-    return;
-  }
+    const isFormValid = await validateForm();
+    if (!isFormValid) {
+      showToast("Please correct the form errors", "error");
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -235,12 +283,7 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
       }
 
       setSaving(false);
-      showToast(
-        `User ${isNew ? "created" : "updated"} successfully`,
-        "success"
-      );
-
-      // Wait a moment for the toast to be seen before navigating back
+      showSuccessDialog(`User ${isNew ? "created" : "updated"} successfully`);
       setTimeout(() => {
         onBack(true);
       }, 1500);
@@ -260,50 +303,50 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
     }
   };
 
-  const showToast = (message, type = "success") => {
+  const showToast = (message, type = "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
   // Thêm hàm kiểm tra unique
-const checkUniqueField = async (field, value) => {
-  if (!value) return true;
-  
-  try {
-    const storedUser = localStorage.getItem("user");
-    let token = null;
-    if (storedUser) {
-      const userObj = JSON.parse(storedUser);
-      token = userObj.accessToken;
-    }
+  const checkUniqueField = async (field, value) => {
+    if (!value) return true;
 
-    // Chuẩn bị tham số cho API
-    const params = new URLSearchParams();
-    params.append('field', field);
-    params.append('value', value);
-    
-    // Thêm excludeId nếu đang edit user
-    if (!isNew && user) {
-      params.append('excludeId', user.id);
-    }
-
-    // Gọi API kiểm tra unique
-    const response = await axios.get(
-      `http://localhost:8080/api/users/check-unique?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const userObj = JSON.parse(storedUser);
+        token = userObj.accessToken;
       }
-    );
 
-    // Phân tích kết quả từ response mới
-    return response.data.unique;
-  } catch (err) {
-    console.error(`Error checking unique ${field}:`, err);
-    return true; // Mặc định là unique nếu có lỗi
-  }
-};
+      // Chuẩn bị tham số cho API
+      const params = new URLSearchParams();
+      params.append("field", field);
+      params.append("value", value);
+
+      // Thêm excludeId nếu đang edit user
+      if (!isNew && user) {
+        params.append("excludeId", user.id);
+      }
+
+      // Gọi API kiểm tra unique
+      const response = await axios.get(
+        `http://localhost:8080/api/users/check-unique?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Phân tích kết quả từ response mới
+      return response.data.unique;
+    } catch (err) {
+      console.error(`Error checking unique ${field}:`, err);
+      return true; // Mặc định là unique nếu có lỗi
+    }
+  };
 
   // Toast notification component
   const Toast = ({ message, type }) => {
@@ -330,18 +373,34 @@ const checkUniqueField = async (field, value) => {
   return (
     <div className="bg-gray-950 text-white">
       {/* Header with back button */}
-      <div className="flex items-center mb-6">
-        <button
-          onClick={() => onBack()}
-          className="mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
-          disabled={saving}
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-2xl font-bold">
-          {isNew ? "Create New User" : "Edit User"}
-        </h1>
-      </div>
+      <div className="flex items-center justify-between mb-6">
+            <button
+              className="flex items-center text-gray-400 hover:text-white"
+              onClick={() => onBack()}
+              disabled={saving}
+            >
+              <ChevronLeft size={20} className="mr-1" />
+              <span>Back</span>
+            </button>
+
+            <h1 className="text-xl font-bold">
+              {isNew ? "CREATE NEW USER" : "EDIT USER"}
+            </h1>
+
+            <div className="flex space-x-2">
+              <button
+                type="submit"
+                className={`px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center ${
+                  saving ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+                onClick={handleSubmit}
+                disabled={saving}
+              >
+                <Save size={18} className="mr-2" />
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
 
       {/* Content */}
       {loading ? (
@@ -355,7 +414,6 @@ const checkUniqueField = async (field, value) => {
               {error}
             </div>
           )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Basic Information */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
@@ -642,35 +700,20 @@ const checkUniqueField = async (field, value) => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> 
 
-          <div className="flex justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={() => onBack()}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
-              disabled={saving}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 transition-colors rounded-md flex items-center gap-2"
-              disabled={saving}
-            >
-              {saving ? (
-                <Loader size={16} className="animate-spin" />
-              ) : (
-                <Save size={16} />
-              )}
-              {saving ? "Saving..." : "Save User"}
-            </button>
-          </div>
         </form>
       )}
 
       {/* Toast notification */}
       {toast && <Toast message={toast.message} type={toast.type} />}
+
+      {/* Success Dialog */}
+<SuccessDialog
+  isOpen={successDialog.show}
+  message={successDialog.message}
+  onClose={() => setSuccessDialog({ show: false, message: "" })}
+/>
     </div>
   );
 };

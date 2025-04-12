@@ -99,7 +99,7 @@ const DropdownMenu = ({ isOpen, onClose, title, children }) => {
 };
 
 // Sửa component Toast để nhận onClose từ props thay vì gọi trực tiếp setToast
-const Toast = ({ message, type, onClose }) => {
+const Toast = ({ message, type }) => {
   const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
   const icon = type === "success" ? (
     <CheckCircle size={20} />
@@ -108,17 +108,34 @@ const Toast = ({ message, type, onClose }) => {
   );
 
   return (
-    <div
-      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
-    >
+    <div className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 transform transition-all duration-300 ease-in-out opacity-0 translate-y-6 animate-toast`}>
       {icon}
       <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
-      >
-        <X size={16} />
-      </button>
+    </div>
+  );
+};
+// Component SuccessDialog cần thêm vào đầu file ProjectEdit.js
+const SuccessDialog = ({ isOpen, message, onClose }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Tự động đóng dialog sau 1.5 giây
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1500);
+      
+      // Cleanup timer khi component unmount hoặc isOpen thay đổi
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in flex flex-col items-center">
+        <CheckCircle size={50} className="text-green-500 mb-4" />
+        <h2 className="text-xl font-bold mb-2 text-center">{message}</h2>
+      </div>
     </div>
   );
 };
@@ -150,6 +167,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
   const [allTags, setAllTags] = useState([]);
   const [formErrors, setFormErrors] = useState({});
   const [apiError, setApiError] = useState(null);
+
+  const [successDialog, setSuccessDialog] = useState({
+    show: false,
+    message: "",
+  });
 
   // Load project data when editing existing project
   useEffect(() => {
@@ -260,9 +282,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     }
   };
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+  const showSuccessDialog = (message) => {
+    setSuccessDialog({
+      show: true,
+      message: message
+    });
   };
 
   const handleAddMember = (user) => {
@@ -307,154 +331,160 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chỉ theo ngày
+// Thay thế toàn bộ hàm validateForm trong ProjectEdit.js
+const validateForm = () => {
+  const errors = {};
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chỉ theo ngày
 
-    // Validate project name
-    if (!project?.name?.trim()) {
-      errors.name = "Project name is required";
-    } else if (project.name.length > 100) {
-      errors.name = "Project name cannot exceed 100 characters";
+  // Validate project name
+  if (!project?.name?.trim()) {
+    errors.name = "Project name is required";
+  } else if (project.name.length > 100) {
+    errors.name = "Project name cannot exceed 100 characters";
+  }
+
+  // Validate description (không bắt buộc nhưng giới hạn độ dài)
+  if (project.description && project.description.length > 200) {
+    errors.description = "Description cannot exceed 200 characters";
+  }
+
+  // Validate manager
+  if (!project.managerId) {
+    errors.managerId = "Manager is required";
+  }
+
+  // Validate dates
+  if (!project.startDate) {
+    errors.startDate = "Start date is required";
+  } else if (isNew && new Date(project.startDate) < today) {
+    // Chỉ validate start date không được trong quá khứ khi thêm mới
+    errors.startDate = "Start date cannot be in the past";
+  }
+
+  if (!project.dueDate) {
+    errors.dueDate = "Due date is required";
+  } else if (new Date(project.dueDate) <= new Date(project.startDate)) {
+    errors.dueDate = "Due date must be after start date";
+  }
+
+  // Validate maximum project duration (2 years)
+  if (project.startDate && project.dueDate) {
+    const timeDiff = new Date(project.dueDate) - new Date(project.startDate);
+    const daysDiff = timeDiff / (1000 * 3600 * 24);
+    if (daysDiff > 730) {
+      // ~2 years
+      errors.dueDate = "Project duration cannot exceed 2 years";
     }
+  }
 
-    // Validate description (không bắt buộc nhưng giới hạn độ dài)
-    if (project.description && project.description.length > 500) {
-      errors.description = "Description cannot exceed 500 characters";
-    }
+  // Validate team members limit
+  if (project.userIds && project.userIds.length > 20) {
+    errors.userIds = "Project cannot have more than 20 team members";
+  }
 
-    // Validate manager
-    if (!project.managerId) {
-      errors.managerId = "Manager is required";
-    }
+  // Validate tags limit
+  if (project.tagIds && project.tagIds.length > 10) {
+    errors.tagIds = "Project cannot have more than 10 tags";
+  }
 
-    // Validate dates
-    if (!project.startDate) {
-      errors.startDate = "Start date is required";
-    } else if (new Date(project.startDate) < today) {
-      errors.startDate = "Start date cannot be in the past";
-    }
+  setFormErrors(errors);
+  return Object.keys(errors).length === 0;
+};
 
-    if (!project.dueDate) {
-      errors.dueDate = "Due date is required";
-    } else if (new Date(project.dueDate) <= new Date(project.startDate)) {
-      errors.dueDate = "Due date must be after start date";
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Validate maximum project duration (2 years)
-    if (project.startDate && project.dueDate) {
-      const timeDiff = new Date(project.dueDate) - new Date(project.startDate);
-      const daysDiff = timeDiff / (1000 * 3600 * 24);
-      if (daysDiff > 730) {
-        // ~2 years
-        errors.dueDate = "Project duration cannot exceed 2 years";
-      }
-    }
+  if (!validateForm()) {
+    return;
+  }
 
-    // Validate team members limit
-    if (project.userIds && project.userIds.length > 20) {
-      errors.userIds = "Project cannot have more than 20 team members";
-    }
+  // Validate Start Date không được sau Due Date
+  if (new Date(project.startDate) > new Date(project.dueDate)) {
+    setFormErrors((prevErrors) => ({
+      ...prevErrors,
+      startDate: "Start date cannot be after due date",
+      dueDate: "Due date cannot be before start date",
+    }));
+    return;
+  }
 
-    // Validate tags limit
-    if (project.tagIds && project.tagIds.length > 10) {
-      errors.tagIds = "Project cannot have more than 10 tags";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  // Format the dates for API
+  const formattedProject = {
+    ...project,
+    startDate: new Date(project.startDate).toISOString(),
+    dueDate: new Date(project.dueDate).toISOString(),
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Remove fields that shouldn't be sent to create/update API
+  const {
+    id,
+    users,
+    tags,
+    managerName,
+    progress,
+    totalTasks,
+    totalCompletedTasks,
+    ...apiProject
+  } = formattedProject;
 
-    if (!validateForm()) {
-      return;
+  setSavingData(true);
+  setApiError(null);
+
+  try {
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
     }
 
-    // Validate Start Date không được sau Due Date
-    if (new Date(project.startDate) > new Date(project.dueDate)) {
-      setFormErrors((prevErrors) => ({
-        ...prevErrors,
-        startDate: "Start date cannot be after due date",
-        dueDate: "Due date cannot be before start date",
-      }));
-      return;
-    }
+    if (isNew) {
+      // Create new project
+      await axios.post("http://localhost:8080/api/projects", apiProject, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    // Format the dates for API
-    const formattedProject = {
-      ...project,
-      startDate: new Date(project.startDate).toISOString(),
-      dueDate: new Date(project.dueDate).toISOString(),
-    };
-
-    // Remove fields that shouldn't be sent to create/update API
-    const {
-      id,
-      users,
-      tags,
-      managerName,
-      progress,
-      totalTasks,
-      totalCompletedTasks,
-      ...apiProject
-    } = formattedProject;
-
-    setSavingData(true);
-    setApiError(null);
-
-    try {
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
-
-      if (isNew) {
-        // Create new project
-        await axios.post("http://localhost:8080/api/projects", apiProject, {
+      // Hiển thị dialog thành công thay vì toast
+      showSuccessDialog("Project created successfully!");
+      
+      // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
+      setTimeout(() => {
+        onBack(true);
+      }, 1500);
+    } else {
+      // Update existing project
+      await axios.put(
+        `http://localhost:8080/api/projects/${id}`,
+        apiProject,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-
-        showToast("Project created successfully", "success");
-
-        // Truyền true để báo cần refresh dữ liệu
-        onBack(true);
-      } else {
-        // Update existing project
-        await axios.put(
-          `http://localhost:8080/api/projects/${id}`,
-          apiProject,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        showToast("Project updated successfully", "success");
-    
-        // Truyền true để báo cần refresh dữ liệu
-        setTimeout(() => {
-          onBack(true);
-        }, 1500);
-      }
-    } catch (error) {
-      console.error("Error saving project:", error);
-      setApiError(
-        `Failed to ${isNew ? "create" : "update"} project. ${
-          error.response?.data?.message ||
-          "Please check your input and try again."
-        }`
+        }
       );
-      setSavingData(false);
+
+      // Hiển thị dialog thành công thay vì toast
+      showSuccessDialog("Project updated successfully!");
+  
+      // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
+      setTimeout(() => {
+        onBack(true);
+      }, 1500);
     }
-  };
+  } catch (error) {
+    console.error("Error saving project:", error);
+    setApiError(
+      `Failed to ${isNew ? "create" : "update"} project. ${
+        error.response?.data?.message ||
+        "Please check your input and try again."
+      }`
+    );
+    setSavingData(false);
+  }
+};
 
   if (loading) {
     return (
@@ -550,14 +580,14 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                   <label className="block text-gray-400 mb-1">
                     Description{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 500 characters)
+                      (Max 200 characters)
                     </span>
                   </label>
                   <textarea
                     name="description"
                     value={project?.description || ""}
                     onChange={handleChange}
-                    maxLength={500}
+                    maxLength={200}
                     className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white h-32 resize-none"
                     placeholder="Enter project description"
                   ></textarea>
@@ -567,7 +597,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     </p>
                   )}
                   <div className="text-xs text-right mt-1 text-gray-400">
-                    {project?.description ? project.description.length : 0}/500
+                    {project?.description ? project.description.length : 0}/200
                   </div>
                 </div>
 
@@ -787,7 +817,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
         </div>
       </form>
 
-      {toast && <Toast message={toast.message} type={toast.type} />}
+      <SuccessDialog
+  isOpen={successDialog.show}
+  message={successDialog.message}
+  onClose={() => setSuccessDialog({ show: false, message: "" })}
+/>
     </div>
   );
 };

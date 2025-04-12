@@ -20,10 +20,35 @@ import {
   ChevronsLeft,
   ChevronsRight,
   RefreshCw,
-  Power ,
+  Power,
 } from "lucide-react";
 import UserDetail from "../detail/UserDetail";
 import UserEdit from "../edit/UserEdit";
+// Component hiển thị thông báo thành công ở giữa màn hình và tự động đóng
+const SuccessDialog = ({ isOpen, message, onClose }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Tự động đóng dialog sau 1.5 giây
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1500);
+
+      // Cleanup timer khi component unmount hoặc isOpen thay đổi
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in flex flex-col items-center">
+        <CheckCircle size={50} className="text-green-500 mb-4" />
+        <h2 className="text-xl font-bold mb-2 text-center">{message}</h2>
+      </div>
+    </div>
+  );
+};
 
 // Format date to show in the table
 const formatDate = (dateString) => {
@@ -297,7 +322,7 @@ const ActionButtons = ({
         onClick={() => onToggleStatus(user.id, user.status)}
         title={user.status === "ACTIVE" ? "Deactivate User" : "Activate User"}
       >
-        <Power  size={16} />
+        <Power size={16} />
       </button>
     </div>
   );
@@ -343,6 +368,10 @@ const UserManagement = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [toast, setToast] = useState(null);
+  const [successDialog, setSuccessDialog] = useState({
+    show: false,
+    message: "",
+  });
   const [confirmDialog, setConfirmDialog] = useState({
     show: false,
     userId: null,
@@ -525,7 +554,7 @@ const UserManagement = () => {
 
       const action =
         confirmDialog.action === "deactivate" ? "deactivated" : "activated";
-      showToast(`User ${action} successfully`, "success");
+      showSuccessDialog(`User ${action} successfully`);
       refreshData();
     } catch (err) {
       console.error("Error toggling user status:", err);
@@ -533,8 +562,15 @@ const UserManagement = () => {
     }
   };
 
-  // Toast notification
-  const showToast = (message, type = "success") => {
+  const showSuccessDialog = (message) => {
+    setSuccessDialog({
+      show: true,
+      message: message,
+    });
+  };
+
+  // Cập nhật hàm showToast để chỉ dùng cho thông báo lỗi
+  const showToast = (message, type = "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
@@ -694,6 +730,12 @@ const UserManagement = () => {
             ? "This will prevent them from logging in."
             : "This will allow them to log in again."
         }`}
+      />
+
+      <SuccessDialog
+        isOpen={successDialog.show}
+        message={successDialog.message}
+        onClose={() => setSuccessDialog({ show: false, message: "" })}
       />
 
       {/* Toast Notification */}

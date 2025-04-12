@@ -3,9 +3,10 @@ import {
   Save,
   X,
   Calendar,
-  CheckCircle, XCircle,
+  CheckCircle,
+  XCircle,
   User,
-  Flag,
+  Loader,
   ListChecks,
   Trash2,
   Plus,
@@ -271,6 +272,31 @@ const Subtask = ({ subtask, onChange, onRemove, users }) => {
   );
 };
 
+const SuccessDialog = ({ isOpen, message, onClose }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Tự động đóng dialog sau 1.5 giây
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1500);
+
+      // Cleanup timer khi component unmount hoặc isOpen thay đổi
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in flex flex-col items-center">
+        <CheckCircle size={50} className="text-green-500 mb-4" />
+        <h2 className="text-xl font-bold mb-2 text-center">{message}</h2>
+      </div>
+    </div>
+  );
+};
+
 const TaskEdit = ({
   task: initialTask = null, // Sử dụng initialTask với giá trị mặc định là null
   isNew = false,
@@ -310,6 +336,18 @@ const TaskEdit = ({
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [toast, setToast] = useState(null);
+
+  const [successDialog, setSuccessDialog] = useState({
+    show: false,
+    message: "",
+  });
+
+  const showSuccessDialog = (message) => {
+    setSuccessDialog({
+      show: true,
+      message: message,
+    });
+  };
 
   // Load task data when editing existing task
   useEffect(() => {
@@ -402,32 +440,21 @@ const TaskEdit = ({
     fetchData();
   }, [isNew, projectId, taskId]);
 
-  const showToast = (message, type = "success") => {
+  const showToast = (message, type = "error") => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
   };
-  
-  // Thêm component Toast
+
   const Toast = ({ message, type }) => {
     const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
-    const icon = type === "success" ? (
-      <CheckCircle size={20} />
-    ) : (
-      <XCircle size={20} /> 
-    );
-  
+    const icon =
+      type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />;
+
     return (
       <div
-        className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+        className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 transform transition-all duration-300 ease-in-out opacity-0 translate-y-6 animate-toast`}
       >
         {icon}
         <span>{message}</span>
-        <button
-          onClick={() => setToast(null)}
-          className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
-        >
-          <X size={16} />
-        </button>
       </div>
     );
   };
@@ -489,8 +516,8 @@ const TaskEdit = ({
     }
 
     // Validate description (không bắt buộc nhưng giới hạn độ dài)
-    if (task.description && task.description.length > 500) {
-      errors.description = "Description cannot exceed 500 characters";
+    if (task.description && task.description.length > 200) {
+      errors.description = "Description cannot exceed 200 characters";
     }
 
     // Validate project selection
@@ -499,9 +526,10 @@ const TaskEdit = ({
     }
 
     // Validate start date
+    // Validate start date
     if (!task.startDate) {
       errors.startDate = "Start date is required";
-    } else if (new Date(task.startDate) < today) {
+    } else if (isNew && new Date(task.startDate) < today) {
       errors.startDate = "Start date cannot be in the past";
     }
 
@@ -574,13 +602,14 @@ const TaskEdit = ({
       const result = await response.json();
       console.log(`Task ${isNew ? "created" : "updated"}:`, result);
 
-      showToast(`Task ${isNew ? "created" : "updated"} successfully!`, "success");
+      showSuccessDialog(`Task ${isNew ? "created" : "updated"} successfully!`);
 
-      // Truyền true để báo hiệu component cha cần refresh dữ liệu
-      onBack(true);
+      // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
+      setTimeout(() => {
+        onBack(true);
+      }, 1500);
     } catch (error) {
       showToast(`Error: ${error.message}`, "error");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -610,22 +639,25 @@ const TaskEdit = ({
         throw new Error("Failed to delete task");
       }
 
-      alert("Task deleted successfully!");
+      showSuccessDialog("Task deleted successfully!");
 
-      // Truyền true để báo hiệu component cha cần refresh dữ liệu
-      onBack(true);
+      // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
+      setTimeout(() => {
+        onBack(true);
+      }, 1500);
     } catch (error) {
       console.error("Error deleting task:", error);
-      alert(`Error: ${error.message}`);
-    } finally {
+      showToast(`Error: ${error.message}`, "error");
       setSubmitting(false);
     }
   };
 
+  // Thay thế đoạn loading hiện tại trong TaskEdit
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      <div className="flex flex-col justify-center items-center h-screen">
+        <Loader size={36} className="text-purple-500 animate-spin mb-4" />
+        <p className="text-gray-400">Loading task data...</p>
       </div>
     );
   }
@@ -704,7 +736,7 @@ const TaskEdit = ({
                   <label className="block text-gray-400 mb-1">
                     Description{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 500 characters)
+                      (Max 200 characters)
                     </span>
                   </label>
                   <textarea
@@ -717,7 +749,7 @@ const TaskEdit = ({
                         : "border-gray-600"
                     } rounded-md py-2 px-3 text-white h-32 resize-none`}
                     placeholder="Enter task description"
-                    maxLength={500}
+                    maxLength={200}
                   ></textarea>
                   {formErrors.description && (
                     <p className="text-red-500 text-sm mt-1">
@@ -725,7 +757,7 @@ const TaskEdit = ({
                     </p>
                   )}
                   <div className="text-xs text-right mt-1 text-gray-400">
-                    {task.description ? task.description.length : 0}/500
+                    {task.description ? task.description.length : 0}/200
                   </div>
                 </div>
 
@@ -778,7 +810,11 @@ const TaskEdit = ({
                         name="startDate"
                         value={task.startDate}
                         onChange={handleChange}
-                        min={new Date().toISOString().split("T")[0]}
+                        min={
+                          isNew
+                            ? new Date().toISOString().split("T")[0]
+                            : undefined
+                        }
                         className={`w-full bg-gray-700 border ${
                           formErrors.startDate
                             ? "border-red-500"
@@ -912,7 +948,11 @@ const TaskEdit = ({
         message="Are you sure you want to delete this task? This action cannot be undone."
       />
 
-{toast && <Toast message={toast.message} type={toast.type} />}
+      <SuccessDialog
+        isOpen={successDialog.show}
+        message={successDialog.message}
+        onClose={() => setSuccessDialog({ show: false, message: "" })}
+      />
     </div>
   );
 };
