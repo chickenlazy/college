@@ -326,8 +326,8 @@ const UserDetail = ({ user, onBack }) => {
                           </div>
                           <h4 className="font-medium">{subtask.name}</h4>
                         </div>
-                        <div className={`px-2 py-1 rounded-md text-xs ${subtask.completed ? "bg-green-900 text-green-300" : "bg-red-900 text-red-300"}`}>
-                          {subtask.completed ? "Completed" : "Pending"}
+                        <div className={`px-2 py-1 rounded-md text-xs ${subtask.completed ? "bg-green-900 text-green-300" : "bg-yellow-900 text-red-300"}`}>
+                          {subtask.completed ? "Completed" : "In Progress"}
                         </div>
                       </div>
                       <div className="ml-7 mt-2 grid grid-cols-2 gap-2 text-sm text-gray-400">

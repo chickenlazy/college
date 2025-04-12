@@ -1,5 +1,7 @@
 package com.college.backend.college.project.controller;
 
+import com.college.backend.college.project.entity.User;
+import com.college.backend.college.project.repository.UserRepository;
 import com.college.backend.college.project.request.LoginRequest;
 import com.college.backend.college.project.request.UpdateRoleRequest;
 import com.college.backend.college.project.request.UserRequest;
@@ -10,8 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -19,10 +26,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     // Sửa phương thức đăng ký
@@ -36,6 +45,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<JwtAuthResponse> loginUser(@RequestBody LoginRequest loginDto) {
         JwtAuthResponse jwtAuthResponse = authService.login(loginDto);
+        if (!jwtAuthResponse.isSuccess()) {
+            return new ResponseEntity<>(jwtAuthResponse, HttpStatus.UNAUTHORIZED);
+        }
         return new ResponseEntity<>(jwtAuthResponse, HttpStatus.OK);
     }
 
@@ -44,5 +56,20 @@ public class AuthController {
     public ResponseEntity<ApiResponse> updateUserRole(@RequestBody UpdateRoleRequest updateRoleRequest) {
         ApiResponse apiResponse = authService.updateUserRole(updateRoleRequest);
         return ResponseEntity.ok(apiResponse);
+    }
+
+    @GetMapping("/check-status")
+    public ResponseEntity<?> checkUserStatus(Authentication authentication) {
+        String username = authentication.getName();
+        Optional<User> userOptional = userRepository.findByUsername(username);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", user.getStatus());
+            return ResponseEntity.ok(response);
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
     }
 }

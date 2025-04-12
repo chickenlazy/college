@@ -2,6 +2,7 @@ package com.college.backend.college.project.service.impl;
 
 import com.college.backend.college.project.entity.User;
 import com.college.backend.college.project.enums.Role;
+import com.college.backend.college.project.enums.UserStatus;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
 import com.college.backend.college.project.mapper.UserMapper;
 import com.college.backend.college.project.repository.UserRepository;
@@ -68,36 +69,54 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public JwtAuthResponse login(LoginRequest loginDto) {
         JwtAuthResponse jwtAuthResponse = new JwtAuthResponse();
-        //1. Tạo đối tượng authentication từ loginDto
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword())
-        );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        //2. Tạo một token JWT và gán vào biến AccessToken
-        String token = jwtTokenProvider.generateToken(authentication);
-
-        //3. Kiểm tra Role của User
+        // Kiểm tra user có tồn tại và status trước khi xác thực
         Optional<User> userOptional = userRepository.findByUsernameOrEmail(loginDto.getUsernameOrEmail());
-        String role = null;
         if(userOptional.isPresent()) {
-            User loggedInUser = userOptional.get();
-            // Lấy Role từ enum
-            role = loggedInUser.getRole().name();
-
-            //Thêm thông tin user vào response
-            jwtAuthResponse.setId(loggedInUser.getId());
-            jwtAuthResponse.setFullName(loggedInUser.getFullName());
-            jwtAuthResponse.setUsername(loggedInUser.getUsername());
-            jwtAuthResponse.setEmail(loggedInUser.getEmail());
-            jwtAuthResponse.setPhoneNumber((loggedInUser.getPhoneNumber()));
-            jwtAuthResponse.setCreatedDate(loggedInUser.getCreatedDate());
-            jwtAuthResponse.setLastModifiedDate(loggedInUser.getLastModifiedDate());
+            User user = userOptional.get();
+            // Kiểm tra status, nếu là INACTIVE thì trả về response với message thông báo
+            if(UserStatus.INACTIVE.equals(user.getStatus())) {
+                jwtAuthResponse.setSuccess(false);
+                jwtAuthResponse.setMessage("The account has been disabled");
+                return jwtAuthResponse;
+            }
         }
 
-        jwtAuthResponse.setRole(role);
-        jwtAuthResponse.setAccessToken(token);
+        try {
+            //1. Tạo đối tượng authentication từ loginDto
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword())
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            //2. Tạo một token JWT và gán vào biến AccessToken
+            String token = jwtTokenProvider.generateToken(authentication);
+
+            //3. Kiểm tra Role của User
+            if(userOptional.isPresent()) {
+                User loggedInUser = userOptional.get();
+                // Lấy Role từ enum
+                String role = loggedInUser.getRole().name();
+
+                //Thêm thông tin user vào response
+                jwtAuthResponse.setId(loggedInUser.getId());
+                jwtAuthResponse.setFullName(loggedInUser.getFullName());
+                jwtAuthResponse.setUsername(loggedInUser.getUsername());
+                jwtAuthResponse.setEmail(loggedInUser.getEmail());
+                jwtAuthResponse.setPhoneNumber((loggedInUser.getPhoneNumber()));
+                jwtAuthResponse.setCreatedDate(loggedInUser.getCreatedDate());
+                jwtAuthResponse.setLastModifiedDate(loggedInUser.getLastModifiedDate());
+                jwtAuthResponse.setRole(role);
+            }
+
+            jwtAuthResponse.setAccessToken(token);
+            jwtAuthResponse.setMessage("Login successful");
+
+        } catch (Exception e) {
+            jwtAuthResponse.setSuccess(false);
+            jwtAuthResponse.setMessage("Invalid username or password");
+        }
 
         return jwtAuthResponse;
     }

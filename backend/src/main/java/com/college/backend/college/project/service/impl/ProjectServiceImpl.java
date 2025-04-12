@@ -11,22 +11,27 @@ import com.college.backend.college.project.repository.ProjectRepository;
 import com.college.backend.college.project.repository.TagRepository;
 import com.college.backend.college.project.repository.TaskRepository;
 import com.college.backend.college.project.repository.UserRepository;
+import com.college.backend.college.project.request.EmailRequest;
 import com.college.backend.college.project.request.ProjectRequest;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.ProjectResponse;
 import com.college.backend.college.project.response.UserResponse;
+import com.college.backend.college.project.service.EmailService;
 import com.college.backend.college.project.service.ProjectService;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +41,9 @@ public class ProjectServiceImpl implements ProjectService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     public ProjectServiceImpl(ProjectRepository projectRepository, TaskRepository taskRepository, UserRepository userRepository, TagRepository tagRepository) {
@@ -148,6 +156,11 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Lưu project vào cơ sở dữ liệu
         Project savedProject = projectRepository.save(project);
+
+        if (project.getManager() != null && project.getManager().getEmail() != null
+                && !project.getManager().getEmail().isEmpty()) {
+            sendProjectCreationEmail(project.getManager(), savedProject, project.getUsers());
+        }
 
         // Chuyển đổi Project thành ProjectResponse và trả về
         return mapProjectToProjectResponse(savedProject);
@@ -492,11 +505,20 @@ public class ProjectServiceImpl implements ProjectService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-        // Tạo Specification để lọc theo userId
+        // Tạo Specification để lọc theo userId (là thành viên hoặc là manager)
         Specification<Project> spec = (root, query, criteriaBuilder) -> {
-            // Join với bảng users
-            Join<Project, User> userJoin = root.join("users");
-            return criteriaBuilder.equal(userJoin.get("id"), userId);
+            // Bắt buộc distinct để tránh kết quả trùng lặp
+            query.distinct(true);
+
+            // Điều kiện 1: User là thành viên của project
+            Join<Project, User> userJoin = root.join("users", jakarta.persistence.criteria.JoinType.LEFT);
+            Predicate userIsMember = criteriaBuilder.equal(userJoin.get("id"), userId);
+
+            // Điều kiện 2: User là manager của project
+            Predicate userIsManager = criteriaBuilder.equal(root.get("manager").get("id"), userId);
+
+            // Kết hợp 2 điều kiện bằng OR
+            return criteriaBuilder.or(userIsMember, userIsManager);
         };
 
         // Truy vấn tất cả projects của user (không phân trang)
@@ -525,5 +547,62 @@ public class ProjectServiceImpl implements ProjectService {
         response.setStatus(user.getStatus());
 
         return response;
+    }
+
+    @Async
+    public void sendProjectCreationEmail(User manager, Project project, Set<User> users) {
+        try {
+            String subject = "Thông báo: Dự án mới đã được tạo - " + project.getName();
+
+            // Tạo nội dung HTML cho email
+            StringBuilder usersList = new StringBuilder();
+            if (users != null && !users.isEmpty()) {
+                usersList.append("<ul>");
+                for (User user : users) {
+                    usersList.append("<li>")
+                            .append(user.getFullName() != null ? user.getFullName() : user.getUsername())
+                            .append(" (").append(user.getEmail()).append(")")
+                            .append("</li>");
+                }
+                usersList.append("</ul>");
+            } else {
+                usersList.append("<p>Chưa có thành viên nào được thêm vào dự án.</p>");
+            }
+
+            String htmlBody = "<html><body>" +
+                    "<h2>Xin chào " + (manager.getFullName() != null ? manager.getFullName() : manager.getUsername()) + ",</h2>" +
+                    "<p>Một dự án mới đã được tạo và bạn được chỉ định làm quản lý.</p>" +
+                    "<h3>Thông tin dự án:</h3>" +
+                    "<p><strong>Tên dự án:</strong> " + project.getName() + "</p>" +
+                    "<p><strong>ID dự án:</strong> " + project.getId() + "</p>" +
+                    "<p><strong>Mô tả:</strong> " + (project.getDescription() != null ? project.getDescription() : "Không có mô tả") + "</p>" +
+                    "<p><strong>Ngày bắt đầu:</strong> " + (project.getStartDate() != null ? formatDate(project.getStartDate()) : "Chưa xác định") + "</p>" +
+                    "<p><strong>Ngày kết thúc dự kiến:</strong> " + (project.getDueDate() != null ? formatDate(project.getDueDate()) : "Chưa xác định") + "</p>" +
+                    "<h3>Danh sách thành viên:</h3>" +
+                    usersList.toString() +
+                    "<p>Vui lòng <a href='https://yourapp.com/projects/" + project.getId() + "'>nhấp vào đây</a> để xem chi tiết dự án.</p>" +
+                    "<p>Trân trọng,<br>Hệ thống quản lý dự án</p>" +
+                    "</body></html>";
+
+            // Tạo EmailRequest từ lớp có sẵn
+            EmailRequest emailRequest = new EmailRequest();
+            emailRequest.setTo(manager.getEmail());
+            emailRequest.setSubject(subject);
+            emailRequest.setBody(htmlBody);
+
+            // Gửi email
+            emailService.sendEmailWithHtml(emailRequest);
+        } catch (Exception e) {
+            // Log lỗi nhưng không dừng quy trình tạo dự án
+            System.err.println("Không thể gửi email thông báo: " + e.getMessage());
+            // Có thể sử dụng logger thay vì System.err
+            // logger.error("Failed to send project creation notification email", e);
+        }
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) return "";
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        return sdf.format(date);
     }
 }

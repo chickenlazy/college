@@ -22,5 +22,7 @@ public class JwtAuthResponse {
     private String email;
     private Date createdDate;
     private Date lastModifiedDate;
+    private String message;
+    private boolean success = true;
 }
 

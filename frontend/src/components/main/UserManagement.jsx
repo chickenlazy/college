@@ -293,12 +293,16 @@ const Pagination = ({
 };
 
 // Action Buttons Component
+// Action Buttons Component
 const ActionButtons = ({
   user,
   openUserDetail,
   openUserEdit,
   onToggleStatus,
 }) => {
+  // Kiểm tra xem user có phải là admin không
+  const isAdmin = user.role === "ROLE_ADMIN";
+  
   return (
     <div className="flex gap-2">
       <button
@@ -309,18 +313,32 @@ const ActionButtons = ({
         <Eye size={16} />
       </button>
       <button
-        className="p-2 rounded-full bg-yellow-600 text-white"
-        onClick={() => openUserEdit(user)}
-        title="Edit User"
+        className={`p-2 rounded-full ${
+          isAdmin ? "bg-gray-500 cursor-not-allowed" : "bg-yellow-600"
+        } text-white`}
+        onClick={() => !isAdmin && openUserEdit(user)}
+        disabled={isAdmin}
+        title={isAdmin ? "Cannot edit Admin users" : "Edit User"}
       >
         <Edit size={16} />
       </button>
       <button
         className={`p-2 rounded-full ${
-          user.status === "ACTIVE" ? "bg-red-600" : "bg-green-600"
+          isAdmin
+            ? "bg-gray-500 cursor-not-allowed"
+            : user.status === "ACTIVE"
+            ? "bg-red-600"
+            : "bg-green-600"
         } text-white`}
-        onClick={() => onToggleStatus(user.id, user.status)}
-        title={user.status === "ACTIVE" ? "Deactivate User" : "Activate User"}
+        onClick={() => !isAdmin && onToggleStatus(user.id, user.status)}
+        disabled={isAdmin}
+        title={
+          isAdmin
+            ? "Cannot change Admin status"
+            : user.status === "ACTIVE"
+            ? "Deactivate User"
+            : "Activate User"
+        }
       >
         <Power size={16} />
       </button>

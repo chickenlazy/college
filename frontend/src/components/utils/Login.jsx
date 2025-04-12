@@ -108,13 +108,19 @@ const Login = ({ onLoginSuccess }) => {
     }
     
     setIsLoading(true);
-
+  
     try {
       const response = await axios.post('http://localhost:8080/api/auth/login', {
         usernameOrEmail: formData.usernameOrEmail,
         password: formData.password
       });
-
+  
+      // Kiểm tra nếu phản hồi chứa trường success là false
+      if (response.data.success === false) {
+        setError(response.data.message || 'Unable to login. Please try again.');
+        return;
+      }
+  
       // Store the authentication token and user info
       localStorage.setItem('user', JSON.stringify({
         accessToken: response.data.accessToken,
@@ -128,7 +134,7 @@ const Login = ({ onLoginSuccess }) => {
         createdDate: response.data.createdDate,
         lastModifiedDate: response.data.lastModifiedDate
       }));
-
+  
       setSuccessMessage('Login successful! Redirecting...');
       
       // Call the onLoginSuccess callback to handle successful login
@@ -136,7 +142,12 @@ const Login = ({ onLoginSuccess }) => {
         onLoginSuccess(response.data);
       }, 1000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Incorrect username or password. Please try again.');
+      // Xử lý lỗi từ backend
+      if (err.response?.status === 401) {
+        setError(err.response.data.message || 'The account has been disabled. Please contact administrator.');
+      } else {
+        setError(err.response?.data?.message || 'Incorrect username or password. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +161,7 @@ const Login = ({ onLoginSuccess }) => {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            Enter your credentials to access the dashboard
+            If you don't have an account yet, please contact the admin.
           </p>
         </div>
         
