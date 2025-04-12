@@ -553,21 +553,24 @@ const TaskEdit = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!validateForm()) {
       return;
     }
-
+  
     try {
       const storedUser = localStorage.getItem("user");
       let token = null;
+      let userId = null; // Thêm biến để lưu userId
+      
       if (storedUser) {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
+        userId = user.id; // Lấy id của user đang đăng nhập
       }
-
+  
       setSubmitting(true);
-
+  
       // Prepare request payload
       const payload = {
         name: task.name,
@@ -578,14 +581,15 @@ const TaskEdit = ({
         priority: task.priority,
         projectId: task.projectId,
         assigneeId: task.assigneeId || null,
+        createdBy: userId // Thêm createdBy là id của user đang đăng nhập
       };
-
+  
       const url = isNew
         ? "http://localhost:8080/api/tasks"
         : `http://localhost:8080/api/tasks/${task.id}`;
-
+  
       const method = isNew ? "POST" : "PUT";
-
+  
       const response = await fetch(url, {
         method,
         headers: {
@@ -594,16 +598,16 @@ const TaskEdit = ({
         },
         body: JSON.stringify(payload),
       });
-
+  
       if (!response.ok) {
         throw new Error(`Failed to ${isNew ? "create" : "update"} task`);
       }
-
+  
       const result = await response.json();
       console.log(`Task ${isNew ? "created" : "updated"}:`, result);
-
+  
       showSuccessDialog(`Task ${isNew ? "created" : "updated"} successfully!`);
-
+  
       // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
       setTimeout(() => {
         onBack(true);

@@ -4,6 +4,7 @@ import com.college.backend.college.project.entity.Project;
 import com.college.backend.college.project.enums.ProjectStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,6 +13,9 @@ import java.util.List;
 
 public interface ProjectRepository extends JpaRepository<Project, Integer> {
     Page<Project> findAll(Specification<Project> spec, Pageable pageable);
+
+    List<Project> findAll(Specification<Project> spec, Sort sort);
+
     // Đếm số lượng project theo trạng thái
     long countByStatus(ProjectStatus status);
 

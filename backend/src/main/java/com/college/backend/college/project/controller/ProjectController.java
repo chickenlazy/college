@@ -5,6 +5,7 @@ import com.college.backend.college.project.request.ProjectRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.ProjectResponse;
+import com.college.backend.college.project.response.UserResponse;
 import com.college.backend.college.project.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -160,6 +161,15 @@ public class ProjectController {
     }
 
     /**
+     * API để lấy danh sách thành viên của một dự án: GET /api/projects/{projectId}/members
+     */
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<UserResponse>> getProjectMembers(@PathVariable Integer projectId) {
+        List<UserResponse> members = projectService.getProjectMembers(projectId);
+        return ResponseEntity.ok(members);
+    }
+
+    /**
      * API để lấy danh sách dự án mà một user tham gia: GET /api/projects/user/{userId}?pageNo=1&pageSize=10&search=keyword&status=IN_PROGRESS
      */
     @GetMapping("/user/{userId}")
@@ -184,6 +194,16 @@ public class ProjectController {
         PagedResponse<ProjectResponse> response = projectService.getProjectsByUserId(
                 userId, pageNo, pageSize, search, projectStatus);
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API để lấy tất cả dự án mà một user tham gia (không phân trang, không lọc): GET /api/projects/user/{userId}/all
+     */
+    @GetMapping("/user/{userId}/all")
+    public ResponseEntity<List<ProjectResponse>> getAllProjectsByUserId(@PathVariable Integer userId) {
+        // Gọi service để lấy tất cả dự án của user
+        List<ProjectResponse> response = projectService.getAllProjectsByUserId(userId);
         return ResponseEntity.ok(response);
     }
 }

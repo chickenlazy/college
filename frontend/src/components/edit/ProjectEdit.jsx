@@ -158,6 +158,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       : null
   );
 
+  const [currentUser, setCurrentUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(!isNew);
   const [savingData, setSavingData] = useState(false);
@@ -181,6 +182,20 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       setLoading(false);
     }
 
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setCurrentUser(user);
+      
+      // Nếu là tạo mới project và user không phải admin, tự động đặt manager là user hiện tại
+      if (isNew && user.role !== "ROLE_ADMIN") {
+        setProject(prev => ({
+          ...prev,
+          managerId: user.id
+        }));
+      }
+    }
+  
     // Fetch available users and tags
     fetchUsers();
     fetchTags();
@@ -350,7 +365,7 @@ const validateForm = () => {
   }
 
   // Validate manager
-  if (!project.managerId) {
+  if (currentUser && currentUser.role === "ROLE_ADMIN" && !project.managerId) {
     errors.managerId = "Manager is required";
   }
 
@@ -395,6 +410,14 @@ const validateForm = () => {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
+  // Nếu user không phải admin và chưa có managerId, đặt managerId là id của user hiện tại
+  if (currentUser && currentUser.role !== "ROLE_ADMIN" && !project.managerId) {
+    setProject(prev => ({
+      ...prev,
+      managerId: currentUser.id
+    }));
+  }
+
   if (!validateForm()) {
     return;
   }
@@ -428,6 +451,10 @@ const handleSubmit = async (e) => {
     ...apiProject
   } = formattedProject;
 
+  if (currentUser && currentUser.role !== "ROLE_ADMIN") {
+    apiProject.managerId = currentUser.id;
+  }
+  
   setSavingData(true);
   setApiError(null);
 
@@ -676,30 +703,34 @@ const handleSubmit = async (e) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1">Manager *</label>
-                  <select
-                    name="managerId"
-                    value={project.managerId || ""}
-                    onChange={handleChange}
-                    className={`w-full bg-gray-700 border ${
-                      formErrors.managerId
-                        ? "border-red-500"
-                        : "border-gray-600"
-                    } rounded-md py-2 px-3 text-white`}
-                  >
-                    <option value="">Select a manager</option>
-                    {allUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.fullName}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.managerId && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formErrors.managerId}
-                    </p>
-                  )}
-                </div>
+  <label className="block text-gray-400 mb-1">Manager *</label>
+  {currentUser && currentUser.role === "ROLE_ADMIN" ? (
+    <select
+      name="managerId"
+      value={project.managerId || ""}
+      onChange={handleChange}
+      className={`w-full bg-gray-700 border ${
+        formErrors.managerId ? "border-red-500" : "border-gray-600"
+      } rounded-md py-2 px-3 text-white`}
+    >
+      <option value="">Select a manager</option>
+      {allUsers.map((user) => (
+        <option key={user.id} value={user.id}>
+          {user.fullName}
+        </option>
+      ))}
+    </select>
+  ) : (
+    <div className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white opacity-80">
+      {currentUser ? currentUser.fullName : "Loading..."} (You)
+    </div>
+  )}
+  {formErrors.managerId && (
+    <p className="text-red-500 text-sm mt-1">
+      {formErrors.managerId}
+    </p>
+  )}
+</div>
               </div>
             </div>
 

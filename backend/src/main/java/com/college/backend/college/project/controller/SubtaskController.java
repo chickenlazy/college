@@ -54,4 +54,11 @@ public class SubtaskController {
         PagedResponse<SubtaskResponse> subtasks = subtaskService.getSubtasksByAssigneeWithPagination(userId, page, size);
         return ResponseEntity.ok(subtasks);
     }
+
+    // API để lấy tất cả subtasks được gán cho một user (không phân trang): GET /api/subtasks/user/{userId}/all
+    @GetMapping("/user/{userId}/all")
+    public ResponseEntity<List<SubtaskResponse>> getAllSubtasksByAssignee(@PathVariable Integer userId) {
+        List<SubtaskResponse> subtasks = subtaskService.getSubtasksByAssignee(userId);
+        return ResponseEntity.ok(subtasks);
+    }
 }

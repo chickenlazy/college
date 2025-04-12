@@ -685,7 +685,7 @@ const fetchTasks = async (
                 <thead>
                   <tr className="bg-gray-900 text-left">
                     <th className="p-3 border-b border-gray-700">
-                      <div className="flex items-center gap-2">Task</div>
+                      <div className="flex items-center gap-2">Name</div>
                     </th>
                     <th className="p-3 border-b border-gray-700">
                       <div className="flex items-center gap-2">Project</div>

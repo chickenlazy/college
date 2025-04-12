@@ -410,33 +410,62 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
     setIsEditing(true);
   };
 
-  // Trong component TaskDetail, useEffect đang thiếu phần mảng dependencies
-  useEffect(() => {
-    const fetchAllUsers = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        let token = null;
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          token = user.accessToken;
-        }
+  // Trc khi load User cua Project thay vi all User
+  // useEffect(() => {
+  //   const fetchAllUsers = async () => {
+  //     try {
+  //       const storedUser = localStorage.getItem("user");
+  //       let token = null;
+  //       if (storedUser) {
+  //         const user = JSON.parse(storedUser);
+  //         token = user.accessToken;
+  //       }
 
-        const response = await axios.get(
-          "http://localhost:8080/api/users/active",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setAllUsers(response.data || []);
-      } catch (error) {
-        console.error("Error fetching users:", error);
+  //       const response = await axios.get(
+  //         "http://localhost:8080/api/users/active",
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+  //       setAllUsers(response.data || []);
+  //     } catch (error) {
+  //       console.error("Error fetching users:", error);
+  //     }
+  //   };
+
+  //   fetchAllUsers();
+  // }, []); // Đã có mảng dependencies nhưng không có vấn đề
+
+  // Thay đổi useEffect để fetch users từ project thay vì tất cả user
+useEffect(() => {
+  const fetchProjectUsers = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
       }
-    };
 
-    fetchAllUsers();
-  }, []); // Đã có mảng dependencies nhưng không có vấn đề
+      // Fetch users từ project thay vì tất cả user
+      const response = await axios.get(
+        `http://localhost:8080/api/projects/${task.projectId}/members`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAllUsers(response.data || []);
+    } catch (error) {
+      console.error("Error fetching project users:", error);
+    }
+  };
+
+  fetchProjectUsers();
+}, [task.projectId]); // Thêm dependency task.projectId
 
   if (!task) {
     return (

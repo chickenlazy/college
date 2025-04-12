@@ -14,6 +14,7 @@ import com.college.backend.college.project.repository.UserRepository;
 import com.college.backend.college.project.request.ProjectRequest;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.ProjectResponse;
+import com.college.backend.college.project.response.UserResponse;
 import com.college.backend.college.project.service.ProjectService;
 import jakarta.persistence.criteria.Join;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -455,5 +453,77 @@ public class ProjectServiceImpl implements ProjectService {
         return new PagedResponse<>(projectResponses, pageNo, pageSize,
                 projectPage.getTotalElements(), projectPage.getTotalPages(),
                 projectPage.isLast());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> getProjectMembers(Integer projectId) {
+        // Kiểm tra xem project có tồn tại không
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
+
+        // Nếu project không có danh sách thành viên, trả về danh sách rỗng
+        List<User> members = new ArrayList<>();
+
+        if (project.getUsers() != null) {
+            members.addAll(project.getUsers());
+        }
+
+        // Thêm manager vào danh sách nếu chưa có trong danh sách thành viên
+        if (project.getManager() != null) {
+            boolean managerExists = members.stream()
+                    .anyMatch(user -> user.getId().equals(project.getManager().getId()));
+
+            if (!managerExists) {
+                members.add(project.getManager());
+            }
+        }
+
+        // Chuyển đổi từ User sang UserResponse
+        return members.stream()
+                .map(this::mapUserToUserResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getAllProjectsByUserId(Integer userId) {
+        // Kiểm tra xem user có tồn tại hay không
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        // Tạo Specification để lọc theo userId
+        Specification<Project> spec = (root, query, criteriaBuilder) -> {
+            // Join với bảng users
+            Join<Project, User> userJoin = root.join("users");
+            return criteriaBuilder.equal(userJoin.get("id"), userId);
+        };
+
+        // Truy vấn tất cả projects của user (không phân trang)
+        List<Project> projects = projectRepository.findAll(spec, Sort.by("createdDate").descending());
+
+        // Chuyển đổi các Project thành ProjectResponse
+        return projects.stream()
+                .map(this::mapProjectToProjectResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Phương thức helper để chuyển đổi User sang UserResponse
+    private UserResponse mapUserToUserResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setFullName(user.getFullName());
+        response.setUsername(user.getUsername());
+        response.setEmail(user.getEmail());
+        response.setPhoneNumber(user.getPhoneNumber());
+        response.setRole(user.getRole());
+        response.setCreatedDate(user.getCreatedDate());
+        response.setLastModifiedDate(user.getLastModifiedDate());
+        response.setDepartment(user.getDepartment());
+        response.setAddress(user.getAddress());
+        response.setPosition(user.getPosition());
+        response.setStatus(user.getStatus());
+
+        return response;
     }
 }

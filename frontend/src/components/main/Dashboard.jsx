@@ -11,6 +11,7 @@ import TaskEdit from "../edit/TaskEdit";
 import UserProfile from "../utils/UserProfile";
 import UserManagement from "./UserManagement";
 import Subtask from "./SubTask";
+import UserProject from "./UserProject";
 
 import {
   Menu,
@@ -29,24 +30,93 @@ import {
   LogIn,
 } from "lucide-react";
 
-const DashboardUI = ({ onLogout }) => {
+const DashboardUI = ({ onLogout, initialComponent }) => {
   const [user, setUser] = useState(null);
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeComponent, setActiveComponent] = useState(
+    initialComponent || ""
+  );
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+
+      // Nếu không có initialComponent, đặt trang mặc định dựa trên vai trò
+      if (!initialComponent) {
+        if (userData.role === "ROLE_ADMIN") {
+          setActiveComponent("dashboard");
+        } else if (userData.role === "ROLE_MANAGER") {
+          setActiveComponent("project");
+        } else if (userData.role === "ROLE_USER") {
+          setActiveComponent("userProject"); // Thay đổi từ subTask thành userProject
+        }
+      }
     }
-  }, []);
+  }, [initialComponent]);
 
-  console.log(user);
+  // Hàm kiểm tra quyền truy cập
+  // Hàm kiểm tra quyền truy cập
+  const hasAccess = (component) => {
+    if (!user) return false;
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeComponent, setActiveComponent] = useState("dashboard");
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    switch (component) {
+      case "dashboard":
+        return user.role === "ROLE_ADMIN";
+      case "project":
+      case "teamTask":
+        return user.role === "ROLE_ADMIN" || user.role === "ROLE_MANAGER";
+      case "subTask":
+        return true; // Tất cả role đều có thể truy cập subtask
+      case "userProject":
+        return (
+          user.role === "ROLE_USER" ||
+          user.role === "ROLE_ADMIN" ||
+          user.role === "ROLE_MANAGER"
+        ); // Tất cả role đều có thể truy cập userProject
+      case "userManagement":
+        return user.role === "ROLE_ADMIN";
+      case "userProfile":
+        return true; // Mọi người dùng đều có thể truy cập profile
+      case "projectDetail":
+      case "taskDetail":
+      case "projectEdit":
+      case "taskEdit":
+      case "task":
+        return user.role === "ROLE_ADMIN" || user.role === "ROLE_MANAGER";
+      default:
+        return false;
+    }
+  };
+
+  // Kiểm tra quyền truy cập mỗi khi thay đổi component
+  useEffect(() => {
+    if (user && activeComponent && !hasAccess(activeComponent)) {
+      // Chuyển hướng về trang mặc định theo vai trò
+      if (user.role === "ROLE_ADMIN") {
+        setActiveComponent("dashboard");
+      } else if (user.role === "ROLE_MANAGER") {
+        setActiveComponent("project");
+      } else if (user.role === "ROLE_USER") {
+        setActiveComponent("userProject"); // Thay đổi từ subTask thành userProject
+      }
+    }
+  }, [activeComponent, user]);
 
   // Function to render the active component
   const renderComponent = () => {
+    if (user && activeComponent && !hasAccess(activeComponent)) {
+      return (
+        <div className="bg-gray-900 rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-6">Access Denied</h2>
+          <div className="h-96 flex items-center justify-center text-gray-500">
+            <p>You don't have permission to access this resource</p>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeComponent) {
       case "projectDetail":
         return <ProjectDetail />;
@@ -64,6 +134,8 @@ const DashboardUI = ({ onLogout }) => {
         return <TaskOverview />;
       case "subTask":
         return <Subtask />;
+      case "userProject":
+        return <UserProject />;
       case "teamTask":
         return <TeamTask />;
       case "userManagement":
@@ -106,9 +178,8 @@ const DashboardUI = ({ onLogout }) => {
 
         <nav className="flex-1 mt-4">
           <ul>
-            <li className="px-2">
-              {/* Dashboard menu item */}
-              {(user?.role === "ROLE_ADMIN") && (
+            {user?.role === "ROLE_ADMIN" && (
+              <li className="px-2">
                 <button
                   onClick={() => {
                     setActiveComponent("dashboard");
@@ -123,12 +194,10 @@ const DashboardUI = ({ onLogout }) => {
                   <LayoutDashboard size={20} />
                   <span>Dashboard</span>
                 </button>
-              )}
-            </li>
-            <li className="px-2 mt-2">
-              {/* Project menu item */}
-              {(user?.role === "ROLE_ADMIN" ||
-                user?.role === "ROLE_MANAGER") && (
+              </li>
+            )}
+            {(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_MANAGER") && (
+              <li className="px-2 mt-2">
                 <button
                   onClick={() => {
                     setActiveComponent("project");
@@ -143,12 +212,10 @@ const DashboardUI = ({ onLogout }) => {
                   <FolderKanban size={20} />
                   <span>Project</span>
                 </button>
-              )}
-            </li>
-            <li className="px-2 mt-2">
-              {/* Team Task menu item */}
-              {(user?.role === "ROLE_ADMIN" ||
-                user?.role === "ROLE_MANAGER") && (
+              </li>
+            )}
+            {(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_MANAGER") && (
+              <li className="px-2 mt-2">
                 <button
                   onClick={() => {
                     setActiveComponent("teamTask");
@@ -163,11 +230,28 @@ const DashboardUI = ({ onLogout }) => {
                   <ListChecks size={20} />
                   <span>Team Task</span>
                 </button>
-              )}
-            </li>
-            <li className="px-2 mt-2">
-              {/* Sub Task menu item */}
-              {user?.role === "ROLE_USER" && (
+              </li>
+            )}
+            {user?.role === "ROLE_USER" && (
+              <li className="px-2 mt-2">
+                <button
+                  onClick={() => {
+                    setActiveComponent("userProject");
+                    setIsMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                    activeComponent === "userProject"
+                      ? "bg-purple-600 text-white"
+                      : "hover:bg-gray-800"
+                  }`}
+                >
+                  <FolderKanban size={20} />
+                  <span>Project</span>
+                </button>
+              </li>
+            )}
+            {user?.role === "ROLE_USER" && (
+              <li className="px-2 mt-2">
                 <button
                   onClick={() => {
                     setActiveComponent("subTask");
@@ -182,11 +266,10 @@ const DashboardUI = ({ onLogout }) => {
                   <ClipboardList size={20} />
                   <span>Sub Task</span>
                 </button>
-              )}
-            </li>
-            <li className="px-2 mt-2">
-              {/* User Management menu item */}
-              {user?.role === "ROLE_ADMIN" && (
+              </li>
+            )}
+            {user?.role === "ROLE_ADMIN" && (
+              <li className="px-2 mt-2">
                 <button
                   onClick={() => {
                     setActiveComponent("userManagement");
@@ -201,8 +284,8 @@ const DashboardUI = ({ onLogout }) => {
                   <User size={20} />
                   <span>User Management</span>
                 </button>
-              )}
-            </li>
+              </li>
+            )}
           </ul>
         </nav>
       </div>
