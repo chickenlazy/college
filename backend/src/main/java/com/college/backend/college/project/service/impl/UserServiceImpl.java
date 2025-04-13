@@ -46,9 +46,65 @@ public class UserServiceImpl implements UserService {
         return getAllUsers(pageNo, pageSize, null, null);
     }
 
+//    @Override
+//    @Transactional(readOnly = true)
+//    public PagedResponse<UserResponse> getAllUsers(int pageNo, int pageSize, String search, String roleString) {
+//        // Tạo Pageable để phân trang
+//        Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending()); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
+//
+//        // Tạo Specification để tìm kiếm và lọc
+//        Specification<User> spec = Specification.where(null);
+//
+//        // Thêm điều kiện tìm kiếm theo tên hoặc email nếu có
+//        if (StringUtils.hasText(search)) {
+//            spec = spec.and((root, query, criteriaBuilder) ->
+//                    criteriaBuilder.or(
+//                            criteriaBuilder.like(
+//                                    criteriaBuilder.lower(root.get("fullName")),
+//                                    "%" + search.toLowerCase() + "%"
+//                            ),
+//                            criteriaBuilder.like(
+//                                    criteriaBuilder.lower(root.get("email")),
+//                                    "%" + search.toLowerCase() + "%"
+//                            )
+//                    )
+//            );
+//        }
+//
+//        // Thêm điều kiện lọc theo role nếu có
+//        if (StringUtils.hasText(roleString)) {
+//            try {
+//                Role role = Role.valueOf(roleString.toUpperCase());
+//                spec = spec.and((root, query, criteriaBuilder) ->
+//                        criteriaBuilder.equal(root.get("role"), role)
+//                );
+//            } catch (IllegalArgumentException e) {
+//                // Nếu giá trị role không hợp lệ, bỏ qua
+//            }
+//        }
+//
+//        // Truy vấn users từ repository với điều kiện tìm kiếm và lọc
+//        Page<User> userPage = userRepository.findAll(spec, pageable);
+//
+//        // Chuyển đổi các User thành UserResponse sử dụng UserMapper
+//        List<UserResponse> userResponses = userPage.getContent().stream()
+//                .map(UserMapper.INSTANCE::userToUserRes)
+//                .collect(Collectors.toList());
+//
+//        // Tạo và trả về PagedResponse
+//        return new PagedResponse<>(
+//                userResponses,
+//                pageNo,
+//                pageSize,
+//                userPage.getTotalElements(),
+//                userPage.getTotalPages(),
+//                userPage.isLast()
+//        );
+//    }
+
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<UserResponse> getAllUsers(int pageNo, int pageSize, String search, String roleString) {
+    public PagedResponse<UserResponse> getAllUsers(int pageNo, int pageSize, String search, String filterValue) {
         // Tạo Pageable để phân trang
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("createdDate").descending()); // pageNo - 1 vì Spring Data JPA bắt đầu từ 0
 
@@ -71,15 +127,29 @@ public class UserServiceImpl implements UserService {
             );
         }
 
-        // Thêm điều kiện lọc theo role nếu có
-        if (StringUtils.hasText(roleString)) {
-            try {
-                Role role = Role.valueOf(roleString.toUpperCase());
-                spec = spec.and((root, query, criteriaBuilder) ->
-                        criteriaBuilder.equal(root.get("role"), role)
-                );
-            } catch (IllegalArgumentException e) {
-                // Nếu giá trị role không hợp lệ, bỏ qua
+        // Kiểm tra và áp dụng bộ lọc (role hoặc status)
+        if (StringUtils.hasText(filterValue)) {
+            if (filterValue.startsWith("ROLE_")) {
+                // Lọc theo role
+                try {
+                    Role role = Role.valueOf(filterValue);
+                    spec = spec.and((root, query, criteriaBuilder) ->
+                            criteriaBuilder.equal(root.get("role"), role)
+                    );
+                } catch (IllegalArgumentException e) {
+                    // Nếu giá trị role không hợp lệ, bỏ qua
+                }
+            } else if (filterValue.equals("ACTIVE") || filterValue.equals("INACTIVE")) {
+                // Lọc theo status
+                // Lọc theo status
+                try {
+                    UserStatus status = UserStatus.valueOf(filterValue);
+                    spec = spec.and((root, query, criteriaBuilder) ->
+                            criteriaBuilder.equal(root.get("status"), status)
+                    );
+                } catch (IllegalArgumentException e) {
+                    // Nếu giá trị status không hợp lệ, bỏ qua
+                }
             }
         }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import UserTaskDetail from "../detail/UserTaskDetail";
 import axios from "axios";
 import {
   Search,
@@ -12,7 +13,7 @@ import {
   RotateCcw,
   ClipboardList,
   FolderKanban,
-  User,
+  Eye,
   Calendar,
   Bell,
   ChevronLeft,
@@ -197,7 +198,7 @@ const Pagination = ({
 };
 
 // Enhanced Subtask Card Component
-const EnhancedSubtaskCard = ({ subtask, onToggle }) => {
+const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
   // Check if due date is passed
   const isDueDatePassed = () => {
     if (!subtask.dueDate) return false;
@@ -326,10 +327,18 @@ const EnhancedSubtaskCard = ({ subtask, onToggle }) => {
       )}
 
       {/* Card Footer with Action Button */}
-      <div className="p-3 bg-gray-900 flex justify-center">
+      {/* Card Footer with Action Button */}
+      <div className="p-3 bg-gray-900 flex justify-between gap-2">
+        <button
+          onClick={() => onViewDetails(subtask)}
+          className="flex-1 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+        >
+          <Eye size={16} />
+          <span>View Details</span>
+        </button>
         <button
           onClick={() => onToggle(subtask.id)}
-          className={`w-full py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+          className={`flex-1 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
             subtask.completed
               ? "bg-gray-700 hover:bg-gray-600 text-white"
               : "bg-purple-600 hover:bg-purple-700 text-white"
@@ -359,6 +368,8 @@ const EnhancedSubtaskCard = ({ subtask, onToggle }) => {
 
 const Subtask = () => {
   const [subtasks, setSubtasks] = useState([]);
+  const [selectedSubtask, setSelectedSubtask] = useState(null);
+  const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -481,6 +492,17 @@ const Subtask = () => {
     setCurrentPage(1);
   };
 
+  const handleViewDetails = (subtask) => {
+    setSelectedSubtask(subtask);
+    setShowTaskDetail(true);
+  };
+
+  // Thêm hàm xử lý quay lại
+  const handleBackFromDetail = () => {
+    setShowTaskDetail(false);
+    setSelectedSubtask(null);
+  };
+
   // Filter subtasks based on active filter and search
   const filteredSubtasks = subtasks.filter((subtask) => {
     // Apply completion filter
@@ -550,111 +572,127 @@ const Subtask = () => {
 
   return (
     <div className="p-6 bg-gray-950 text-white">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">
-          <span className="text-purple-400">MY</span> SUBTASKS
-        </h1>
-        <div className="text-sm text-gray-400">
-          {apiData.totalElements} subtask
-          {apiData.totalElements !== 1 ? "s" : ""} found
-        </div>
-      </div>
-
-      {/* Action Buttons - Update search to set currentPage to 1 */}
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
-        <div className="flex flex-wrap gap-2">
-          <button
-            className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-600 rounded-md transition-colors"
-            onClick={handleReset}
-          >
-            <RotateCcw size={18} />
-            <span>Reset</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search subtasks..."
-              className="pl-10 pr-4 py-2 bg-gray-800 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-purple-600"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Tabs - Update to set currentPage to 1 */}
-      <FilterTabs
-        activeFilter={activeFilter}
-        onFilterChange={(filter) => {
-          setActiveFilter(filter);
-          setCurrentPage(1);
-        }}
-      />
-
-      {/* Subtask Cards */}
-      <div className="mt-4 min-h-[400px]">
-        {loading ? (
-          <div className="flex flex-col justify-center items-center h-64">
-            <Loader size={36} className="text-purple-500 animate-spin mb-4" />
-            <p className="text-gray-400">Loading your subtasks...</p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col justify-center items-center h-64 text-center p-4">
-            <XCircle size={36} className="text-red-500 mb-4" />
-            <p className="text-red-400 font-medium text-lg mb-2">Error</p>
-            <p className="text-gray-400">{error}</p>
-          </div>
-        ) : filteredSubtasks.length === 0 ? (
-          <div className="flex flex-col justify-center items-center h-64 text-center">
-            <ClipboardList size={48} className="text-gray-600 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No subtasks found</h3>
-            <p className="text-gray-400 max-w-md">
-              {search || activeFilter !== "all"
-                ? "Try adjusting your filters or search query"
-                : "You don't have any assigned subtasks at the moment"}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredSubtasks.map((subtask) => (
-              <EnhancedSubtaskCard
-                key={subtask.id}
-                subtask={subtask}
-                onToggle={handleToggleStatus}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {!loading && subtasks.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={apiData.totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={itemsPerPage}
-          totalItems={apiData.totalElements}
-          onItemsPerPageChange={handleItemsPerPageChange}
+      {showTaskDetail && selectedSubtask ? (
+        <>
+        {console.log("Selected Task ID:", selectedSubtask.taskId)}
+        <UserTaskDetail
+          taskId={selectedSubtask.taskId}
+          onBack={handleBackFromDetail}
         />
-      )}
+      </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">
+              <span className="text-purple-400">MY</span> SUBTASKS
+            </h1>
+            <div className="text-sm text-gray-400">
+              {apiData.totalElements} subtask
+              {apiData.totalElements !== 1 ? "s" : ""} found
+            </div>
+          </div>
 
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
+          {/* Action Buttons - Update search to set currentPage to 1 */}
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-600 rounded-md transition-colors"
+                onClick={handleReset}
+              >
+                <RotateCcw size={18} />
+                <span>Reset</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search subtasks..."
+                  className="pl-10 pr-4 py-2 bg-gray-800 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Tabs - Update to set currentPage to 1 */}
+          <FilterTabs
+            activeFilter={activeFilter}
+            onFilterChange={(filter) => {
+              setActiveFilter(filter);
+              setCurrentPage(1);
+            }}
+          />
+
+          {/* Subtask Cards */}
+          <div className="mt-4 min-h-[400px]">
+            {loading ? (
+              <div className="flex flex-col justify-center items-center h-64">
+                <Loader
+                  size={36}
+                  className="text-purple-500 animate-spin mb-4"
+                />
+                <p className="text-gray-400">Loading your subtasks...</p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col justify-center items-center h-64 text-center p-4">
+                <XCircle size={36} className="text-red-500 mb-4" />
+                <p className="text-red-400 font-medium text-lg mb-2">Error</p>
+                <p className="text-gray-400">{error}</p>
+              </div>
+            ) : filteredSubtasks.length === 0 ? (
+              <div className="flex flex-col justify-center items-center h-64 text-center">
+                <ClipboardList size={48} className="text-gray-600 mb-4" />
+                <h3 className="text-lg font-medium mb-2">No subtasks found</h3>
+                <p className="text-gray-400 max-w-md">
+                  {search || activeFilter !== "all"
+                    ? "Try adjusting your filters or search query"
+                    : "You don't have any assigned subtasks at the moment"}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredSubtasks.map((subtask) => (
+                  <EnhancedSubtaskCard
+                    key={subtask.id}
+                    subtask={subtask}
+                    onToggle={handleToggleStatus}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {!loading && subtasks.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={apiData.totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              totalItems={apiData.totalElements}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          )}
+
+          {/* Toast Notification */}
+          {toast && (
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast(null)}
+            />
+          )}
+        </>
       )}
     </div>
   );

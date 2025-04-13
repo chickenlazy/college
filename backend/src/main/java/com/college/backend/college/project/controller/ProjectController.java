@@ -206,4 +206,17 @@ public class ProjectController {
         List<ProjectResponse> response = projectService.getAllProjectsByUserId(userId);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ProjectResponse>> getAllProjectsWithoutPaging() {
+        List<ProjectResponse> response = projectService.getAllProjectsWithoutPaging();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/manager/{managerId}/all")
+    public ResponseEntity<List<ProjectResponse>> getAllProjectsByManagerIdWithoutPaging(
+            @PathVariable Integer managerId) {
+        List<ProjectResponse> response = projectService.getAllProjectsByManagerIdWithoutPaging(managerId);
+        return ResponseEntity.ok(response);
+    }
 }

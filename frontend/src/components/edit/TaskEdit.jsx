@@ -350,18 +350,45 @@ const TaskEdit = ({
   };
 
   // Load task data when editing existing task
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        let token = null;
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          token = user.accessToken;
-        }
+// Load task data when editing existing task
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      let userId = null;
+      let userRole = null;
+      
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+        userId = user.id;
+        userRole = user.role;
+      }
 
-        // Fetch projects
-        const projectsResponse = await fetch(
+      // Fetch projects - thay đổi API dựa vào role
+      let projectsResponse;
+      
+      if (userRole === "ROLE_ADMIN") {
+        projectsResponse = await fetch(
+          "http://localhost:8080/api/projects/all",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else if (userRole === "ROLE_MANAGER") {
+        projectsResponse = await fetch(
+          `http://localhost:8080/api/projects/manager/${userId}/all`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else {
+        projectsResponse = await fetch(
           "http://localhost:8080/api/projects",
           {
             headers: {
@@ -369,76 +396,89 @@ const TaskEdit = ({
             },
           }
         );
-        if (!projectsResponse.ok) {
-          throw new Error("Failed to fetch projects");
+      }
+      
+      if (!projectsResponse.ok) {
+        throw new Error("Failed to fetch projects");
+      }
+      
+      const projectsData = await projectsResponse.json();
+      
+      // Cập nhật xử lý danh sách projects dựa vào định dạng response
+      // Nếu là API phân trang, projectsData sẽ có thuộc tính content
+      // Nếu là API không phân trang, projectsData sẽ là một mảng
+      setProjects(Array.isArray(projectsData) ? projectsData : projectsData.content);
+      
+      // Tiếp tục xử lý như phần còn lại của code
+      
+      // Fetch users
+      const usersResponse = await fetch(
+        "http://localhost:8080/api/users/active",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-        const projectsData = await projectsResponse.json();
-        setProjects(projectsData.content);
+      );
+      
+      if (!usersResponse.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      
+      const usersData = await usersResponse.json();
+      setUsers(usersData);
 
-        // Fetch users
-        const usersResponse = await fetch(
-          "http://localhost:8080/api/users/active",
+      // If editing existing task, fetch task data
+      if (!isNew && taskId) {
+        const taskResponse = await fetch(
+          `http://localhost:8080/api/tasks/${taskId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
-        if (!usersResponse.ok) {
-          throw new Error("Failed to fetch users");
+        if (!taskResponse.ok) {
+          throw new Error("Failed to fetch task");
         }
-        const usersData = await usersResponse.json();
-        setUsers(usersData);
-
-        // If editing existing task, fetch task data
-        if (!isNew && taskId) {
-          const taskResponse = await fetch(
-            `http://localhost:8080/api/tasks/${taskId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          if (!taskResponse.ok) {
-            throw new Error("Failed to fetch task");
-          }
-          const taskData = await taskResponse.json();
-          setTask({
-            ...taskData,
-            // Chuyển đổi startDate và dueDate sang định dạng yyyy-MM-dd
-            startDate: taskData.startDate
-              ? new Date(taskData.startDate).toISOString().split("T")[0]
-              : new Date().toISOString().split("T")[0],
-            dueDate: taskData.dueDate
-              ? new Date(taskData.dueDate).toISOString().split("T")[0]
-              : new Date(new Date().setMonth(new Date().getMonth() + 1))
-                  .toISOString()
-                  .split("T")[0],
-          });
-        }
-
-        // If we have a projectId from props, set it in the task
-        if (projectId && isNew) {
-          const project = projectsData.content.find((p) => p.id === projectId);
-          if (project) {
-            setTask((prev) => ({
-              ...prev,
-              projectId,
-              projectName: project.name,
-            }));
-          }
-        }
-
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
+        const taskData = await taskResponse.json();
+        setTask({
+          ...taskData,
+          // Chuyển đổi startDate và dueDate sang định dạng yyyy-MM-dd
+          startDate: taskData.startDate
+            ? new Date(taskData.startDate).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
+          dueDate: taskData.dueDate
+            ? new Date(taskData.dueDate).toISOString().split("T")[0]
+            : new Date(new Date().setMonth(new Date().getMonth() + 1))
+                .toISOString()
+                .split("T")[0],
+        });
       }
-    };
 
-    fetchData();
-  }, [isNew, projectId, taskId]);
+      // If we have a projectId from props, set it in the task
+      if (projectId && isNew) {
+        // Cập nhật cách tìm project để phù hợp với cả hai loại response
+        const projectsList = Array.isArray(projectsData) ? projectsData : projectsData.content;
+        const project = projectsList.find((p) => p.id === projectId);
+        if (project) {
+          setTask((prev) => ({
+            ...prev,
+            projectId,
+            projectName: project.name,
+          }));
+        }
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [isNew, projectId, taskId]);
 
   const showToast = (message, type = "error") => {
     setToast({ message, type });

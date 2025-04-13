@@ -40,4 +40,8 @@ public interface ProjectService {
      */
     List<UserResponse> getProjectMembers(Integer projectId);
     List<ProjectResponse> getAllProjectsByUserId(Integer userId);
+
+    // Thêm vào interface ProjectService
+    List<ProjectResponse> getAllProjectsWithoutPaging();
+    List<ProjectResponse> getAllProjectsByManagerIdWithoutPaging(Integer managerId);
 }

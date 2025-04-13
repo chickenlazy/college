@@ -530,6 +530,35 @@ public class ProjectServiceImpl implements ProjectService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getAllProjectsWithoutPaging() {
+        List<Project> projects = projectRepository.findAll(Sort.by("createdDate").descending());
+        return projects.stream()
+                .map(this::mapProjectToProjectResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProjectResponse> getAllProjectsByManagerIdWithoutPaging(Integer managerId) {
+        // Kiểm tra xem manager có tồn tại hay không
+        User manager = userRepository.findById(managerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + managerId));
+
+        // Tạo Specification để lọc theo managerId
+        Specification<Project> spec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("manager").get("id"), managerId);
+
+        // Truy vấn tất cả projects của manager
+        List<Project> projects = projectRepository.findAll(spec, Sort.by("createdDate").descending());
+
+        // Chuyển đổi các Project thành ProjectResponse
+        return projects.stream()
+                .map(this::mapProjectToProjectResponse)
+                .collect(Collectors.toList());
+    }
+
     // Phương thức helper để chuyển đổi User sang UserResponse
     private UserResponse mapUserToUserResponse(User user) {
         UserResponse response = new UserResponse();
