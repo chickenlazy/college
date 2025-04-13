@@ -25,7 +25,6 @@ public class TaskResponse {
 
     // Subtasks and comments
     private Set<SubtaskResponse> subTasks;
-    private Set<CommentResponse> comments;
 
     private Integer totalSubtasks;
     private Integer totalCompletedSubtasks;

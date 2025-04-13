@@ -287,9 +287,7 @@ public class TaskServiceImpl implements TaskService {
             task.setStatus(TaskStatus.NOT_STARTED);
         }
 
-        // Initialize empty sets for subtasks and comments if needed
         task.setSubtasks(new HashSet<>());
-        task.setComments(new HashSet<>());
 
         // Save the task first to get task ID for subtasks
         Task savedTask = taskRepository.save(task);
@@ -366,12 +364,6 @@ public class TaskServiceImpl implements TaskService {
         } else {
             taskResponse.setSubTasks(new HashSet<>());
         }
-
-        // Ensure comments are initialized
-        taskResponse.setComments(
-                taskResponse.getComments() != null ?
-                        taskResponse.getComments() : new HashSet<>()
-        );
 
         return taskResponse;
     }

@@ -28,7 +28,6 @@ public interface TaskMapper {
     @Mapping(target = "lastModifiedDate", ignore = true)
     @Mapping(target = "project", ignore = true)
     @Mapping(target = "subtasks", ignore = true)
-    @Mapping(target = "comments", ignore = true)
     @Mapping(target = "createdBy", ignore = true) // Xử lý bên ngoài
     Task taskRequestToTask(TaskRequest taskRequest);
 
@@ -37,7 +36,6 @@ public interface TaskMapper {
     @Mapping(target = "lastModifiedDate", ignore = true)
     @Mapping(target = "project", ignore = true)
     @Mapping(target = "subtasks", ignore = true)
-    @Mapping(target = "comments", ignore = true)
     @Mapping(target = "createdBy", ignore = true) // Xử lý bên ngoài
     void updateTaskFromRequest(TaskRequest request, @MappingTarget Task task);
 }

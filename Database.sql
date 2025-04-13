@@ -73,16 +73,6 @@ CREATE TABLE subtasks (
   last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Xóa và tạo lại bảng `comments`
-DROP TABLE IF EXISTS comments;
-CREATE TABLE comments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  text TEXT,
-  author_id INT,
-  task_id INT,
-  created_date DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Xóa và tạo lại bảng `project_users`
 DROP TABLE IF EXISTS project_users;
 CREATE TABLE project_users (
@@ -196,32 +186,6 @@ VALUES
   ('Tối ưu hóa SEO cho website', 16, TRUE, 8, '2026-03-01 09:00:00', '2026-03-10 17:00:00'),
   ('Hỗ trợ khách hàng qua chat trực tuyến', 17, FALSE, 9, '2026-04-01 09:00:00', '2026-04-10 17:00:00'),
   ('Lập kế hoạch sản phẩm', 18, TRUE, 10, '2026-05-01 09:00:00', '2026-05-10 17:00:00');
-
-
--- Chèn dữ liệu vào bảng `comments`
-INSERT INTO comments (text, author_id, task_id)
-VALUES
-  ('Cần điều chỉnh lại cơ sở dữ liệu cho phù hợp', 2, 1),
-  ('Cập nhật tiến độ phát triển ứng dụng di động', 3, 2),
-  ('Đã hoàn thành thiết kế giao diện, cần duyệt lại', 4, 3),
-  ('Cần kiểm tra lại phần mềm trước khi phát hành', 5, 4),
-  ('Đang tiến hành cải tiến giao diện người dùng', 6, 5),
-  ('Đã bắt đầu nghiên cứu tính năng mới', 7, 6),
-  ('Marketing sản phẩm đã sẵn sàng, chờ phê duyệt', 8, 7),
-  ('Khóa đào tạo cho nhân viên mới đã hoàn tất', 9, 8),
-  ('Hệ thống phần mềm đã được nâng cấp', 10, 9),
-  ('Hỗ trợ khách hàng đang được giải quyết, chờ phản hồi', 2, 10),
-  ('Đã phân tích xong dữ liệu thị trường', 3, 11),
-  ('Báo cáo tiến độ dự án đã được hoàn thành', 4, 12),
-  ('Công cụ quản lý công việc đã phát triển xong, chờ kiểm tra', 5, 13),
-  ('Website thương mại điện tử đã hoàn thiện, sẵn sàng chạy thử', 6, 14),
-  ('Chiến dịch quảng cáo đang chạy tốt', 7, 15),
-  ('SEO cho website đã tối ưu xong', 8, 16),
-  ('Hỗ trợ khách hàng qua chat đang hoạt động hiệu quả', 9, 17),
-  ('Sản phẩm đã được lập kế hoạch xong', 10, 18),
-  ('Kiểm thử sản phẩm đã hoàn thành, cần feedback', 2, 19),
-  ('Chương trình sự kiện ra mắt sản phẩm đã sẵn sàng', 3, 20);
-
 
 -- Chèn dữ liệu vào bảng `project_users`
 INSERT INTO project_users (project_id, user_id)

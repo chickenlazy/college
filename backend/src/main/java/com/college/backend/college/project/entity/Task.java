@@ -66,10 +66,6 @@ public class Task {
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Subtask> subtasks;
 
-    // Mối quan hệ với Comment - thêm cascade
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Comment> comments;
-
     @ManyToOne
     @JoinColumn(name = "created_by")
     private User createdBy;

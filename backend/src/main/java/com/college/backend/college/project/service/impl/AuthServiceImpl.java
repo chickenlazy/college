@@ -77,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
             // Kiểm tra status, nếu là INACTIVE thì trả về response với message thông báo
             if(UserStatus.INACTIVE.equals(user.getStatus())) {
                 jwtAuthResponse.setSuccess(false);
-                jwtAuthResponse.setMessage("The account has been disabled");
+                jwtAuthResponse.setMessage("Your account is currently inactive. Please contact the administrator.");
                 return jwtAuthResponse;
             }
         }
