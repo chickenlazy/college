@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
 
 // Input Component
@@ -163,6 +164,12 @@ const Login = ({ onLoginSuccess }) => {
           <p className="mt-2 text-center text-sm text-gray-400">
             If you don't have an account yet, please contact the admin.
           </p>
+          {/* Thêm link quên mật khẩu */}
+<div className="text-center mt-4">
+  <Link to="/forgot-password" className="text-purple-400 hover:text-purple-300 text-sm">
+    Quên mật khẩu?
+  </Link>
+</div>
         </div>
         
         <div className="bg-gray-800 rounded-lg p-6 shadow-xl">

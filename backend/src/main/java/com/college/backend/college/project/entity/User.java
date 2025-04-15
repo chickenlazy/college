@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,6 +49,12 @@ public class User {
 
     @Column(name = "position")
     private String position;
+
+    @Column(name = "reset_code")
+    private String resetCode;
+
+    @Column(name = "reset_code_expiry")
+    private LocalDateTime resetCodeExpiry;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")

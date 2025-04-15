@@ -8,11 +8,13 @@ import com.college.backend.college.project.exception.InvalidPasswordException;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
 import com.college.backend.college.project.mapper.UserMapper;
 import com.college.backend.college.project.repository.UserRepository;
+import com.college.backend.college.project.request.EmailRequest;
 import com.college.backend.college.project.request.PasswordUpdateRequest;
 import com.college.backend.college.project.request.UserRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.UserResponse;
+import com.college.backend.college.project.service.EmailService;
 import com.college.backend.college.project.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,18 +27,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, EmailService emailService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -300,5 +306,103 @@ public class UserServiceImpl implements UserService {
             return user == null || (user.getId().equals(excludeId));
         }
         return true; // Mặc định trả về true nếu field không phải là username hoặc email
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse initiatePasswordReset(String email) {
+        // Kiểm tra email có tồn tại
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với email: " + email));
+
+        // Kiểm tra tài khoản có đang active không
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new BadCredentialsException("Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.");
+        }
+
+        // Tạo mã xác nhận ngẫu nhiên 6 chữ số
+        String resetCode = generateRandomCode();
+
+        // Lưu mã và thời gian hết hạn (60 giây từ hiện tại)
+        user.setResetCode(resetCode);
+        user.setResetCodeExpiry(LocalDateTime.now().plusSeconds(60));
+
+        userRepository.save(user);
+
+        // Tạo email request
+        EmailRequest emailRequest = createResetPasswordEmail(email, resetCode);
+
+        // Gửi email với nội dung HTML
+        emailService.sendEmailWithHtml(emailRequest);
+
+        return new ApiResponse(true, "Mã xác nhận đã được gửi đến email của bạn. Vui lòng kiểm tra và nhập mã trong vòng 60 giây.");
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse verifyAndResetPassword(String email, String resetCode, String newPassword) {
+        // Tìm user bằng email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với email: " + email));
+
+        // Kiểm tra mã xác nhận
+        if (user.getResetCode() == null || !user.getResetCode().equals(resetCode)) {
+            throw new BadCredentialsException("Mã xác nhận không đúng");
+        }
+
+        // Kiểm tra thời gian hiệu lực
+        if (user.getResetCodeExpiry() == null || user.getResetCodeExpiry().isBefore(LocalDateTime.now())) {
+            // Xóa mã reset hết hạn
+            user.setResetCode(null);
+            user.setResetCodeExpiry(null);
+            userRepository.save(user);
+
+            throw new BadCredentialsException("Mã xác nhận đã hết hạn. Vui lòng yêu cầu mã mới.");
+        }
+
+        // Kiểm tra mật khẩu mới hợp lệ
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new InvalidPasswordException("Mật khẩu phải có ít nhất 6 ký tự");
+        }
+
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        // Xóa mã reset
+        user.setResetCode(null);
+        user.setResetCodeExpiry(null);
+
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Mật khẩu đã được đặt lại thành công");
+    }
+
+    // Phương thức hỗ trợ: Tạo mã xác nhận ngẫu nhiên 6 chữ số
+    private String generateRandomCode() {
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000); // Tạo số ngẫu nhiên 6 chữ số
+        return String.valueOf(code);
+    }
+
+    private EmailRequest createResetPasswordEmail(String email, String resetCode) {
+        EmailRequest emailRequest = new EmailRequest();
+        emailRequest.setTo(email);
+        emailRequest.setSubject("Mã xác nhận đặt lại mật khẩu");
+
+        // Tạo nội dung HTML đẹp cho email
+        String htmlContent =
+                "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;'>" +
+                        "<h2 style='color: #4a148c; text-align: center;'>Đặt lại mật khẩu</h2>" +
+                        "<p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>" +
+                        "<p>Mã xác nhận của bạn là:</p>" +
+                        "<div style='background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold; margin: 20px 0;'>" + resetCode + "</div>" +
+                        "<p style='color: #d32f2f;'>Mã này chỉ có hiệu lực trong <strong>60 giây</strong>.</p>" +
+                        "<p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>" +
+                        "<p>Trân trọng,<br>Đội ngũ hỗ trợ</p>" +
+                        "</div>";
+
+        emailRequest.setBody(htmlContent);
+
+        return emailRequest;
     }
 }

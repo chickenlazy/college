@@ -302,7 +302,7 @@ const ActionButtons = ({
 }) => {
   // Kiểm tra xem user có phải là admin không
   const isAdmin = user.role === "ROLE_ADMIN";
-  
+
   return (
     <div className="flex gap-2">
       <button
@@ -429,14 +429,9 @@ const UserManagement = () => {
         params.search = searchTerm;
       }
 
-      // Add filter parameter if not "all"
       if (filterValue !== "all") {
-        // Check if it's a role filter or status filter
-        if (filterValue.startsWith("ROLE_")) {
-          params.role = filterValue;
-        } else if (filterValue === "ACTIVE" || filterValue === "INACTIVE") {
-          params.status = filterValue;
-        }
+        // Luôn sử dụng tham số filterValue cho cả role và status
+        params.filterValue = filterValue;
       }
 
       const storedUser = localStorage.getItem("user");

@@ -8,6 +8,7 @@ import {
   Briefcase,
   MapPin,
   CheckCircle,
+  IdCard,
   AlertTriangle,
 } from "lucide-react";
 
@@ -252,6 +253,7 @@ const UserProfile = () => {
               value={user.fullName}
             />
             <ProfileInput label="Email" icon={Mail} value={user.email} />
+            <ProfileInput label="Username" icon={IdCard} value={user.username} />
             <ProfileInput
               label="Phone Number"
               icon={Phone}

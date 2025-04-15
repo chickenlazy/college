@@ -11,7 +11,9 @@ import {
   Calendar,
   Check,
   Clock,
-  Shield,
+  ChevronLeft,
+  Shield, 
+  IdCard  
 } from "lucide-react";
 
 const UserDetail = ({ user, onBack }) => {
@@ -123,7 +125,16 @@ const UserDetail = ({ user, onBack }) => {
   return (
     <div className="bg-gray-950 text-white">
       {/* Header with back button */}
-      <div className="flex items-center mb-6">
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => onBack(true)} // Thêm tham số true để báo hiệu cần refresh
+          className="flex items-center text-gray-400 hover:text-white"
+        >
+          <ChevronLeft size={20} className="mr-1" />
+          <span>Back</span>
+        </button>
+      </div>
+      {/* <div className="flex items-center mb-6">
         <button
           onClick={() => onBack()}
           className="mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors"
@@ -131,7 +142,7 @@ const UserDetail = ({ user, onBack }) => {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-2xl font-bold">User Details</h1>
-      </div>
+      </div> */}
    
       {/* Content */}
       {loading ? (
@@ -166,6 +177,14 @@ const UserDetail = ({ user, onBack }) => {
                   <div>
                     <p className="text-gray-400 text-sm">Email</p>
                     <p>{userData.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <IdCard  className="mr-3 text-gray-400 mt-1" size={18} />
+                  <div>
+                    <p className="text-gray-400 text-sm">Username</p>
+                    <p>{userData.username}</p>
                   </div>
                 </div>
    

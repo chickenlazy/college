@@ -39,7 +39,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(emailRequest.getBody(), true); // true để sử dụng HTML
 
             // Thêm header để giảm khả năng vào spam
-            message.addHeader("List-Unsubscribe", "<https://yourapp.com/unsubscribe?email=" + emailRequest.getTo() + ">");
+            message.addHeader("List-Unsubscribe", "<http://localhost:3000//unsubscribe?email=" + emailRequest.getTo() + ">");
             message.addHeader("Precedence", "bulk");
 
             mailSender.send(message);

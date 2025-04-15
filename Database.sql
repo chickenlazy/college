@@ -29,6 +29,10 @@ CREATE TABLE users (
   last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+ALTER TABLE users 
+ADD COLUMN reset_code VARCHAR(6),
+ADD COLUMN reset_code_expiry DATETIME;
+
 -- Xóa và tạo lại bảng `projects`
 DROP TABLE IF EXISTS projects;
 CREATE TABLE projects (

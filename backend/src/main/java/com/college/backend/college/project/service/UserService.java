@@ -27,4 +27,20 @@ public interface UserService {
     UserResponse updatePassword(PasswordUpdateRequest passwordUpdateRequest);
 
     boolean isFieldValueUnique(String field, String value, Integer excludeId);
+
+    /**
+     * Khởi tạo quá trình lấy lại mật khẩu bằng cách gửi mã xác nhận
+     * @param email Email của người dùng
+     * @return ApiResponse chứa thông tin xác nhận
+     */
+    ApiResponse initiatePasswordReset(String email);
+
+    /**
+     * Xác thực mã reset và đặt lại mật khẩu mới
+     * @param email Email người dùng
+     * @param resetCode Mã xác nhận
+     * @param newPassword Mật khẩu mới
+     * @return ApiResponse kết quả đặt lại mật khẩu
+     */
+    ApiResponse verifyAndResetPassword(String email, String resetCode, String newPassword);
 }

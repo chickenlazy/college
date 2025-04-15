@@ -1,7 +1,9 @@
 package com.college.backend.college.project.controller;
 
+import com.college.backend.college.project.request.ForgotPasswordRequest;
 import com.college.backend.college.project.request.PasswordUpdateRequest;
 import com.college.backend.college.project.request.UserRequest;
+import com.college.backend.college.project.request.VerifyResetCodeRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.UniqueCheckResponse;
@@ -32,11 +34,11 @@ public class UserController {
             @RequestParam(defaultValue = "1") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String role) {
+            @RequestParam(required = false) String filterValue) {
 
         // Gọi service để lấy dữ liệu phân trang với tìm kiếm và lọc
         PagedResponse<UserResponse> response = userService.getAllUsers(
-                pageNo, pageSize, search, role);
+                pageNo, pageSize, search, filterValue);
 
         // Trả về response dưới dạng HTTP Response Entity
         return ResponseEntity.ok(response);
@@ -106,6 +108,27 @@ public class UserController {
                 isUnique
         );
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API để yêu cầu lấy lại mật khẩu - gửi mã xác nhận qua email
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        ApiResponse response = userService.initiatePasswordReset(request.getEmail());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API để xác thực mã và đặt lại mật khẩu mới
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestBody VerifyResetCodeRequest request) {
+        ApiResponse response = userService.verifyAndResetPassword(
+                request.getEmail(),
+                request.getResetCode(),
+                request.getNewPassword());
         return ResponseEntity.ok(response);
     }
 

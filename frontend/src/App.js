@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import DashboardUI from "./components/main/Dashboard";
 import Login from "./components/utils/Login";
 import axios from "axios";
-import { AlertTriangle } from "lucide-react"; // Nhớ import icon này
+import { AlertTriangle } from "lucide-react";
+import ForgotPassword from "./components/utils/ForgotPassword";
 
 // Thêm component ErrorDialog vào App.js
 const ErrorDialog = ({ isOpen, message, onClose }) => {
@@ -180,6 +181,7 @@ function App() {
         <Route path="/login" element={
           isAuthenticated ? <Navigate to={getDefaultRoute()} /> : <Login onLoginSuccess={handleLoginSuccess} />
         } />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/*" element={
           isAuthenticated && userRole === "ROLE_ADMIN" 
             ? <DashboardUI onLogout={handleLogout} initialComponent="dashboard" />
