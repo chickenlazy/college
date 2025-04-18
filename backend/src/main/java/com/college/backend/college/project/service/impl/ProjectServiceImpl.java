@@ -3,6 +3,7 @@ package com.college.backend.college.project.service.impl;
 import com.college.backend.college.project.entity.Project;
 import com.college.backend.college.project.entity.Tag;
 import com.college.backend.college.project.entity.User;
+import com.college.backend.college.project.enums.NotificationType;
 import com.college.backend.college.project.enums.ProjectStatus;
 import com.college.backend.college.project.enums.TaskStatus;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
@@ -12,11 +13,13 @@ import com.college.backend.college.project.repository.TagRepository;
 import com.college.backend.college.project.repository.TaskRepository;
 import com.college.backend.college.project.repository.UserRepository;
 import com.college.backend.college.project.request.EmailRequest;
+import com.college.backend.college.project.request.NotificationRequest;
 import com.college.backend.college.project.request.ProjectRequest;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.ProjectResponse;
 import com.college.backend.college.project.response.UserResponse;
 import com.college.backend.college.project.service.EmailService;
+import com.college.backend.college.project.service.NotificationService;
 import com.college.backend.college.project.service.ProjectService;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
@@ -41,16 +44,18 @@ public class ProjectServiceImpl implements ProjectService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final NotificationService notificationService;
 
     @Autowired
     private EmailService emailService;
 
     @Autowired
-    public ProjectServiceImpl(ProjectRepository projectRepository, TaskRepository taskRepository, UserRepository userRepository, TagRepository tagRepository) {
+    public ProjectServiceImpl(ProjectRepository projectRepository, TaskRepository taskRepository, UserRepository userRepository, TagRepository tagRepository, NotificationService notificationService) {
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.tagRepository = tagRepository;
+        this.notificationService = notificationService;
     }
 
     private ProjectResponse mapProjectToProjectResponse(Project project) {
@@ -157,6 +162,31 @@ public class ProjectServiceImpl implements ProjectService {
         // Lưu project vào cơ sở dữ liệu
         Project savedProject = projectRepository.save(project);
 
+        if (savedProject.getManager() != null) {
+            NotificationRequest managerNotification = new NotificationRequest();
+            managerNotification.setTitle("Dự án mới được tạo");
+            managerNotification.setContent("Bạn đã được chỉ định làm quản lý cho dự án \"" + savedProject.getName() + "\"");
+            managerNotification.setType(NotificationType.PROJECT);
+            managerNotification.setReferenceId(savedProject.getId());
+            managerNotification.setUserId(savedProject.getManager().getId());
+            notificationService.createNotification(managerNotification);
+        }
+
+// Thông báo cho các thành viên
+        if (savedProject.getUsers() != null && !savedProject.getUsers().isEmpty()) {
+            NotificationRequest memberNotification = new NotificationRequest();
+            memberNotification.setTitle("Dự án mới được tạo");
+            memberNotification.setContent("Bạn đã được thêm vào dự án \"" + savedProject.getName() + "\"");
+            memberNotification.setType(NotificationType.PROJECT);
+            memberNotification.setReferenceId(savedProject.getId());
+
+            Integer[] userIds = savedProject.getUsers().stream()
+                    .map(User::getId)
+                    .toArray(Integer[]::new);
+
+            notificationService.createBulkNotifications(memberNotification, userIds);
+        }
+
         if (project.getManager() != null && project.getManager().getEmail() != null
                 && !project.getManager().getEmail().isEmpty()) {
             sendProjectCreationEmail(project.getManager(), savedProject, project.getUsers());
@@ -229,6 +259,38 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Lưu project đã cập nhật
         Project updatedProject = projectRepository.save(project);
+
+        // Trong phương thức updateProject
+        if (oldStatus != updatedProject.getStatus()) {
+            NotificationRequest statusNotification = new NotificationRequest();
+            statusNotification.setTitle("Trạng thái dự án đã thay đổi");
+            statusNotification.setContent("Trạng thái của dự án \"" + updatedProject.getName() + "\" đã được cập nhật thành " + updatedProject.getStatus().name());
+            statusNotification.setType(NotificationType.PROJECT);
+            statusNotification.setReferenceId(updatedProject.getId());
+
+            // Danh sách ID người nhận thông báo
+            List<Integer> notifyUserIds = new ArrayList<>();
+
+            // Thêm manager vào danh sách nhận thông báo (nếu có)
+            if (updatedProject.getManager() != null) {
+                notifyUserIds.add(updatedProject.getManager().getId());
+            }
+
+            // Thêm các thành viên vào danh sách nhận thông báo
+            if (updatedProject.getUsers() != null && !updatedProject.getUsers().isEmpty()) {
+                updatedProject.getUsers().forEach(user -> {
+                    if (!notifyUserIds.contains(user.getId())) {
+                        notifyUserIds.add(user.getId());
+                    }
+                });
+            }
+
+            // Gửi thông báo cho tất cả người nhận
+            if (!notifyUserIds.isEmpty()) {
+                notificationService.createBulkNotifications(statusNotification,
+                        notifyUserIds.toArray(new Integer[0]));
+            }
+        }
 
         // Chuyển đổi và trả về
         return mapProjectToProjectResponse(updatedProject);
@@ -338,6 +400,14 @@ public class ProjectServiceImpl implements ProjectService {
         // Lưu project đã cập nhật
         Project updatedProject = projectRepository.save(project);
 
+        NotificationRequest notificationRequest = new NotificationRequest();
+        notificationRequest.setTitle("Bạn đã được thêm vào dự án");
+        notificationRequest.setContent("Bạn đã được thêm vào dự án \"" + updatedProject.getName() + "\"");
+        notificationRequest.setType(NotificationType.PROJECT);
+        notificationRequest.setReferenceId(updatedProject.getId());
+        notificationRequest.setUserId(userId);
+        notificationService.createNotification(notificationRequest);
+
         // Chuyển đổi và trả về
         return mapProjectToProjectResponse(updatedProject);
     }
@@ -370,6 +440,14 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Lưu project đã cập nhật
         Project updatedProject = projectRepository.save(project);
+
+        NotificationRequest removeNotification = new NotificationRequest();
+        removeNotification.setTitle("Bạn đã bị xóa khỏi dự án");
+        removeNotification.setContent("Bạn đã bị xóa khỏi dự án \"" + updatedProject.getName() + "\"");
+        removeNotification.setType(NotificationType.PROJECT);
+        removeNotification.setReferenceId(updatedProject.getId());
+        removeNotification.setUserId(userId);
+        notificationService.createNotification(removeNotification);
 
         // Chuyển đổi và trả về
         return mapProjectToProjectResponse(updatedProject);

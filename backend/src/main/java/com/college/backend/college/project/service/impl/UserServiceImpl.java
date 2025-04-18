@@ -15,6 +15,7 @@ import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.UserResponse;
 import com.college.backend.college.project.service.EmailService;
+import com.college.backend.college.project.service.NotificationService;
 import com.college.backend.college.project.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -38,12 +39,14 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, EmailService emailService, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, EmailService emailService, PasswordEncoder passwordEncoder, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -223,32 +226,44 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-        // Chuẩn bị thông tin cập nhật từ userRequest
-        User updatedInfo = UserMapper.INSTANCE.userReqToUser(userRequest);
-
-        // Cập nhật các trường (giữ lại mật khẩu hiện tại nếu không có mật khẩu mới)
-        if (StringUtils.hasText(updatedInfo.getFullName())) {
-            user.setFullName(updatedInfo.getFullName());
+        // Kiểm tra trùng lặp email (nếu email thay đổi)
+        if (StringUtils.hasText(userRequest.getEmail()) && !userRequest.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(userRequest.getEmail())) {
+                throw new IllegalArgumentException("Email đã được sử dụng: " + userRequest.getEmail());
+            }
         }
 
-        if (StringUtils.hasText(updatedInfo.getEmail())) {
-            user.setEmail(updatedInfo.getEmail());
+        // Kiểm tra trùng lặp username (nếu username thay đổi)
+        if (StringUtils.hasText(userRequest.getUsername()) && !userRequest.getUsername().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(userRequest.getUsername())) {
+                throw new IllegalArgumentException("Username đã được sử dụng: " + userRequest.getUsername());
+            }
+            user.setUsername(userRequest.getUsername());
         }
 
-        if (StringUtils.hasText(updatedInfo.getPhoneNumber())) {
-            user.setPhoneNumber(updatedInfo.getPhoneNumber());
+        // Cập nhật các trường (có thể cập nhật thành null hoặc chuỗi rỗng nếu client gửi)
+        if (userRequest.getFullName() != null) {
+            user.setFullName(userRequest.getFullName());
         }
 
-        if (StringUtils.hasText(updatedInfo.getDepartment())) {
-            user.setDepartment(updatedInfo.getDepartment());
+        if (userRequest.getEmail() != null) {
+            user.setEmail(userRequest.getEmail());
         }
 
-        if (StringUtils.hasText(updatedInfo.getAddress())) {
-            user.setAddress(updatedInfo.getAddress());
+        if (userRequest.getPhoneNumber() != null) {
+            user.setPhoneNumber(userRequest.getPhoneNumber());
         }
 
-        if (StringUtils.hasText(updatedInfo.getPosition())) {
-            user.setPosition(updatedInfo.getPosition());
+        if (userRequest.getDepartment() != null) {
+            user.setDepartment(userRequest.getDepartment());
+        }
+
+        if (userRequest.getAddress() != null) {
+            user.setAddress(userRequest.getAddress());
+        }
+
+        if (userRequest.getPosition() != null) {
+            user.setPosition(userRequest.getPosition());
         }
 
         // Nếu có mật khẩu mới, mã hóa và cập nhật
@@ -260,7 +275,6 @@ public class UserServiceImpl implements UserService {
             user.setStatus(userRequest.getStatus());
         }
 
-        // Thêm vào phương thức updateUser trong UserServiceImpl
         if (userRequest.getRole() != null) {
             user.setRole(userRequest.getRole());
         }

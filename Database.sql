@@ -99,6 +99,19 @@ CREATE TABLE project_tags (
   PRIMARY KEY (project_id, tag_id)
 );
 
+DROP TABLE IF EXISTS notifications;
+CREATE TABLE notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  content TEXT,
+  type ENUM('PROJECT', 'TASK', 'SUBTASK', 'SYSTEM', 'OTHER') NOT NULL,
+  status ENUM('READ', 'UNREAD') NOT NULL DEFAULT 'UNREAD',
+  reference_id INT,
+  user_id INT,
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  read_date DATETIME
+);
+
 -- Cập nhật câu lệnh INSERT vào bảng `users`
 INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position, status)
 VALUES

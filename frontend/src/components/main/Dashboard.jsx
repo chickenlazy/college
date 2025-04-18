@@ -29,6 +29,7 @@ import {
   File,
   LogIn,
 } from "lucide-react";
+import NotificationCenter from "../utils/Notification";
 
 const DashboardUI = ({ onLogout, initialComponent }) => {
   const [user, setUser] = useState(null);
@@ -303,9 +304,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
             </button>
 
             <div className="flex items-center ml-auto gap-4">
-              <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
-                <Bell size={20} />
-              </button>
+              <NotificationCenter />
               <div className="flex items-center gap-2">
                 <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
                   <User size={20} />
