@@ -219,4 +219,12 @@ public class ProjectController {
         List<ProjectResponse> response = projectService.getAllProjectsByManagerIdWithoutPaging(managerId);
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping("/{projectId}/status")
+    public ResponseEntity<ProjectResponse> updateProjectStatus(
+            @PathVariable Integer projectId,
+            @RequestParam ProjectStatus status) {
+        ProjectResponse updatedProject = projectService.updateProjectStatus(projectId, status);
+        return ResponseEntity.ok(updatedProject);
+    }
 }

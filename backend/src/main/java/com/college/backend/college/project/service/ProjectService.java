@@ -33,6 +33,7 @@ public interface ProjectService {
     PagedResponse<ProjectResponse> getProjectsByManagerId(Integer managerId, int pageNo, int pageSize, String search, ProjectStatus status);
     PagedResponse<ProjectResponse> getProjectsByUserId(Integer userId, int pageNo, int pageSize, String search, ProjectStatus status);
 
+    ProjectResponse updateProjectStatus(Integer projectId, ProjectStatus status);
     /**
      * Lấy danh sách thành viên của một dự án
      * @param projectId ID của dự án

@@ -31,4 +31,7 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
     List<Task> findByDueDateBeforeAndStatusNot(Date dueDate, TaskStatus status);
 
     List<Task> findByProjectId(Integer projectId);
+
+    List<Task> findByDueDateBetweenAndStatusNot(Date start, Date end, TaskStatus status);
+
 }

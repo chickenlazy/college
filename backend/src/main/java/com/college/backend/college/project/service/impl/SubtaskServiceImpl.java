@@ -4,6 +4,7 @@ import com.college.backend.college.project.entity.Project;
 import com.college.backend.college.project.entity.Subtask;
 import com.college.backend.college.project.entity.Task;
 import com.college.backend.college.project.entity.User;
+import com.college.backend.college.project.enums.NotificationType;
 import com.college.backend.college.project.enums.ProjectStatus;
 import com.college.backend.college.project.enums.TaskStatus;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
@@ -11,10 +12,12 @@ import com.college.backend.college.project.repository.ProjectRepository;
 import com.college.backend.college.project.repository.SubtaskRepository;
 import com.college.backend.college.project.repository.TaskRepository;
 import com.college.backend.college.project.repository.UserRepository;
+import com.college.backend.college.project.request.NotificationRequest;
 import com.college.backend.college.project.request.SubtaskRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.SubtaskResponse;
+import com.college.backend.college.project.service.NotificationService;
 import com.college.backend.college.project.service.SubtaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,13 +38,15 @@ public class SubtaskServiceImpl implements SubtaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final NotificationService notificationService;
 
     @Autowired
-    public SubtaskServiceImpl(SubtaskRepository subtaskRepository, TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository) {
+    public SubtaskServiceImpl(SubtaskRepository subtaskRepository, TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository, NotificationService notificationService) {
         this.subtaskRepository = subtaskRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -80,6 +85,20 @@ public class SubtaskServiceImpl implements SubtaskService {
         // Lưu subtask đã cập nhật
         Subtask updatedSubtask = subtaskRepository.save(subtask);
 
+        // Sau khi cập nhật subtask, thêm đoạn code gửi thông báo
+        if (task != null && task.getProject() != null && task.getProject().getManager() != null) {
+            NotificationRequest notification = new NotificationRequest();
+            notification.setTitle("Trạng thái công việc phụ đã thay đổi");
+            notification.setContent("Công việc phụ \"" + updatedSubtask.getName() + "\" trong task \"" + task.getName() + "\" của dự án \"" + task.getProject().getName() + "\" đã được cập nhật thành " +
+                    (updatedSubtask.getCompleted() ? "hoàn thành" : "chưa hoàn thành"));
+            notification.setType(NotificationType.SUBTASK);
+            notification.setReferenceId(updatedSubtask.getId());
+
+            // Gửi thông báo cho người quản lý dự án
+            notification.setUserId(task.getProject().getManager().getId());
+            notificationService.createNotification(notification);
+        }
+
         // Cập nhật task nếu cần
         if (task != null) {
             // Cập nhật thời gian chỉnh sửa của task
@@ -98,8 +117,6 @@ public class SubtaskServiceImpl implements SubtaskService {
             if (allCompleted && task.getStatus() != TaskStatus.COMPLETED) {
                 task.setStatus(TaskStatus.COMPLETED);
 
-                // Kiểm tra và cập nhật project nếu cần
-                updateProjectStatusIfNeeded(task.getProject());
             } else if (!allCompleted && task.getStatus() == TaskStatus.COMPLETED) {
                 // Nếu có ít nhất một subtask chưa hoàn thành mà task đang ở trạng thái COMPLETED
                 // thì cập nhật task về IN_PROGRESS
@@ -204,6 +221,17 @@ public class SubtaskServiceImpl implements SubtaskService {
 
         // Lưu subtask
         Subtask savedSubtask = subtaskRepository.save(subtask);
+
+        // Sau khi tạo subtask, thêm đoạn code gửi thông báo
+        if (assignee != null) {
+            NotificationRequest notification = new NotificationRequest();
+            notification.setTitle("Công việc phụ mới được giao");
+            notification.setContent("Bạn được giao công việc phụ \"" + savedSubtask.getName() + "\" trong task \"" + task.getName() + "\"");
+            notification.setType(NotificationType.SUBTASK);
+            notification.setReferenceId(savedSubtask.getId());
+            notification.setUserId(assignee.getId());
+            notificationService.createNotification(notification);
+        }
 
         // Tạo và trả về response
         SubtaskResponse response = new SubtaskResponse();

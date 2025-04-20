@@ -4,6 +4,7 @@ import com.college.backend.college.project.entity.Project;
 import com.college.backend.college.project.entity.Subtask;
 import com.college.backend.college.project.entity.Task;
 import com.college.backend.college.project.entity.User;
+import com.college.backend.college.project.enums.NotificationType;
 import com.college.backend.college.project.enums.ProjectStatus;
 import com.college.backend.college.project.enums.TaskStatus;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
@@ -13,12 +14,14 @@ import com.college.backend.college.project.repository.ProjectRepository;
 import com.college.backend.college.project.repository.SubtaskRepository;
 import com.college.backend.college.project.repository.TaskRepository;
 import com.college.backend.college.project.repository.UserRepository;
+import com.college.backend.college.project.request.NotificationRequest;
 import com.college.backend.college.project.request.SubtaskRequest;
 import com.college.backend.college.project.request.TaskRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.SubtaskResponse;
 import com.college.backend.college.project.response.TaskResponse;
+import com.college.backend.college.project.service.NotificationService;
 import com.college.backend.college.project.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -40,13 +43,73 @@ public class TaskServiceImpl implements TaskService {
     private final SubtaskRepository subtaskRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Autowired
-    public TaskServiceImpl(TaskRepository taskRepository, SubtaskRepository subtaskRepository, ProjectRepository projectRepository, UserRepository userRepository) {
+    public TaskServiceImpl(TaskRepository taskRepository, SubtaskRepository subtaskRepository, ProjectRepository projectRepository, UserRepository userRepository, NotificationService notificationService) {
         this.taskRepository = taskRepository;
         this.subtaskRepository = subtaskRepository;
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
+    }
+
+    private void sendTaskStatusChangeNotification(Task task, TaskStatus oldStatus, TaskStatus newStatus) {
+        if (oldStatus == newStatus) return;
+
+        Project project = task.getProject();
+        if (project == null) return;
+
+        String statusText = "";
+        switch (newStatus) {
+            case COMPLETED:
+                statusText = "đã hoàn thành";
+                break;
+            case IN_PROGRESS:
+                statusText = "đang thực hiện";
+                break;
+            case NOT_STARTED:
+                statusText = "chưa bắt đầu";
+                break;
+            case OVER_DUE:
+                statusText = "quá hạn";
+                break;
+            default:
+                statusText = newStatus.name();
+        }
+
+        NotificationRequest notification = new NotificationRequest();
+        notification.setTitle("Trạng thái công việc đã thay đổi");
+        notification.setContent("Công việc \"" + task.getName() + "\" trong dự án \"" + project.getName() + "\" đã được cập nhật thành " + statusText);
+        notification.setType(NotificationType.TASK);
+        notification.setReferenceId(task.getId());
+
+        // Danh sách người nhận thông báo
+        List<Integer> notifyUserIds = new ArrayList<>();
+
+        // Thêm manager vào danh sách
+        if (project.getManager() != null) {
+            notifyUserIds.add(project.getManager().getId());
+        }
+
+        // Thêm người tạo task vào danh sách
+        if (task.getCreatedBy() != null && !notifyUserIds.contains(task.getCreatedBy().getId())) {
+            notifyUserIds.add(task.getCreatedBy().getId());
+        }
+
+        // Thêm các thành viên dự án
+        if (project.getUsers() != null && !project.getUsers().isEmpty()) {
+            project.getUsers().forEach(user -> {
+                if (!notifyUserIds.contains(user.getId())) {
+                    notifyUserIds.add(user.getId());
+                }
+            });
+        }
+
+        // Gửi thông báo
+        if (!notifyUserIds.isEmpty()) {
+            notificationService.createBulkNotifications(notification, notifyUserIds.toArray(new Integer[0]));
+        }
     }
 
     @Override
@@ -82,6 +145,11 @@ public class TaskServiceImpl implements TaskService {
 
         // Lưu task đã cập nhật
         Task updatedTask = taskRepository.save(task);
+
+        // Gửi thông báo nếu trạng thái thay đổi
+        if (oldStatus != updatedTask.getStatus()) {
+            sendTaskStatusChangeNotification(updatedTask, oldStatus, updatedTask.getStatus());
+        }
 
         // Trả về response
         TaskResponse response = TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
@@ -142,8 +210,37 @@ public class TaskServiceImpl implements TaskService {
         // Xóa tất cả các Subtask liên quan đến Task này
         subtaskRepository.deleteAllByTask(task);
 
+        Project project = task.getProject();
+
         // Xóa Task
         taskRepository.delete(task);
+
+        // Gửi thông báo về việc xóa task
+        if (project != null) {
+            NotificationRequest notification = new NotificationRequest();
+            notification.setTitle("Công việc đã bị xóa");
+            notification.setContent("Công việc \"" + task.getName() + "\" trong dự án \"" + project.getName() + "\" đã bị xóa");
+            notification.setType(NotificationType.TASK);
+            notification.setReferenceId(project.getId()); // Sử dụng ID của project vì task đã bị xóa
+
+            // Danh sách người nhận thông báo
+            List<Integer> notifyUserIds = new ArrayList<>();
+
+            // Thêm manager vào danh sách
+            if (project.getManager() != null) {
+                notifyUserIds.add(project.getManager().getId());
+            }
+
+            // Thêm người tạo task vào danh sách
+            if (task.getCreatedBy() != null && !notifyUserIds.contains(task.getCreatedBy().getId())) {
+                notifyUserIds.add(task.getCreatedBy().getId());
+            }
+
+            // Gửi thông báo
+            if (!notifyUserIds.isEmpty()) {
+                notificationService.createBulkNotifications(notification, notifyUserIds.toArray(new Integer[0]));
+            }
+        }
 
         // Trả về phản hồi thành công
         return new ApiResponse(Boolean.TRUE, "Task deleted successfully");
@@ -162,16 +259,6 @@ public class TaskServiceImpl implements TaskService {
             task.setStatus(TaskStatus.IN_PROGRESS);
         } else {
             task.setStatus(TaskStatus.COMPLETED);
-
-            // Cũng cập nhật tất cả subtasks thành completed
-            if (task.getSubtasks() != null && !task.getSubtasks().isEmpty()) {
-                for (Subtask subtask : task.getSubtasks()) {
-                    if (!subtask.getCompleted()) {
-                        subtask.setCompleted(true);
-                        subtaskRepository.save(subtask);
-                    }
-                }
-            }
         }
 
         // Cập nhật thời gian chỉnh sửa
@@ -180,10 +267,9 @@ public class TaskServiceImpl implements TaskService {
         // Lưu task đã cập nhật
         Task updatedTask = taskRepository.save(task);
 
-        // Nếu task đã được hoàn thành, kiểm tra project
-        if (!wasCompleted && task.getStatus() == TaskStatus.COMPLETED) {
-            updateProjectStatusIfNeeded(updatedTask.getProject());
-        }
+        // Gửi thông báo khi trạng thái task thay đổi
+        TaskStatus newStatus = updatedTask.getStatus();
+        sendTaskStatusChangeNotification(updatedTask, wasCompleted ? TaskStatus.COMPLETED : TaskStatus.IN_PROGRESS, newStatus);
 
         // Chuyển đổi và trả về response
         return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
@@ -196,6 +282,7 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
 
         boolean wasCompleted = task.getStatus() == TaskStatus.COMPLETED;
+        TaskStatus oldStatus = task.getStatus();
 
         // Cập nhật trạng thái mới
         task.setStatus(newStatus);
@@ -203,58 +290,13 @@ public class TaskServiceImpl implements TaskService {
         // Cập nhật thời gian chỉnh sửa
         task.setLastModifiedDate(new Date());
 
-        // Nếu task chuyển sang trạng thái COMPLETED
-        if (newStatus == TaskStatus.COMPLETED) {
-            // Cập nhật tất cả subtasks thành completed
-            if (task.getSubtasks() != null && !task.getSubtasks().isEmpty()) {
-                for (Subtask subtask : task.getSubtasks()) {
-                    if (!subtask.getCompleted()) {
-                        subtask.setCompleted(true);
-                        subtaskRepository.save(subtask);
-                    }
-                }
-            }
-
-            // Kiểm tra và cập nhật project nếu cần
-            if (!wasCompleted) {
-                updateProjectStatusIfNeeded(task.getProject());
-            }
-        }
-
         // Lưu task đã cập nhật
         Task updatedTask = taskRepository.save(task);
 
+        sendTaskStatusChangeNotification(updatedTask, oldStatus, newStatus);
+
         // Chuyển đổi và trả về response
         return TaskMapper.INSTANCE.taskToTaskResponse(updatedTask);
-    }
-
-    /**
-     * Kiểm tra và cập nhật trạng thái của project nếu cần
-     */
-    private void updateProjectStatusIfNeeded(Project project) {
-        if (project == null) return;
-
-        // Kiểm tra tất cả tasks của project
-        boolean allTasksCompleted = true;
-        List<Task> tasks = taskRepository.findByProjectId(project.getId());
-
-        if (tasks.isEmpty()) {
-            return; // Không có task nào, không cần cập nhật
-        }
-
-        for (Task t : tasks) {
-            if (t.getStatus() != TaskStatus.COMPLETED) {
-                allTasksCompleted = false;
-                break;
-            }
-        }
-
-        // Nếu tất cả tasks đều hoàn thành, cập nhật project thành COMPLETED
-        if (allTasksCompleted && project.getStatus() != ProjectStatus.COMPLETED) {
-            project.setStatus(ProjectStatus.COMPLETED);
-            project.setLastModifiedDate(new Date());
-            projectRepository.save(project);
-        }
     }
 
     @Override
@@ -291,6 +333,32 @@ public class TaskServiceImpl implements TaskService {
 
         // Save the task first to get task ID for subtasks
         Task savedTask = taskRepository.save(task);
+
+        // Gửi thông báo cho project manager
+        if (project.getManager() != null) {
+            NotificationRequest managerNotification = new NotificationRequest();
+            managerNotification.setTitle("Công việc mới được tạo");
+            managerNotification.setContent("Một công việc mới \"" + savedTask.getName() + "\" đã được tạo trong dự án \"" + project.getName() + "\"");
+            managerNotification.setType(NotificationType.TASK);
+            managerNotification.setReferenceId(savedTask.getId());
+            managerNotification.setUserId(project.getManager().getId());
+            notificationService.createNotification(managerNotification);
+        }
+
+        // Gửi thông báo cho các thành viên dự án
+        if (project.getUsers() != null && !project.getUsers().isEmpty()) {
+            NotificationRequest memberNotification = new NotificationRequest();
+            memberNotification.setTitle("Công việc mới trong dự án");
+            memberNotification.setContent("Một công việc mới \"" + savedTask.getName() + "\" đã được tạo trong dự án \"" + project.getName() + "\"");
+            memberNotification.setType(NotificationType.TASK);
+            memberNotification.setReferenceId(savedTask.getId());
+
+            Integer[] userIds = project.getUsers().stream()
+                    .map(User::getId)
+                    .toArray(Integer[]::new);
+
+            notificationService.createBulkNotifications(memberNotification, userIds);
+        }
 
         // Process and create subtasks if provided
         Set<Subtask> createdSubtasks = new HashSet<>();

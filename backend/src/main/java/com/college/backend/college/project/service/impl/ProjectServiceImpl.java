@@ -309,6 +309,59 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
+    public ProjectResponse updateProjectStatus(Integer projectId, ProjectStatus status) {
+        // Kiểm tra xem project có tồn tại không
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + projectId));
+
+        // Lưu trạng thái cũ để so sánh
+        ProjectStatus oldStatus = project.getStatus();
+
+        // Cập nhật trạng thái mới
+        project.setStatus(status);
+        project.setLastModifiedDate(new Date());
+
+        // Lưu project đã cập nhật
+        Project updatedProject = projectRepository.save(project);
+
+        // Gửi thông báo khi trạng thái thay đổi
+        if (oldStatus != updatedProject.getStatus()) {
+            NotificationRequest statusNotification = new NotificationRequest();
+            statusNotification.setTitle("Trạng thái dự án đã thay đổi");
+            statusNotification.setContent("Trạng thái của dự án \"" + updatedProject.getName() + "\" đã được cập nhật thành " + updatedProject.getStatus().name());
+            statusNotification.setType(NotificationType.PROJECT);
+            statusNotification.setReferenceId(updatedProject.getId());
+
+            // Danh sách ID người nhận thông báo
+            List<Integer> notifyUserIds = new ArrayList<>();
+
+            // Thêm manager vào danh sách nhận thông báo (nếu có)
+            if (updatedProject.getManager() != null) {
+                notifyUserIds.add(updatedProject.getManager().getId());
+            }
+
+            // Thêm các thành viên vào danh sách nhận thông báo
+            if (updatedProject.getUsers() != null && !updatedProject.getUsers().isEmpty()) {
+                updatedProject.getUsers().forEach(user -> {
+                    if (!notifyUserIds.contains(user.getId())) {
+                        notifyUserIds.add(user.getId());
+                    }
+                });
+            }
+
+            // Gửi thông báo cho tất cả người nhận
+            if (!notifyUserIds.isEmpty()) {
+                notificationService.createBulkNotifications(statusNotification,
+                        notifyUserIds.toArray(new Integer[0]));
+            }
+        }
+
+        // Chuyển đổi và trả về
+        return mapProjectToProjectResponse(updatedProject);
+    }
+
+    @Override
+    @Transactional
     public ProjectResponse addTagToProject(Integer projectId, Integer tagId) {
         // Tìm project theo ID
         Project project = projectRepository.findById(projectId)
@@ -557,17 +610,10 @@ public class ProjectServiceImpl implements ProjectService {
         List<User> members = new ArrayList<>();
 
         if (project.getUsers() != null) {
-            members.addAll(project.getUsers());
-        }
-
-        // Thêm manager vào danh sách nếu chưa có trong danh sách thành viên
-        if (project.getManager() != null) {
-            boolean managerExists = members.stream()
-                    .anyMatch(user -> user.getId().equals(project.getManager().getId()));
-
-            if (!managerExists) {
-                members.add(project.getManager());
-            }
+            // Lọc ra các thành viên không phải là manager
+            members = project.getUsers().stream()
+                    .filter(user -> project.getManager() == null || !user.getId().equals(project.getManager().getId()))
+                    .collect(Collectors.toList());
         }
 
         // Chuyển đổi từ User sang UserResponse
@@ -608,10 +654,23 @@ public class ProjectServiceImpl implements ProjectService {
                 .collect(Collectors.toList());
     }
 
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<ProjectResponse> getAllProjectsWithoutPaging() {
+//        List<Project> projects = projectRepository.findAll(Sort.by("createdDate").descending());
+//        return projects.stream()
+//                .map(this::mapProjectToProjectResponse)
+//                .collect(Collectors.toList());
+//    }
+
     @Override
     @Transactional(readOnly = true)
     public List<ProjectResponse> getAllProjectsWithoutPaging() {
-        List<Project> projects = projectRepository.findAll(Sort.by("createdDate").descending());
+        // Tạo Specification để chỉ lấy projects có status IN_PROGRESS
+        Specification<Project> spec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("status"), ProjectStatus.IN_PROGRESS);
+
+        List<Project> projects = projectRepository.findAll(spec, Sort.by("createdDate").descending());
         return projects.stream()
                 .map(this::mapProjectToProjectResponse)
                 .collect(Collectors.toList());

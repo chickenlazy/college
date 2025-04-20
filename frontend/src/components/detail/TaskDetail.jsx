@@ -732,10 +732,10 @@ useEffect(() => {
               {statusMenuOpen && (
                 <div className="absolute left-0 mt-1 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700 min-w-[171px] w-auto">
                   {[
-                    // "COMPLETED",
+                    "COMPLETED",
                     "IN_PROGRESS",
                     "NOT_STARTED",
-                    // "OVER_DUE",
+                    "OVER_DUE",
                     "ON_HOLD",
                   ].map((status) => (
                     <div

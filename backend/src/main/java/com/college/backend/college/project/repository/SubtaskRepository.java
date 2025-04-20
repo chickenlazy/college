@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -16,5 +17,8 @@ public interface SubtaskRepository extends JpaRepository<Subtask, Integer> {
     // Tìm subtask theo người được gán
     List<Subtask> findByAssigneeId(Integer assigneeId);
     Page<Subtask> findByAssigneeId(Integer assigneeId, Pageable pageable);
+
+    List<Subtask> findByDueDateBetweenAndCompletedFalse(Date start, Date end);
+    List<Subtask> findByDueDateBeforeAndCompletedFalse(Date date);
 
 }

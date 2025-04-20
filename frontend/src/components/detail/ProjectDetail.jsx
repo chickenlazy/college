@@ -451,6 +451,8 @@ const TagDropdownMenu = ({ isOpen, onClose, tags, onSelect, usedTagIds }) => {
 };
 
 const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [toast, setToast] = useState(null);
   const [project, setProject] = useState(null);
@@ -880,14 +882,77 @@ if (showTaskEdit) {
 
           {/* Project Title and Status */}
           <div className="mb-6">
-            <div className="flex items-center mb-2">
-              <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
-              <div
-                className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} bg-opacity-20 ${statusInfo.textColor}`}
-              >
-                {statusInfo.text}
-              </div>
+          <div className="flex items-center mb-2">
+  <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
+  <div className="relative">
+    <div
+      className="cursor-pointer"
+      onClick={() => setStatusMenuOpen(!statusMenuOpen)}
+    >
+      <div
+        className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} bg-opacity-20 ${statusInfo.textColor} flex items-center gap-1`}
+      >
+        {statusInfo.text}
+        <ChevronDown size={12} />
+      </div>
+    </div>
+    {statusMenuOpen && (
+      <div className="absolute left-0 mt-1 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700 min-w-[171px] w-auto">
+        {[
+          "COMPLETED",
+          "IN_PROGRESS",
+          "NOT_STARTED", 
+          "ON_HOLD",
+          "OVER_DUE"
+        ].map((status) => (
+          <div
+            key={status}
+            className={`px-3 py-2 rounded-md flex items-center gap-2 cursor-pointer my-1 hover:bg-gray-700 mx-1 ${
+              project.status === status ? "bg-gray-700" : ""
+            }`}
+            onClick={async () => {
+              try {
+                const storedUser = localStorage.getItem("user");
+                let token = null;
+                if (storedUser) {
+                  const user = JSON.parse(storedUser);
+                  token = user.accessToken;
+                }
+
+                await axios.patch(
+                  `http://localhost:8080/api/projects/${project.id}/status?status=${status}`,
+                  {}, 
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                // Fetch lại dữ liệu project
+                fetchProjectData();
+                showToast(`Project status updated to ${status.replace(/_/g, " ")}`, "success");
+                setStatusMenuOpen(false);
+              } catch (error) {
+                console.error("Error updating project status:", error);
+                showToast("Failed to update project status", "error");
+                setStatusMenuOpen(false);
+              }
+            }}
+          >
+            <div
+              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                getStatusInfo(status).color
+              } bg-opacity-20 ${getStatusInfo(status).textColor}`}
+            >
+              {getStatusInfo(status).text}
             </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
             <p className="text-gray-300">{project.description}</p>
 
             {/* Tags */}
@@ -1156,12 +1221,6 @@ if (showTaskEdit) {
                   <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                     <Users size={48} className="mx-auto mb-3 opacity-50" />
                     <p>No team members assigned to this project yet.</p>
-                    <button
-                      className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
-                      onClick={() => setMembersMenuOpen(true)}
-                    >
-                      Add team members
-                    </button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
