@@ -21,6 +21,7 @@ import {
   Plus,
 } from "lucide-react";
 import TaskEdit from "../edit/TaskEdit";
+import SubtaskMemberModal from "../utils/SubtaskMemberModal";
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -1023,75 +1024,57 @@ useEffect(() => {
 
                     {/* Phần chọn assignee */}
                     <div className="relative">
-                      <div
-                        className={`w-full bg-gray-700 border ${
-                          subtaskErrors.assignee
-                            ? "border-red-500"
-                            : "border-gray-600"
-                        } rounded-md py-3 px-4 text-white cursor-pointer flex justify-between items-center`}
-                        onClick={() => setMembersMenuOpen(!membersMenuOpen)}
-                      >
-                        <span>
-                          {selectedAssignee
-                            ? selectedAssignee.fullName
-                            : "Select Assignee"}
-                        </span>
-                        <ChevronDown size={16} />
-                      </div>
-                      {subtaskErrors.assignee && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {subtaskErrors.assignee}
-                        </p>
-                      )}
+  <div
+    className={`w-full bg-gray-700 border ${
+      subtaskErrors.assignee ? "border-red-500" : "border-gray-600"
+    } rounded-md py-3 px-4 text-white cursor-pointer flex justify-between items-center`}
+    onClick={() => setMembersMenuOpen(true)} // Thay đổi từ toggle sang set true
+  >
+    <div className="flex items-center">
+      {selectedAssignee ? (
+        <>
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-2">
+            {selectedAssignee.fullName
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .substring(0, 2)}
+          </div>
+          <div>
+            <span>{selectedAssignee.fullName}</span>
+            {selectedAssignee.role && (
+              <div className="text-xs text-gray-400">{selectedAssignee.role}</div>
+            )}
+          </div>
+        </>
+      ) : (
+        <span className="text-gray-400">Select Assignee</span>
+      )}
+    </div>
+    <ChevronDown size={16} />
+  </div>
+  {subtaskErrors.assignee && (
+    <p className="text-red-500 text-sm mt-1">{subtaskErrors.assignee}</p>
+  )}
 
-                      {membersMenuOpen && (
-                        <div className="absolute left-0 right-0 mt-2 bg-gray-800 rounded-lg border border-gray-700 shadow-lg z-30 max-h-80 overflow-y-auto">
-                          <div className="p-3 border-b border-gray-700 flex justify-between items-center">
-                            <h3 className="font-medium">Select Assignee</h3>
-                            <button
-                              className="p-1 hover:bg-gray-700 rounded-full"
-                              onClick={() => setMembersMenuOpen(false)}
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-                          <div className="p-2">
-                            {allUsers.map((user) => (
-                              <div
-                                key={user.id}
-                                className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-md cursor-pointer"
-                                onClick={() => {
-                                  setSelectedAssignee(user);
-                                  setMembersMenuOpen(false);
-                                }}
-                              >
-                                <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white flex-shrink-0">
-                                  {user.fullName
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .substring(0, 2)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">
-                                    {user.fullName}
-                                  </p>
-                                  <div className="flex items-center text-sm text-gray-400 gap-2">
-                                    <span className="truncate">
-                                      {user.position}
-                                    </span>
-                                    <span className="text-gray-500">•</span>
-                                    <span className="truncate">
-                                      {user.department}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+  {/* Sử dụng Modal mới thay vì dropdown cũ */}
+  <SubtaskMemberModal
+    isOpen={membersMenuOpen}
+    onClose={() => setMembersMenuOpen(false)}
+    users={allUsers}
+    onSelect={(user) => {
+      setSelectedAssignee(user);
+      setMembersMenuOpen(false);
+      // Xóa lỗi nếu có
+      if (subtaskErrors.assignee) {
+        setSubtaskErrors((prev) => ({
+          ...prev,
+          assignee: null,
+        }));
+      }
+    }}
+  />
+</div>
 
                     <div className="flex gap-3 mt-2">
                       <button
