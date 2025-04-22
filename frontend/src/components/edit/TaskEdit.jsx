@@ -16,6 +16,202 @@ import {
   Check,
 } from "lucide-react";
 
+// Project Modal Popup Component
+const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
+  // Di chuyển các useState ra ngoài điều kiện if
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("All");
+
+  // Return sớm nếu modal không mở
+  if (!isOpen) return null;
+
+  // Lấy danh sách các status duy nhất
+  const uniqueStatuses = [
+    "All",
+    ...new Set(projects.map((project) => project.status).filter(Boolean)),
+  ];
+
+  // Lọc projects dựa trên tìm kiếm và status
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch = project.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      selectedStatusFilter === "All" || project.status === selectedStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-750">
+          <h3 className="text-lg font-medium text-white">Select Project</h3>
+          <button
+            className="p-2 hover:bg-gray-700 hover:text-white text-gray-400 rounded-full transition-colors"
+            onClick={onClose}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Search and filter section */}
+        <div className="p-4 border-b border-gray-700 space-y-3">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search projects by name..."
+              className="w-full bg-gray-700 rounded-md px-4 py-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              autoFocus
+            />
+            <div className="absolute left-3 top-2.5 text-gray-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+          </div>
+
+          {/* <div>
+            <label className="text-sm text-gray-400 mb-2 block">
+              Filter by status:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {uniqueStatuses.map((status) => (
+                <button
+                  key={status}
+                  className={`px-3 py-1 text-sm rounded-full whitespace-nowrap transition-colors ${
+                    selectedStatusFilter === status
+                      ? "bg-purple-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
+                  onClick={() => setSelectedStatusFilter(status)}
+                >
+                  {status === "All" ? "All" : status.replace(/_/g, " ")}
+                </button>
+              ))}
+            </div>
+          </div> */}
+        </div>
+
+        {/* Projects list */}
+        <div className="overflow-y-auto flex-grow custom-scrollbar p-1">
+          {filteredProjects.length === 0 ? (
+            <div className="text-center py-12 text-gray-400 flex flex-col items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mb-3 opacity-50"
+              >
+                <path d="M17.5 8c.7 0 1.4.3 1.9.8.6.6.8 1.3.8 2 0 .7-.3 1.4-.8 2-.3.2-.5.5-.8.7"></path>
+                <path d="M3 3l18 18"></path>
+                <path d="M16.5 16.5 21 21"></path>
+                <path d="M10 5.5a7 7 0 0 1 10.5 6c0 1.5-.5 2.8-1.3 4"></path>
+                <path d="M7.7 7.8a7 7 0 0 0-1.2 3.8c0 .7.1 1.4.3 2"></path>
+                <path d="M12 12a7 7 0 0 0 1.3 4"></path>
+              </svg>
+              <p className="text-base mb-2">No matching projects found</p>
+              {searchTerm && (
+                <button
+                  className="mt-2 text-sm text-purple-400 hover:text-purple-300 py-1 px-3 rounded-md hover:bg-gray-700"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedStatusFilter("All");
+                  }}
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3">
+              {filteredProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="flex items-center p-3 hover:bg-gray-750 bg-gray-800 rounded-lg cursor-pointer transition-colors group border border-gray-700 hover:border-purple-500"
+                  onClick={() => onSelect(project)}
+                >
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-medium">
+                    <FolderKanban size={20} />
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h4 className="font-medium text-white">{project.name}</h4>
+                    <div className="flex items-center flex-wrap mt-1">
+                      <span
+                        className={`text-xs bg-opacity-20 px-2 py-0.5 rounded-full ${
+                          project.status === "NOT_STARTED"
+                            ? "bg-gray-600 text-gray-300"
+                            : project.status === "IN_PROGRESS"
+                            ? "bg-blue-600 text-blue-300"
+                            : project.status === "COMPLETED"
+                            ? "bg-green-600 text-green-300"
+                            : project.status === "ON_HOLD"
+                            ? "bg-yellow-600 text-yellow-300"
+                            : "bg-gray-600 text-gray-300"
+                        }`}
+                      >
+                        {project.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ml-2 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 5v14"></path>
+                      <path d="M5 12h14"></path>
+                    </svg>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-700 bg-gray-750 flex justify-between items-center">
+          <span className="text-sm text-gray-400">
+            Showing {filteredProjects.length} of {projects.length} projects
+          </span>
+          <button
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Status Badge Component
 const StatusBadge = ({ status }) => {
   let color;
@@ -350,135 +546,136 @@ const TaskEdit = ({
   };
 
   // Load task data when editing existing task
-// Load task data when editing existing task
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      let userId = null;
-      let userRole = null;
-      
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-        userId = user.id;
-        userRole = user.role;
-      }
+  // Load task data when editing existing task
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        let userId = null;
+        let userRole = null;
 
-      // Fetch projects - thay đổi API dựa vào role
-      let projectsResponse;
-      
-      if (userRole === "ROLE_ADMIN") {
-        projectsResponse = await fetch(
-          "http://localhost:8080/api/projects/all",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      } else if (userRole === "ROLE_MANAGER") {
-        projectsResponse = await fetch(
-          `http://localhost:8080/api/projects/manager/${userId}/all`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      } else {
-        projectsResponse = await fetch(
-          "http://localhost:8080/api/projects",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
-      
-      if (!projectsResponse.ok) {
-        throw new Error("Failed to fetch projects");
-      }
-      
-      const projectsData = await projectsResponse.json();
-      
-      // Cập nhật xử lý danh sách projects dựa vào định dạng response
-      // Nếu là API phân trang, projectsData sẽ có thuộc tính content
-      // Nếu là API không phân trang, projectsData sẽ là một mảng
-      setProjects(Array.isArray(projectsData) ? projectsData : projectsData.content);
-      
-      // Tiếp tục xử lý như phần còn lại của code
-      
-      // Fetch users
-      const usersResponse = await fetch(
-        "http://localhost:8080/api/users/active",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+          userId = user.id;
+          userRole = user.role;
         }
-      );
-      
-      if (!usersResponse.ok) {
-        throw new Error("Failed to fetch users");
-      }
-      
-      const usersData = await usersResponse.json();
-      setUsers(usersData);
 
-      // If editing existing task, fetch task data
-      if (!isNew && taskId) {
-        const taskResponse = await fetch(
-          `http://localhost:8080/api/tasks/${taskId}`,
+        // Fetch projects - thay đổi API dựa vào role
+        let projectsResponse;
+
+        if (userRole === "ROLE_ADMIN") {
+          projectsResponse = await fetch(
+            "http://localhost:8080/api/projects/all",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        } else if (userRole === "ROLE_MANAGER") {
+          projectsResponse = await fetch(
+            `http://localhost:8080/api/projects/manager/${userId}/all`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        } else {
+          projectsResponse = await fetch("http://localhost:8080/api/projects", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        }
+
+        if (!projectsResponse.ok) {
+          throw new Error("Failed to fetch projects");
+        }
+
+        const projectsData = await projectsResponse.json();
+
+        // Cập nhật xử lý danh sách projects dựa vào định dạng response
+        // Nếu là API phân trang, projectsData sẽ có thuộc tính content
+        // Nếu là API không phân trang, projectsData sẽ là một mảng
+        setProjects(
+          Array.isArray(projectsData) ? projectsData : projectsData.content
+        );
+
+        // Tiếp tục xử lý như phần còn lại của code
+
+        // Fetch users
+        const usersResponse = await fetch(
+          "http://localhost:8080/api/users/active",
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
-        if (!taskResponse.ok) {
-          throw new Error("Failed to fetch task");
+
+        if (!usersResponse.ok) {
+          throw new Error("Failed to fetch users");
         }
-        const taskData = await taskResponse.json();
-        setTask({
-          ...taskData,
-          // Chuyển đổi startDate và dueDate sang định dạng yyyy-MM-dd
-          startDate: taskData.startDate
-            ? new Date(taskData.startDate).toISOString().split("T")[0]
-            : new Date().toISOString().split("T")[0],
-          dueDate: taskData.dueDate
-            ? new Date(taskData.dueDate).toISOString().split("T")[0]
-            : new Date(new Date().setMonth(new Date().getMonth() + 1))
-                .toISOString()
-                .split("T")[0],
-        });
-      }
 
-      // If we have a projectId from props, set it in the task
-      if (projectId && isNew) {
-        // Cập nhật cách tìm project để phù hợp với cả hai loại response
-        const projectsList = Array.isArray(projectsData) ? projectsData : projectsData.content;
-        const project = projectsList.find((p) => p.id === projectId);
-        if (project) {
-          setTask((prev) => ({
-            ...prev,
-            projectId,
-            projectName: project.name,
-          }));
+        const usersData = await usersResponse.json();
+        setUsers(usersData);
+
+        // If editing existing task, fetch task data
+        if (!isNew && taskId) {
+          const taskResponse = await fetch(
+            `http://localhost:8080/api/tasks/${taskId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          if (!taskResponse.ok) {
+            throw new Error("Failed to fetch task");
+          }
+          const taskData = await taskResponse.json();
+          setTask({
+            ...taskData,
+            // Chuyển đổi startDate và dueDate sang định dạng yyyy-MM-dd
+            startDate: taskData.startDate
+              ? new Date(taskData.startDate).toISOString().split("T")[0]
+              : new Date().toISOString().split("T")[0],
+            dueDate: taskData.dueDate
+              ? new Date(taskData.dueDate).toISOString().split("T")[0]
+              : new Date(new Date().setMonth(new Date().getMonth() + 1))
+                  .toISOString()
+                  .split("T")[0],
+          });
         }
+
+        // If we have a projectId from props, set it in the task
+        if (projectId && isNew) {
+          // Cập nhật cách tìm project để phù hợp với cả hai loại response
+          const projectsList = Array.isArray(projectsData)
+            ? projectsData
+            : projectsData.content;
+          const project = projectsList.find((p) => p.id === projectId);
+          if (project) {
+            setTask((prev) => ({
+              ...prev,
+              projectId,
+              projectName: project.name,
+            }));
+          }
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
       }
+    };
 
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, [isNew, projectId, taskId]);
+    fetchData();
+  }, [isNew, projectId, taskId]);
 
   const showToast = (message, type = "error") => {
     setToast({ message, type });
@@ -522,7 +719,7 @@ useEffect(() => {
       projectName: project.name,
     });
     setProjectMenuOpen(false);
-
+  
     // Clear error message
     if (formErrors.projectId) {
       setFormErrors({
@@ -532,16 +729,16 @@ useEffect(() => {
     }
   };
 
-  // Sửa đoạn code từ dòng 422-429
-  const handleAssigneeSelect = (user) => {
-    setTask({
-      ...task,
-      assigneeId: user.id,
-      assigneeName: user.fullName,
-      assigneeRole: user.role,
-    });
-    setAssigneeMenuOpen(false);
-  };
+  // // Sửa đoạn code từ dòng 422-429
+  // const handleAssigneeSelect = (user) => {
+  //   setTask({
+  //     ...task,
+  //     assigneeId: user.id,
+  //     assigneeName: user.fullName,
+  //     assigneeRole: user.role,
+  //   });
+  //   setAssigneeMenuOpen(false);
+  // };
 
   const validateForm = () => {
     const errors = {};
@@ -593,24 +790,24 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!validateForm()) {
       return;
     }
-  
+
     try {
       const storedUser = localStorage.getItem("user");
       let token = null;
       let userId = null; // Thêm biến để lưu userId
-      
+
       if (storedUser) {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
         userId = user.id; // Lấy id của user đang đăng nhập
       }
-  
+
       setSubmitting(true);
-  
+
       // Prepare request payload
       const payload = {
         name: task.name,
@@ -621,15 +818,15 @@ useEffect(() => {
         priority: task.priority,
         projectId: task.projectId,
         assigneeId: task.assigneeId || null,
-        createdBy: userId // Thêm createdBy là id của user đang đăng nhập
+        createdBy: userId, // Thêm createdBy là id của user đang đăng nhập
       };
-  
+
       const url = isNew
         ? "http://localhost:8080/api/tasks"
         : `http://localhost:8080/api/tasks/${task.id}`;
-  
+
       const method = isNew ? "POST" : "PUT";
-  
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -638,16 +835,16 @@ useEffect(() => {
         },
         body: JSON.stringify(payload),
       });
-  
+
       if (!response.ok) {
         throw new Error(`Failed to ${isNew ? "create" : "update"} task`);
       }
-  
+
       const result = await response.json();
       console.log(`Task ${isNew ? "created" : "updated"}:`, result);
-  
+
       showSuccessDialog(`Task ${isNew ? "created" : "updated"} successfully!`);
-  
+
       // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
       setTimeout(() => {
         onBack(true);
@@ -808,33 +1005,25 @@ useEffect(() => {
                 <div>
                   <label className="block text-gray-400 mb-1">Project *</label>
                   <div className="relative">
-                    <div
+                    <button
+                      type="button"
                       className={`w-full bg-gray-700 border ${
                         formErrors.projectId
                           ? "border-red-500"
                           : "border-gray-600"
-                      } rounded-md py-2 px-3 text-white cursor-pointer flex justify-between items-center`}
+                      } rounded-md py-2 px-3 text-white text-left flex justify-between items-center`}
                       onClick={() => setProjectMenuOpen(!projectMenuOpen)}
                     >
                       <span>{task.projectName || "Select a project"}</span>
                       <FolderKanban size={18} className="text-gray-400" />
-                    </div>
-                    <DropdownMenu
+                    </button>
+
+                    <ProjectModal
                       isOpen={projectMenuOpen}
                       onClose={() => setProjectMenuOpen(false)}
-                      title="Select Project"
-                    >
-                      <div className="space-y-1">
-                        {projects.map((project) => (
-                          <ProjectOption
-                            key={project.id}
-                            project={project}
-                            isSelected={project.id === task.projectId}
-                            onSelect={handleProjectSelect}
-                          />
-                        ))}
-                      </div>
-                    </DropdownMenu>
+                      projects={projects}
+                      onSelect={handleProjectSelect}
+                    />
                   </div>
                   {formErrors.projectId && (
                     <p className="text-red-500 text-sm mt-1">

@@ -7,7 +7,9 @@ import com.college.backend.college.project.response.PagedResponse;
 import com.college.backend.college.project.response.ProjectResponse;
 import com.college.backend.college.project.response.UserResponse;
 import com.college.backend.college.project.service.ProjectService;
+import com.college.backend.college.project.service.impl.ExcelExportService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -23,10 +28,12 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final ExcelExportService excelExportService;
 
     @Autowired
-    public ProjectController(ProjectService projectService) {
+    public ProjectController(ProjectService projectService, ExcelExportService excelExportService) {
         this.projectService = projectService;
+        this.excelExportService = excelExportService;
     }
 
     @PostMapping
@@ -226,5 +233,28 @@ public class ProjectController {
             @RequestParam ProjectStatus status) {
         ProjectResponse updatedProject = projectService.updateProjectStatus(projectId, status);
         return ResponseEntity.ok(updatedProject);
+    }
+
+    @GetMapping("/{id}/export")
+    public ResponseEntity<byte[]> exportProjectToExcel(@PathVariable Integer id) {
+        try {
+            byte[] excelContent = excelExportService.exportProjectToExcel(id);
+
+            // Tạo tên file dựa trên ID dự án và ngày hiện tại
+            String currentDate = new SimpleDateFormat("yyyyMMdd").format(new Date());
+            String filename = "project_" + id + "_report_" + currentDate + ".xlsx";
+
+            // Thiết lập headers cho response
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(excelContent, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            // Log lỗi và trả về lỗi 500 Internal Server Error
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

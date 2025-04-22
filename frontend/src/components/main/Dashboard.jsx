@@ -16,8 +16,8 @@ import UserProject from "./UserProject";
 import {
   Menu,
   ClipboardList,
-  UserCog,
-  Search,
+  ChevronDown,
+  LogOut ,
   Settings,
   ListChecks,
   Kanban,
@@ -33,6 +33,7 @@ import NotificationCenter from "../utils/Notification";
 
 const DashboardUI = ({ onLogout, initialComponent }) => {
   const [user, setUser] = useState(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeComponent, setActiveComponent] = useState(
     initialComponent || ""
@@ -57,7 +58,6 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
     }
   }, [initialComponent]);
 
-  // Hàm kiểm tra quyền truy cập
   // Hàm kiểm tra quyền truy cập
   const hasAccess = (component) => {
     if (!user) return false;
@@ -154,6 +154,19 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
         );
     }
   };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (isUserMenuOpen && !event.target.closest('.user-menu-container')) {
+        setIsUserMenuOpen(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
 
   const toggleSettingsMenu = () => {
     setIsSettingsOpen(!isSettingsOpen);
@@ -295,58 +308,74 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation */}
         <header className="bg-gray-900 py-3 px-4">
-          <div className="flex justify-between items-center">
-            <button
-              className="lg:hidden text-gray-400 hover:text-white"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <Menu size={24} />
-            </button>
-
-            <div className="flex items-center ml-auto gap-4">
-              <NotificationCenter />
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white">
-                  <User size={20} />
+  <div className="flex justify-between items-center">
+    <button
+      className="lg:hidden text-gray-400 hover:text-white"
+      onClick={() => setIsMenuOpen(!isMenuOpen)}
+    >
+      <Menu size={24} />
+    </button>
+    
+    <div className="flex items-center ml-auto gap-4">
+      <NotificationCenter />
+      
+      {/* User Profile Dropdown - Cách 1 */}
+      <div className="flex items-center gap-2 relative user-menu-container">
+        <button 
+          className="flex items-center gap-2 p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white"
+          onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+        >
+          <User size={20} />
+          <span className="hidden md:inline">
+            {user ? user.fullName : ""}
+          </span>
+          <ChevronDown size={16} />
+        </button>
+        
+        {isUserMenuOpen && (
+          <div className="absolute top-full right-0 mt-1 bg-gray-800 text-white rounded-md shadow-lg p-2 z-10 min-w-[200px]">
+            <ul>
+              <li>
+                <button
+                  onClick={() => {
+                    setActiveComponent("userProfile");
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded"
+                >
+                  <User size={16} className="mr-2" />
+                  Profile
                 </button>
-                <span className="hidden md:inline">
-                  {user ? user.fullName : ""}
-                </span>
-              </div>
-              <button
-                className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white"
-                onClick={toggleSettingsMenu}
-              >
-                <Settings size={20} />
-              </button>
-            </div>
-            {isSettingsOpen && (
-              <div className="absolute top-14 right-4 bg-gray-800 text-white rounded-md shadow-lg p-2 z-10">
-                <ul>
-                  <li>
-                    <button
-                      onClick={() => {
-                        setActiveComponent("userProfile");
-                        setIsSettingsOpen(false);
-                      }}
-                      className="block px-4 py-2 text-sm hover:bg-gray-700"
-                    >
-                      Profile
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={handleLogout}
-                      className="block px-4 py-2 text-sm hover:bg-gray-700"
-                    >
-                      Logout
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            )}
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    setActiveComponent("settings");
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded"
+                >
+                  <Settings size={16} className="mr-2" />
+                  Settings
+                </button>
+              </li>
+              <li className="border-t border-gray-700 my-1"></li>
+              <li>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded text-red-400 hover:text-red-300"
+                >
+                  <LogOut size={16} className="mr-2" />
+                  Logout
+                </button>
+              </li>
+            </ul>
           </div>
-        </header>
+        )}
+      </div>
+    </div>
+  </div>
+</header>
 
         {/* Dashboard Content */}
         <main className="flex-1 overflow-y-auto p-6 bg-gray-950">

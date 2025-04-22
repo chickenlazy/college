@@ -206,7 +206,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <label className="text-sm text-gray-400 mb-2 block">
               Filter by role:
             </label>
@@ -225,7 +225,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Members list */}
@@ -673,7 +673,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
           const user = JSON.parse(storedUser);
           token = user.accessToken;
         }
-
+  
         const response = await axios.get(
           "http://localhost:8080/api/users/active",
           {
@@ -682,12 +682,15 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             },
           }
         );
-        setAllUsers(response.data || []);
+        
+        // Lọc chỉ lấy những user có role là ROLE_USER
+        const userRoleOnly = response.data.filter(user => user.role === "ROLE_USER");
+        setAllUsers(userRoleOnly);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
-
+  
     fetchAllUsers();
   }, []);
 

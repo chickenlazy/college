@@ -56,7 +56,7 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
               </div>
             </div>
             
-            <div>
+            {/* <div>
               <label className="text-sm text-gray-400 mb-2 block">Filter by role:</label>
               <div className="flex flex-wrap gap-2">
                 {uniqueRoles.map(role => (
@@ -73,7 +73,7 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
           
           {/* Members list */}

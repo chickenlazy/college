@@ -22,7 +22,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ArrowUpDown,
+  FileSpreadsheet,
+  FileDown,
+  Table,
 } from "lucide-react";
 import ProjectDetail from "../detail/ProjectDetail";
 import ProjectEdit from "../edit/ProjectEdit";
@@ -338,33 +340,62 @@ const Pagination = ({
 };
 
 // Action Buttons Component
-// Action Buttons Component
 const ActionButtons = ({
   project,
   openProjectDetail,
   openProjectEdit,
   onDelete,
+  onExport
 }) => {
   return (
     <div className="flex gap-2">
-      <button
-        className="p-2 rounded-full bg-green-600 text-white"
-        onClick={() => openProjectDetail(project)}
-      >
-        <Eye size={16} />
-      </button>
-      <button
-        className="p-2 rounded-full bg-yellow-600 text-white"
-        onClick={() => openProjectEdit(project)}
-      >
-        <Edit size={16} />
-      </button>
-      <button
-        className="p-2 rounded-full bg-red-600 text-white"
-        onClick={() => onDelete(project.id)}
-      >
-        <Trash2 size={16} />
-      </button>
+      <div className="relative group">
+        <button
+          className="p-2 rounded-full bg-blue-600 text-white"
+          onClick={() => openProjectDetail(project)}
+        >
+          <Eye size={16} />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+          View details
+        </div>
+      </div>
+
+      <div className="relative group">
+        <button
+          className="p-2 rounded-full bg-yellow-600 text-white"
+          onClick={() => openProjectEdit(project)}
+        >
+          <Edit size={16} />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+          Edit project
+        </div>
+      </div>
+
+      <div className="relative group">
+        <button
+          className="p-2 rounded-full bg-green-700 text-white"
+          onClick={() => onExport(project.id)}
+        >
+          <FileSpreadsheet size={16} />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+          Export to Excel
+        </div>
+      </div>
+
+      <div className="relative group">
+        <button
+          className="p-2 rounded-full bg-red-600 text-white"
+          onClick={() => onDelete(project.id)}
+        >
+          <Trash2 size={16} />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+          Delete project
+        </div>
+      </div>
     </div>
   );
 };
@@ -524,6 +555,61 @@ const Project = () => {
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
+  };
+
+  const handleExportProject = async (projectId) => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      // Gọi API với responseType là 'blob' để nhận dữ liệu dạng file
+      const response = await axios.get(
+        `http://localhost:8080/api/projects/${projectId}/export`,
+        {
+          responseType: 'blob',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      // Tạo URL object từ blob response
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      
+      // Tạo link để download
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Lấy thông tin project từ danh sách hiện tại để có tên
+      const project = projects.find(p => p.id === projectId);
+      let projectName = "unknown";
+      
+      if (project) {
+        // Thay thế các ký tự không hợp lệ cho tên file
+        projectName = project.name.replace(/[\\/:*?"<>|]/g, "_").substring(0, 30);
+      }
+      
+      // Tạo tên file chuẩn theo định dạng
+      const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const filename = `${projectId}_${projectName}_${currentDate}.xlsx`;
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Giải phóng URL object
+      window.URL.revokeObjectURL(url);
+      
+      showToast("Project exported successfully", "success");
+    } catch (err) {
+      console.error("Error exporting project:", err);
+      showToast("Failed to export project", "error");
+    }
   };
 
   const [showProjectDetail, setShowProjectDetail] = useState(false);
@@ -700,9 +786,9 @@ const Project = () => {
                 <tbody>
                   {currentProjects.map((project) => (
                     <tr key={project.id} className="hover:bg-gray-900">
-<td className="p-4 border-b border-gray-800">
-  {formatName(project.name, project.description)}
-</td>
+                      <td className="p-4 border-b border-gray-800">
+                        {formatName(project.name, project.description)}
+                      </td>
                       <td className="p-4 border-b border-gray-800">
                         {project.managerName || (
                           <span className="italic text-gray-400 flex items-center">
@@ -729,6 +815,7 @@ const Project = () => {
                           openProjectDetail={openProjectDetail}
                           openProjectEdit={openProjectEdit}
                           onDelete={handleDeleteProject}
+                          onExport={handleExportProject}
                         />
                       </td>
                     </tr>
