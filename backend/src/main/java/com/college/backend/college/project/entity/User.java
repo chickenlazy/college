@@ -87,4 +87,8 @@ public class User {
     // Thêm vào class User
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Notification> notifications;
+
+    // Thêm vào class User
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Comment> comments;
 }

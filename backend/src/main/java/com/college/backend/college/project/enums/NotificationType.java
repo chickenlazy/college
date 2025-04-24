@@ -5,5 +5,6 @@ public enum NotificationType {
     TASK,
     SUBTASK,
     SYSTEM,
+    COMMENT,
     OTHER
 }

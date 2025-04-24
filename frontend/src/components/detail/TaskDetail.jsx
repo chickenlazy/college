@@ -379,6 +379,209 @@ const MemberDropdownMenu = ({ isOpen, onClose, users, onSelect }) => {
   );
 };
 
+// Comment component mới
+const Comment = ({ comment, onReply, onDelete }) => {
+  const [showReplies, setShowReplies] = useState(false);
+  const [replies, setReplies] = useState([]);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const fetchReplies = async () => {
+    if (!showReplies && comment.replyCount > 0) {
+      try {
+        setLoadingReplies(true);
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
+        }
+
+        const response = await axios.get(
+          // http://localhost:8080/api/comments/${comment.id}/replies
+          `http://localhost:8080/api/comments/${comment.id}/replies`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setReplies(response.data || []);
+        setShowReplies(true);
+      } catch (error) {
+        console.error("Error fetching replies:", error);
+      } finally {
+        setLoadingReplies(false);
+      }
+    } else {
+      setShowReplies(!showReplies);
+    }
+  };
+
+  const handleSubmitReply = async () => {
+    if (!replyText.trim()) return;
+
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      const response = await axios.post(
+        "http://localhost:8080/api/comments",
+        {
+          content: replyText,
+          type: "TASK",
+          referenceId: comment.referenceId,
+          parentId: comment.id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Thêm reply mới vào danh sách
+      setReplies([...replies, response.data]);
+      // Reset form
+      setReplyText("");
+      setShowReplyForm(false);
+      // Đảm bảo hiển thị replies
+      setShowReplies(true);
+
+      onReply && onReply(response.data);
+    } catch (error) {
+      console.error("Error adding reply:", error);
+    }
+  };
+
+  return (
+    <div className="mb-4">
+      <div className="bg-gray-800 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white shrink-0">
+            {comment.user.fullName
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .substring(0, 2)}
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between items-center mb-1">
+              <h4 className="font-medium">{comment.user.fullName}</h4>
+              <span className="text-xs text-gray-400">
+                {new Date(comment.createdDate).toLocaleString()}
+              </span>
+            </div>
+            <p className="text-sm">{comment.content}</p>
+
+            <div className="mt-3 flex items-center text-sm text-gray-400 space-x-4">
+              <button
+                className="hover:text-purple-400"
+                onClick={() => setShowReplyForm(!showReplyForm)}
+              >
+                Reply
+              </button>
+
+              {comment.replyCount > 0 && (
+                <button
+                  className="hover:text-purple-400 flex items-center"
+                  onClick={fetchReplies}
+                >
+                  {showReplies
+                    ? "Hide replies"
+                    : `View ${comment.replyCount} replies`}
+                  {loadingReplies && (
+                    <span className="ml-2 animate-spin">⏳</span>
+                  )}
+                </button>
+              )}
+
+              {/* Chỉ hiển thị nút Delete nếu người dùng hiện tại là người tạo comment */}
+              {currentUser && currentUser.id === comment.user.id && (
+                <button
+                  className="hover:text-red-400"
+                  onClick={() => onDelete && onDelete(comment.id)}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+
+            {showReplyForm && (
+              <div className="mt-3">
+                <textarea
+                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                  placeholder="Write a reply..."
+                  rows="2"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                ></textarea>
+                <div className="flex justify-end mt-2 space-x-2">
+                  <button
+                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md"
+                    onClick={() => setShowReplyForm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded-md"
+                    onClick={handleSubmitReply}
+                  >
+                    Reply
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Replies */}
+      {showReplies && replies.length > 0 && (
+        <div className="ml-10 mt-2 space-y-2">
+          {replies.map((reply) => (
+            <div key={reply.id} className="bg-gray-800 rounded-lg p-3">
+              <div className="flex items-start space-x-3">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white shrink-0">
+                  {reply.user.fullName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .substring(0, 2)}
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center mb-1">
+                    <h4 className="font-medium text-sm">
+                      {reply.user.fullName}
+                    </h4>
+                    <span className="text-xs text-gray-400">
+                      {new Date(reply.createdDate).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-sm">{reply.content}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const TaskDetail = ({ task: initialTask, onBack }) => {
   const [subtaskErrors, setSubtaskErrors] = useState({});
   const [task, setTask] = useState(initialTask);
@@ -400,6 +603,10 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
     show: false,
     taskId: null,
   });
+  // Thêm vào phần state
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [newComment, setNewComment] = useState("");
 
   // Thêm hàm showToast
   const showToast = (message, type = "success") => {
@@ -411,62 +618,67 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
     setIsEditing(true);
   };
 
-  // Trc khi load User cua Project thay vi all User
-  // useEffect(() => {
-  //   const fetchAllUsers = async () => {
-  //     try {
-  //       const storedUser = localStorage.getItem("user");
-  //       let token = null;
-  //       if (storedUser) {
-  //         const user = JSON.parse(storedUser);
-  //         token = user.accessToken;
-  //       }
-
-  //       const response = await axios.get(
-  //         "http://localhost:8080/api/users/active",
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-  //       setAllUsers(response.data || []);
-  //     } catch (error) {
-  //       console.error("Error fetching users:", error);
-  //     }
-  //   };
-
-  //   fetchAllUsers();
-  // }, []); // Đã có mảng dependencies nhưng không có vấn đề
-
-  // Thay đổi useEffect để fetch users từ project thay vì tất cả user
-useEffect(() => {
-  const fetchProjectUsers = async () => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      let token = null;
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        token = user.accessToken;
-      }
-
-      // Fetch users từ project thay vì tất cả user
-      const response = await axios.get(
-        `http://localhost:8080/api/projects/${task.projectId}/members`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+  useEffect(() => {
+    const fetchProjectUsers = async () => {
+      try {
+        const storedUser = localStorage.getItem("user");
+        let token = null;
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          token = user.accessToken;
         }
-      );
-      setAllUsers(response.data || []);
-    } catch (error) {
-      console.error("Error fetching project users:", error);
-    }
-  };
 
-  fetchProjectUsers();
-}, [task.projectId]); // Thêm dependency task.projectId
+        // Fetch users từ project thay vì tất cả user
+        const response = await axios.get(
+          `http://localhost:8080/api/projects/${task.projectId}/members`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setAllUsers(response.data || []);
+      } catch (error) {
+        console.error("Error fetching project users:", error);
+      }
+    };
+
+    fetchProjectUsers();
+  }, [task.projectId]); // Thêm dependency task.projectId
+
+  // Thêm useEffect để fetch comments
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (activeTab === "comments") {
+        try {
+          setLoading(true);
+          const storedUser = localStorage.getItem("user");
+          let token = null;
+          if (storedUser) {
+            const user = JSON.parse(storedUser);
+            token = user.accessToken;
+          }
+
+          const response = await axios.get(
+            `http://localhost:8080/api/comments?type=TASK&referenceId=${task.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setComments(response.data || []);
+        } catch (error) {
+          console.error("Error fetching comments:", error);
+          showToast("Failed to load comments", "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchComments();
+  }, [task.id, activeTab]);
 
   if (!task) {
     return (
@@ -1024,57 +1236,65 @@ useEffect(() => {
 
                     {/* Phần chọn assignee */}
                     <div className="relative">
-  <div
-    className={`w-full bg-gray-700 border ${
-      subtaskErrors.assignee ? "border-red-500" : "border-gray-600"
-    } rounded-md py-3 px-4 text-white cursor-pointer flex justify-between items-center`}
-    onClick={() => setMembersMenuOpen(true)} // Thay đổi từ toggle sang set true
-  >
-    <div className="flex items-center">
-      {selectedAssignee ? (
-        <>
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-2">
-            {selectedAssignee.fullName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .substring(0, 2)}
-          </div>
-          <div>
-            <span>{selectedAssignee.fullName}</span>
-            {selectedAssignee.role && (
-              <div className="text-xs text-gray-400">{selectedAssignee.role}</div>
-            )}
-          </div>
-        </>
-      ) : (
-        <span className="text-gray-400">Select Assignee</span>
-      )}
-    </div>
-    <ChevronDown size={16} />
-  </div>
-  {subtaskErrors.assignee && (
-    <p className="text-red-500 text-sm mt-1">{subtaskErrors.assignee}</p>
-  )}
+                      <div
+                        className={`w-full bg-gray-700 border ${
+                          subtaskErrors.assignee
+                            ? "border-red-500"
+                            : "border-gray-600"
+                        } rounded-md py-3 px-4 text-white cursor-pointer flex justify-between items-center`}
+                        onClick={() => setMembersMenuOpen(true)} // Thay đổi từ toggle sang set true
+                      >
+                        <div className="flex items-center">
+                          {selectedAssignee ? (
+                            <>
+                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-2">
+                                {selectedAssignee.fullName
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .substring(0, 2)}
+                              </div>
+                              <div>
+                                <span>{selectedAssignee.fullName}</span>
+                                {selectedAssignee.role && (
+                                  <div className="text-xs text-gray-400">
+                                    {selectedAssignee.role}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">
+                              Select Assignee
+                            </span>
+                          )}
+                        </div>
+                        <ChevronDown size={16} />
+                      </div>
+                      {subtaskErrors.assignee && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {subtaskErrors.assignee}
+                        </p>
+                      )}
 
-  {/* Sử dụng Modal mới thay vì dropdown cũ */}
-  <SubtaskMemberModal
-    isOpen={membersMenuOpen}
-    onClose={() => setMembersMenuOpen(false)}
-    users={allUsers}
-    onSelect={(user) => {
-      setSelectedAssignee(user);
-      setMembersMenuOpen(false);
-      // Xóa lỗi nếu có
-      if (subtaskErrors.assignee) {
-        setSubtaskErrors((prev) => ({
-          ...prev,
-          assignee: null,
-        }));
-      }
-    }}
-  />
-</div>
+                      {/* Sử dụng Modal mới thay vì dropdown cũ */}
+                      <SubtaskMemberModal
+                        isOpen={membersMenuOpen}
+                        onClose={() => setMembersMenuOpen(false)}
+                        users={allUsers}
+                        onSelect={(user) => {
+                          setSelectedAssignee(user);
+                          setMembersMenuOpen(false);
+                          // Xóa lỗi nếu có
+                          if (subtaskErrors.assignee) {
+                            setSubtaskErrors((prev) => ({
+                              ...prev,
+                              assignee: null,
+                            }));
+                          }
+                        }}
+                      />
+                    </div>
 
                     <div className="flex gap-3 mt-2">
                       <button
@@ -1153,6 +1373,134 @@ useEffect(() => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+        {activeTab === "comments" && (
+          <div>
+            <div className="mb-6">
+              <div className="flex flex-col space-y-4">
+                {/* Form thêm comment mới */}
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <textarea
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
+                    placeholder="Write a comment..."
+                    rows="3"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                  ></textarea>
+                  <div className="flex justify-end mt-3">
+                    <button
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md"
+                      onClick={async () => {
+                        if (!newComment.trim()) return;
+
+                        try {
+                          const storedUser = localStorage.getItem("user");
+                          let token = null;
+                          if (storedUser) {
+                            const user = JSON.parse(storedUser);
+                            token = user.accessToken;
+                          }
+
+                          const response = await axios.post(
+                            "http://localhost:8080/api/comments",
+                            {
+                              content: newComment,
+                              type: "TASK",
+                              referenceId: task.id,
+                              parentId: null,
+                            },
+                            {
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                              },
+                            }
+                          );
+
+                          // Thêm comment mới vào đầu danh sách
+                          setComments([response.data, ...comments]);
+                          // Reset form
+                          setNewComment("");
+                          showToast("Comment added successfully", "success");
+                        } catch (error) {
+                          console.error("Error adding comment:", error);
+                          showToast("Failed to add comment", "error");
+                        }
+                      }}
+                    >
+                      Comment
+                    </button>
+                  </div>
+                </div>
+
+                {/* Danh sách comments */}
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                    <p className="mt-2 text-gray-400">Loading comments...</p>
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-800 rounded-lg">
+                    <MessageSquare
+                      size={40}
+                      className="mx-auto text-gray-500 mb-2"
+                    />
+                    <p className="text-gray-400">
+                      No comments yet. Be the first to comment!
+                    </p>
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <Comment
+                      key={comment.id}
+                      comment={comment}
+                      onReply={() => {
+                        // Cập nhật lại danh sách comments sau khi reply
+                        const updatedComments = [...comments];
+                        const index = updatedComments.findIndex(
+                          (c) => c.id === comment.id
+                        );
+                        if (index !== -1) {
+                          updatedComments[index] = {
+                            ...comment,
+                            replyCount: comment.replyCount + 1,
+                          };
+                          setComments(updatedComments);
+                        }
+                      }}
+                      onDelete={async (commentId) => {
+                        try {
+                          const storedUser = localStorage.getItem("user");
+                          let token = null;
+                          if (storedUser) {
+                            const user = JSON.parse(storedUser);
+                            token = user.accessToken;
+                          }
+
+                          await axios.delete(
+                            `http://localhost:8080/api/comments/${commentId}`,
+                            {
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                              },
+                            }
+                          );
+
+                          // Xóa comment khỏi danh sách
+                          setComments(
+                            comments.filter((c) => c.id !== commentId)
+                          );
+                          showToast("Comment deleted successfully", "success");
+                        } catch (error) {
+                          console.error("Error deleting comment:", error);
+                          showToast("Failed to delete comment", "error");
+                        }
+                      }}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}

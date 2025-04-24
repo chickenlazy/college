@@ -104,12 +104,26 @@ CREATE TABLE notifications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   content TEXT,
-  type ENUM('PROJECT', 'TASK', 'SUBTASK', 'SYSTEM', 'OTHER') NOT NULL,
+  type ENUM('PROJECT', 'TASK', 'SUBTASK', 'COMMENT', 'SYSTEM', 'OTHER') NOT NULL,
   status ENUM('READ', 'UNREAD') NOT NULL DEFAULT 'UNREAD',
   reference_id INT,
   user_id INT,
   created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   read_date DATETIME
+);
+
+-- Tạo bảng comments có hỗ trợ trả lời comment
+CREATE TABLE comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  content TEXT NOT NULL,
+  type ENUM('PROJECT', 'TASK', 'SUBTASK') NOT NULL,
+  reference_id INT NOT NULL,
+  user_id INT NOT NULL,
+  parent_id INT DEFAULT NULL,
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
 -- Cập nhật câu lệnh INSERT vào bảng `users`
@@ -263,3 +277,23 @@ VALUES
   (9, 6),  -- Project 9 với Tag 6 (Documentation)
   (10, 1);  -- Project 10 với Tag 1 (Development)
 
+
+-- Thêm dữ liệu mẫu cho bảng comments (comment gốc)
+INSERT INTO comments (content, type, reference_id, user_id, parent_id)
+VALUES
+  ('Chúng ta cần đẩy nhanh tiến độ dự án này', 'PROJECT', 1, 1, NULL),
+  ('Tôi đã hoàn thành phần thiết kế cơ sở dữ liệu', 'TASK', 1, 2, NULL),
+  ('Cần thêm người hỗ trợ cho công việc này', 'SUBTASK', 1, 3, NULL),
+  ('Đã tiến hành phỏng vấn người dùng để lấy yêu cầu', 'PROJECT', 2, 2, NULL),
+  ('Cần cập nhật tài liệu kỹ thuật', 'TASK', 2, 4, NULL),
+  ('Đã gặp vấn đề với phần authentication', 'SUBTASK', 2, 5, NULL);
+
+-- Thêm các reply comments
+INSERT INTO comments (content, type, reference_id, user_id, parent_id)
+VALUES
+  ('Tôi đồng ý, chúng ta nên tổ chức thêm buổi họp hàng tuần', 'PROJECT', 1, 2, 1),
+  ('Tôi đã xem qua và thấy còn thiếu một số quan hệ', 'TASK', 1, 3, 2),
+  ('Tôi có thể hỗ trợ bạn từ tuần sau', 'SUBTASK', 1, 4, 3),
+  ('Đã lên lịch phỏng vấn thêm 5 người dùng vào tuần tới', 'PROJECT', 2, 3, 4),
+  ('Tôi sẽ cập nhật trong ngày mai', 'TASK', 2, 5, 5),
+  ('Đã kiểm tra và fix lỗi, cần review lại', 'SUBTASK', 2, 6, 6);
