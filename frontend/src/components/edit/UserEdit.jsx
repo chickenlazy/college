@@ -163,50 +163,85 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
       errors.username =
         "Username can only contain letters, numbers and underscore";
 
-    // Validate phone format
-    if (formData.phoneNumber) {
-      if (!/^[0-9]{10,15}$/.test(formData.phoneNumber)) {
-        errors.phoneNumber = "Phone number must be 10-15 digits";
-      }
+    // Validate phone format (bắt buộc)
+    if (!formData.phoneNumber) {
+      errors.phoneNumber = "Phone number is required";
+    } else if (!/^[0-9]{10,15}$/.test(formData.phoneNumber)) {
+      errors.phoneNumber = "Phone number must be 10-15 digits";
     }
 
-    // Validate department, position and address length
-    if (formData.department && formData.department.length > 100)
+    // Validate department (bắt buộc)
+    if (!formData.department) {
+      errors.department = "Department is required";
+    } else if (formData.department.length > 100) {
       errors.department = "Department name cannot exceed 100 characters";
+    }
 
-    if (formData.position && formData.position.length > 100)
+    // Validate position (bắt buộc)
+    if (!formData.position) {
+      errors.position = "Position is required";
+    } else if (formData.position.length > 100) {
       errors.position = "Position cannot exceed 100 characters";
+    }
 
-    if (formData.address && formData.address.length > 255)
+    // Validate address (bắt buộc)
+    if (!formData.address) {
+      errors.address = "Address is required";
+    } else if (formData.address.length > 255) {
       errors.address = "Address cannot exceed 255 characters";
+    }
 
     // Validate password for new users
-    if (isNew) {
-      if (!formData.password) errors.password = "Password is required";
-      else if (formData.password.length < 6)
-        errors.password = "Password must be at least 6 characters";
-      else if (formData.password.length > 50)
-        errors.password = "Password cannot exceed 50 characters";
+// Phần validate password hiện tại
+if (isNew) {
+  if (!formData.password) errors.password = "Password is required";
+  else if (formData.password.length < 6)
+    errors.password = "Password must be at least 6 characters";
+  else if (formData.password.length > 50)
+    errors.password = "Password cannot exceed 50 characters";
+  else {
+    // Thêm kiểm tra yêu cầu phức tạp của mật khẩu
+    const hasUpperCase = /[A-Z]/.test(formData.password);
+    const hasLowerCase = /[a-z]/.test(formData.password);
+    const hasNumbers = /[0-9]/.test(formData.password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      errors.password = "Password must include uppercase, lowercase, number, and special character";
+    }
+  }
 
-      if (!formData.confirmPassword)
-        errors.confirmPassword = "Please confirm password";
-      else if (formData.password !== formData.confirmPassword)
-        errors.confirmPassword = "Passwords do not match";
-    } else {
-      // For existing users, validate passwords only if they're provided
-      if (formData.password) {
-        if (formData.password.length < 6)
-          errors.password = "Password must be at least 6 characters";
-        else if (formData.password.length > 50)
-          errors.password = "Password cannot exceed 50 characters";
-
-        if (!formData.confirmPassword)
-          errors.confirmPassword = "Please confirm new password";
-        else if (formData.password !== formData.confirmPassword)
-          errors.confirmPassword = "Passwords do not match";
+  if (!formData.confirmPassword)
+    errors.confirmPassword = "Please confirm password";
+  else if (formData.password !== formData.confirmPassword)
+    errors.confirmPassword = "Passwords do not match";
+} else {
+  // For existing users, validate passwords only if they're provided
+  if (formData.password) {
+    if (formData.password.length < 6)
+      errors.password = "Password must be at least 6 characters";
+    else if (formData.password.length > 50)
+      errors.password = "Password cannot exceed 50 characters";
+    else {
+      // Thêm kiểm tra yêu cầu phức tạp của mật khẩu
+      const hasUpperCase = /[A-Z]/.test(formData.password);
+      const hasLowerCase = /[a-z]/.test(formData.password);
+      const hasNumbers = /[0-9]/.test(formData.password);
+      const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+      
+      if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+        errors.password = "Password must include uppercase, lowercase, number, and special character";
       }
     }
 
+    if (!formData.confirmPassword)
+      errors.confirmPassword = "Please confirm new password";
+    else if (formData.password !== formData.confirmPassword)
+      errors.confirmPassword = "Passwords do not match";
+  }
+}
+
+    // Kiểm tra unique fields
     if (formData.email && !validationErrors.email) {
       const isEmailUnique = await checkUniqueField("email", formData.email);
       if (!isEmailUnique) {
@@ -356,16 +391,10 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
 
     return (
       <div
-        className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+        className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 transform transition-all duration-300 ease-in-out opacity-0 translate-y-6 animate-toast`}
       >
         {icon}
         <span>{message}</span>
-        <button
-          onClick={() => setToast(null)}
-          className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
-        >
-          <X size={16} />
-        </button>
       </div>
     );
   };
@@ -374,33 +403,33 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
     <div className="bg-gray-950 text-white">
       {/* Header with back button */}
       <div className="flex items-center justify-between mb-6">
-            <button
-              className="flex items-center text-gray-400 hover:text-white"
-              onClick={() => onBack()}
-              disabled={saving}
-            >
-              <ChevronLeft size={20} className="mr-1" />
-              <span>Back</span>
-            </button>
+        <button
+          className="flex items-center text-gray-400 hover:text-white"
+          onClick={() => onBack()}
+          disabled={saving}
+        >
+          <ChevronLeft size={20} className="mr-1" />
+          <span>Back</span>
+        </button>
 
-            <h1 className="text-xl font-bold">
-              {isNew ? "CREATE NEW USER" : "EDIT USER"}
-            </h1>
+        <h1 className="text-xl font-bold">
+          {isNew ? "CREATE NEW USER" : "EDIT USER"}
+        </h1>
 
-            <div className="flex space-x-2">
-              <button
-                type="submit"
-                className={`px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center ${
-                  saving ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-                onClick={handleSubmit}
-                disabled={saving}
-              >
-                <Save size={18} className="mr-2" />
-                {saving ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
+        <div className="flex space-x-2">
+          <button
+            type="submit"
+            className={`px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center ${
+              saving ? "opacity-70 cursor-not-allowed" : ""
+            }`}
+            onClick={handleSubmit}
+            disabled={saving}
+          >
+            <Save size={18} className="mr-2" />
+            {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
 
       {/* Content */}
       {loading ? (
@@ -475,6 +504,9 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                       {validationErrors.email}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {formData.email ? formData.email.length : 0}/100
+                  </div>
                 </div>
 
                 <div>
@@ -501,15 +533,19 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                       {validationErrors.username}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {formData.username ? formData.username.length : 0}/50
+                  </div>
                 </div>
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Phone Number
+                    Phone Number *
                   </label>
                   <input
                     type="text"
                     name="phoneNumber"
                     value={formData.phoneNumber || ""}
+                    maxLength={15}
                     onChange={handleChange}
                     className={`w-full bg-gray-800 rounded-md p-2 border ${
                       validationErrors.phoneNumber
@@ -522,6 +558,9 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                       {validationErrors.phoneNumber}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {formData.phoneNumber ? formData.phoneNumber.length : 0}/15
+                  </div>
                 </div>
 
                 <div>
@@ -551,7 +590,7 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Department{" "}
+                    Department *{" "}
                     <span className="text-xs text-gray-500">
                       (Max 100 characters)
                     </span>
@@ -573,11 +612,14 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                       {validationErrors.department}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {formData.department ? formData.department.length : 0}/100
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Position{" "}
+                    Position *{" "}
                     <span className="text-xs text-gray-500">
                       (Max 100 characters)
                     </span>
@@ -599,11 +641,13 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                       {validationErrors.position}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {formData.position ? formData.position.length : 0}/100
+                  </div>
                 </div>
-
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Address{" "}
+                    Address *{" "}
                     <span className="text-xs text-gray-500">
                       (Max 255 characters)
                     </span>
@@ -625,6 +669,9 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                       {validationErrors.address}
                     </p>
                   )}
+                  <div className="text-xs text-right mt-1 text-gray-400">
+                    {formData.address ? formData.address.length : 0}/255
+                  </div>
                 </div>
 
                 <div>
@@ -654,9 +701,6 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
                     {isNew ? "Password *" : "New Password"}{" "}
-                    <span className="text-xs text-gray-500">
-                      (6-50 characters)
-                    </span>
                   </label>
                   <input
                     type="password"
@@ -700,8 +744,7 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
                 </div>
               </div>
             </div>
-          </div> 
-
+          </div>
         </form>
       )}
 
@@ -709,11 +752,11 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
       {toast && <Toast message={toast.message} type={toast.type} />}
 
       {/* Success Dialog */}
-<SuccessDialog
-  isOpen={successDialog.show}
-  message={successDialog.message}
-  onClose={() => setSuccessDialog({ show: false, message: "" })}
-/>
+      <SuccessDialog
+        isOpen={successDialog.show}
+        message={successDialog.message}
+        onClose={() => setSuccessDialog({ show: false, message: "" })}
+      />
     </div>
   );
 };

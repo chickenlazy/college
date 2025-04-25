@@ -10,7 +10,24 @@ import {
   CheckCircle,
   IdCard,
   AlertTriangle,
+  XCircle,
 } from "lucide-react";
+
+// Toast Component từ ProjectEdit
+const Toast = ({ message, type }) => {
+  const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
+  const icon =
+    type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />;
+
+  return (
+    <div
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 transform transition-all duration-300 ease-in-out opacity-0 translate-y-6 animate-toast`}
+    >
+      {icon}
+      <span>{message}</span>
+    </div>
+  );
+};
 
 // Reusable Input Component
 const ProfileInput = ({ label, icon: Icon, value, type = "text" }) => (
@@ -43,7 +60,9 @@ const PasswordInput = ({
   error,
 }) => (
   <div className="space-y-1">
-    <label className="block text-sm text-gray-400">{label}</label>
+    <label className="block text-sm text-gray-400">
+      {label}
+    </label>
     <input
       type="password"
       name={name}
@@ -69,12 +88,20 @@ const UserProfile = () => {
   });
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  // Thêm state cho toast
+  const [toast, setToast] = useState(null);
 
   const [formErrors, setFormErrors] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Hàm hiển thị toast message
+  const showToast = (message, type = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const validatePasswordForm = () => {
     const errors = {
@@ -97,6 +124,23 @@ const UserProfile = () => {
     } else if (passwordData.newPassword.length < 6) {
       errors.newPassword = "Password must be at least 6 characters";
       isValid = false;
+    } else if (passwordData.newPassword.length > 50) {
+      errors.newPassword = "Password cannot exceed 50 characters";
+      isValid = false;
+    } else {
+      // Kiểm tra các yêu cầu phức tạp của mật khẩu
+      const hasUpperCase = /[A-Z]/.test(passwordData.newPassword);
+      const hasLowerCase = /[a-z]/.test(passwordData.newPassword);
+      const hasNumbers = /[0-9]/.test(passwordData.newPassword);
+      const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+        passwordData.newPassword
+      );
+
+      if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+        errors.newPassword =
+          "Password must include uppercase, lowercase, number, and special character";
+        isValid = false;
+      }
     }
 
     // Validate confirm password
@@ -154,6 +198,8 @@ const UserProfile = () => {
 
     // Validate form inputs
     if (!validatePasswordForm()) {
+      // Hiển thị toast khi form không hợp lệ
+      showToast("Please correct the form errors", "error");
       return;
     }
 
@@ -182,6 +228,8 @@ const UserProfile = () => {
         throw new Error(errorData.message || "Failed to update password");
       }
 
+      // Hiển thị toast khi cập nhật mật khẩu thành công
+      showToast("Password updated successfully", "success");
       setPasswordSuccess("Password updated successfully");
       setPasswordData({
         currentPassword: "",
@@ -194,6 +242,8 @@ const UserProfile = () => {
         confirmPassword: "",
       });
     } catch (err) {
+      // Hiển thị toast khi có lỗi
+      showToast(err.message || "Failed to update password", "error");
       setPasswordError(err.message || "Failed to update password");
     }
   };
@@ -253,7 +303,11 @@ const UserProfile = () => {
               value={user.fullName}
             />
             <ProfileInput label="Email" icon={Mail} value={user.email} />
-            <ProfileInput label="Username" icon={IdCard} value={user.username} />
+            <ProfileInput
+              label="Username"
+              icon={IdCard}
+              value={user.username}
+            />
             <ProfileInput
               label="Phone Number"
               icon={Phone}
@@ -333,6 +387,9 @@ const UserProfile = () => {
           </form>
         </div>
       </div>
+
+      {/* Hiển thị Toast nếu có */}
+      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };

@@ -81,7 +81,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
               </svg>
             </div>
           </div>
-{/* 
+          {/* 
           <div>
             <label className="text-sm text-gray-400 mb-2 block">
               Filter by role:
@@ -383,6 +383,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     message: "",
   });
 
+  const showToast = (message, type = "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   // Load project data when editing existing project
   useEffect(() => {
     if (!isNew && initialProject?.id) {
@@ -577,7 +582,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
   const validateForm = () => {
     const errors = {};
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chỉ theo ngày
+    today.setHours(0, 0, 0, 0);
 
     // Validate project name
     if (!project?.name?.trim()) {
@@ -586,17 +591,20 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       errors.name = "Project name cannot exceed 100 characters";
     }
 
-    // Validate description (không bắt buộc nhưng giới hạn độ dài)
-    if (project.description && project.description.length > 200) {
+    // Validate description (giờ bắt buộc nhập)
+    if (!project?.description?.trim()) {
+      errors.description = "Description is required";
+    } else if (project.description.length > 200) {
       errors.description = "Description cannot exceed 200 characters";
     }
 
+    // Validate status
+    if (!project.status) {
+      errors.status = "Status is required";
+    }
+
     // Validate manager
-    if (
-      currentUser &&
-      currentUser.role === "ROLE_ADMIN" &&
-      !project.managerId
-    ) {
+    if (!project.managerId) {
       errors.managerId = "Manager is required";
     }
 
@@ -604,7 +612,6 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     if (!project.startDate) {
       errors.startDate = "Start date is required";
     } else if (isNew && new Date(project.startDate) < today) {
-      // Chỉ validate start date không được trong quá khứ khi thêm mới
       errors.startDate = "Start date cannot be in the past";
     }
 
@@ -619,19 +626,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       const timeDiff = new Date(project.dueDate) - new Date(project.startDate);
       const daysDiff = timeDiff / (1000 * 3600 * 24);
       if (daysDiff > 730) {
-        // ~2 years
         errors.dueDate = "Project duration cannot exceed 2 years";
       }
-    }
-
-    // Validate team members limit
-    if (project.userIds && project.userIds.length > 20) {
-      errors.userIds = "Project cannot have more than 20 team members";
-    }
-
-    // Validate tags limit
-    if (project.tagIds && project.tagIds.length > 10) {
-      errors.tagIds = "Project cannot have more than 10 tags";
     }
 
     setFormErrors(errors);
@@ -654,6 +650,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     }
 
     if (!validateForm()) {
+      showToast("Please correct the form errors", "error");
       return;
     }
 
@@ -839,8 +836,9 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                 </div>
 
                 <div>
+                  {/* Description với dấu * */}
                   <label className="block text-gray-400 mb-1">
-                    Description{" "}
+                    Description *
                     <span className="text-xs text-gray-500">
                       (Max 200 characters)
                     </span>
@@ -850,7 +848,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     value={project?.description || ""}
                     onChange={handleChange}
                     maxLength={200}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white h-32 resize-none"
+                    className={`w-full bg-gray-700 border ${
+                      formErrors.description
+                        ? "border-red-500"
+                        : "border-gray-600"
+                    } rounded-md py-2 px-3 text-white h-32 resize-none`}
                     placeholder="Enter project description"
                   ></textarea>
                   {formErrors.description && (
@@ -866,7 +868,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Start Date *
+                      Start Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
                     </label>
                     <div className="relative">
                       <input
@@ -880,11 +882,9 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
+                        style={{ colorScheme: 'dark' }}
                       />
-                      <Calendar
-                        size={18}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      />
+                       
                     </div>
                     {formErrors.startDate && (
                       <p className="text-red-500 text-sm mt-1">
@@ -895,7 +895,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
 
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Due Date *
+                      Due Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
                     </label>
                     <div className="relative">
                       <input
@@ -908,11 +908,9 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
+                        style={{ colorScheme: 'dark' }}
                       />
-                      <Calendar
-                        size={18}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      />
+                       
                     </div>
                     {formErrors.dueDate && (
                       <p className="text-red-500 text-sm mt-1">
@@ -923,19 +921,24 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                 </div>
 
                 <div>
-                  <label className="block text-gray-400 mb-1">Status</label>
+                  <label className="block text-gray-400 mb-1">Status *</label>
                   <select
                     name="status"
                     value={project.status}
                     onChange={handleChange}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                    className={`w-full bg-gray-700 border ${
+                      formErrors.status ? "border-red-500" : "border-gray-600"
+                    } rounded-md py-2 px-3 text-white`}
                   >
                     <option value="NOT_STARTED">Not Started</option>
                     <option value="IN_PROGRESS">In Progress</option>
                     <option value="ON_HOLD">On Hold</option>
-                    {/* <option value="COMPLETED">Completed</option>
-                    <option value="OVER_DUE">Over Due</option> */}
                   </select>
+                  {formErrors.status && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.status}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-gray-400 mb-1">Manager *</label>
@@ -1081,6 +1084,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
         message={successDialog.message}
         onClose={() => setSuccessDialog({ show: false, message: "" })}
       />
+
+      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };

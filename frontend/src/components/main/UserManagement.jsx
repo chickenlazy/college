@@ -613,7 +613,7 @@ const UserManagement = () => {
                 }}
               >
                 <Plus size={18} />
-                <span>New User</span>
+                <span>New</span>
               </button>
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"

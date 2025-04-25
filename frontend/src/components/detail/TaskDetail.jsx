@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   ChevronLeft,
   Pause,
-  Edit,
+  XCircle,
   Trash2,
   Clock,
   Calendar,
@@ -379,6 +379,21 @@ const MemberDropdownMenu = ({ isOpen, onClose, users, onSelect }) => {
   );
 };
 
+const Toast = ({ message, type }) => {
+  const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
+  const icon =
+    type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />;
+
+  return (
+    <div
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 transform transition-all duration-300 ease-in-out opacity-0 translate-y-6 animate-toast`}
+    >
+      {icon}
+      <span>{message}</span>
+    </div>
+  );
+};
+
 // Comment component mới
 const Comment = ({ comment, onReply, onDelete }) => {
   const [showReplies, setShowReplies] = useState(false);
@@ -595,8 +610,14 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState(null);
-  const [subtaskStartDate, setSubtaskStartDate] = useState(""); // Thêm state cho startDate
-  const [subtaskDueDate, setSubtaskDueDate] = useState(""); // Thêm state cho dueDate
+  const [subtaskStartDate, setSubtaskStartDate] = useState(
+    new Date().toISOString().split("T")[0]
+  ); // Thêm state cho startDate
+  const [subtaskDueDate, setSubtaskDueDate] = useState(
+    new Date(new Date().setMonth(new Date().getMonth() + 1))
+      .toISOString()
+      .split("T")[0]
+  ); // Thêm state cho dueDate
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({
@@ -756,6 +777,8 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
     // If there are errors, stop and show them
     if (Object.keys(errors).length > 0) {
       setSubtaskErrors(errors);
+      // Thêm dòng sau để hiển thị thông báo toast
+      showToast("Please correct the form errors", "error");
       return;
     }
 
@@ -1134,9 +1157,14 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
               </div>
               {showAddSubtask && (
                 <div className="bg-gray-800 rounded-lg p-5 mb-4 border border-gray-700">
-                  <h4 className="text-sm font-medium mb-4">New Subtask</h4>
+                  <h4 className="text-sm font-medium mb-4">
+                    Subtask Information
+                  </h4>
                   <div className="flex flex-col gap-4">
                     <div>
+                      <label className="block text-sm text-gray-400 mb-1">
+                        Subtask Name *
+                      </label>
                       <input
                         type="text"
                         className={`w-full bg-gray-700 border ${
@@ -1171,28 +1199,35 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm text-gray-400 mb-1">
-                          Start Date
+                          Start Date *{" "}
+                          <span className="text-xs text-gray-500">
+                            (Format: MM/DD/YYYY)
+                          </span>
                         </label>
-                        <input
-                          type="date"
-                          className={`w-full bg-gray-700 border ${
-                            subtaskErrors.startDate
-                              ? "border-red-500"
-                              : "border-gray-600"
-                          } rounded-md py-3 px-4 text-white`}
-                          value={subtaskStartDate}
-                          onChange={(e) => {
-                            setSubtaskStartDate(e.target.value);
-                            // Xóa lỗi khi người dùng chọn ngày
-                            if (subtaskErrors.startDate) {
-                              setSubtaskErrors((prev) => ({
-                                ...prev,
-                                startDate: null,
-                              }));
-                            }
-                          }}
-                          min={new Date().toISOString().split("T")[0]} // Chỉ cho phép chọn từ ngày hiện tại
-                        />
+                        <div className="relative">
+                          <input
+                            type="date"
+                            className={`w-full bg-gray-700 border ${
+                              subtaskErrors.startDate
+                                ? "border-red-500"
+                                : "border-gray-600"
+                            } rounded-md py-3 px-4 text-white`}
+                            style={{ colorScheme: 'dark' }}
+                            value={subtaskStartDate}
+                            onChange={(e) => {
+                              setSubtaskStartDate(e.target.value);
+                              // Xóa lỗi khi người dùng chọn ngày
+                              if (subtaskErrors.startDate) {
+                                setSubtaskErrors((prev) => ({
+                                  ...prev,
+                                  startDate: null,
+                                }));
+                              }
+                            }}
+                            min={new Date().toISOString().split("T")[0]} // Chỉ cho phép chọn từ ngày hiện tại
+                          />
+                          
+                        </div>
                         {subtaskErrors.startDate && (
                           <p className="text-red-500 text-sm mt-1">
                             {subtaskErrors.startDate}
@@ -1201,31 +1236,38 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                       </div>
                       <div>
                         <label className="block text-sm text-gray-400 mb-1">
-                          Due Date
+                          Due Date *{" "}
+                          <span className="text-xs text-gray-500">
+                            (Format: MM/DD/YYYY)
+                          </span>
                         </label>
-                        <input
-                          type="date"
-                          className={`w-full bg-gray-700 border ${
-                            subtaskErrors.dueDate
-                              ? "border-red-500"
-                              : "border-gray-600"
-                          } rounded-md py-3 px-4 text-white`}
-                          value={subtaskDueDate}
-                          onChange={(e) => {
-                            setSubtaskDueDate(e.target.value);
-                            // Xóa lỗi khi người dùng chọn ngày
-                            if (subtaskErrors.dueDate) {
-                              setSubtaskErrors((prev) => ({
-                                ...prev,
-                                dueDate: null,
-                              }));
+                        <div className="relative">
+                          <input
+                            type="date"
+                            className={`w-full bg-gray-700 border ${
+                              subtaskErrors.dueDate
+                                ? "border-red-500"
+                                : "border-gray-600"
+                            } rounded-md py-3 px-4 text-white`}
+                            style={{ colorScheme: 'dark' }}
+                            value={subtaskDueDate}
+                            onChange={(e) => {
+                              setSubtaskDueDate(e.target.value);
+                              // Xóa lỗi khi người dùng chọn ngày
+                              if (subtaskErrors.dueDate) {
+                                setSubtaskErrors((prev) => ({
+                                  ...prev,
+                                  dueDate: null,
+                                }));
+                              }
+                            }}
+                            min={
+                              subtaskStartDate ||
+                              new Date().toISOString().split("T")[0]
                             }
-                          }}
-                          min={
-                            subtaskStartDate ||
-                            new Date().toISOString().split("T")[0]
-                          }
-                        />
+                          />
+                          
+                        </div>
                         {subtaskErrors.dueDate && (
                           <p className="text-red-500 text-sm mt-1">
                             {subtaskErrors.dueDate}
@@ -1236,6 +1278,9 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
 
                     {/* Phần chọn assignee */}
                     <div className="relative">
+                      <label className="block text-sm text-gray-400 mb-1">
+                        Assignee *
+                      </label>
                       <div
                         className={`w-full bg-gray-700 border ${
                           subtaskErrors.assignee
@@ -1505,16 +1550,8 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
           </div>
         )}
       </div>
-      {/* Thiếu phần hiển thị toast notification */}
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 px-4 py-2 rounded-md ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          } text-white`}
-        >
-          {toast.message}
-        </div>
-      )}
+      {/* Toast notification */}
+      {toast && <Toast message={toast.message} type={toast.type} />}
 
       {/* Modal xác nhận xóa task */}
       {deleteConfirm.show && (

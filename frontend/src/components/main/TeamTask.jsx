@@ -612,7 +612,7 @@ const fetchTasks = async (
         <TaskDetail task={taskDetail} onBack={handleBackFromTaskDetail} />
       ) : (
         <>
-          <h1 className="text-2xl font-bold mb-4">TEAM TASKS</h1>
+          <h1 className="text-2xl font-bold mb-4">TASK MANAGEMENT</h1>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-between items-center gap-4 mb-4">

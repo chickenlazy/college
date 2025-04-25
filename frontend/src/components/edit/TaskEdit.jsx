@@ -719,7 +719,7 @@ const TaskEdit = ({
       projectName: project.name,
     });
     setProjectMenuOpen(false);
-  
+
     // Clear error message
     if (formErrors.projectId) {
       setFormErrors({
@@ -743,7 +743,7 @@ const TaskEdit = ({
   const validateForm = () => {
     const errors = {};
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chỉ theo ngày
+    today.setHours(0, 0, 0, 0);
 
     // Validate task name
     if (!task.name.trim()) {
@@ -752,8 +752,10 @@ const TaskEdit = ({
       errors.name = "Task name cannot exceed 100 characters";
     }
 
-    // Validate description (không bắt buộc nhưng giới hạn độ dài)
-    if (task.description && task.description.length > 200) {
+    // Validate description (bắt buộc nhập)
+    if (!task.description?.trim()) {
+      errors.description = "Description is required";
+    } else if (task.description.length > 200) {
       errors.description = "Description cannot exceed 200 characters";
     }
 
@@ -762,7 +764,16 @@ const TaskEdit = ({
       errors.projectId = "Project is required";
     }
 
-    // Validate start date
+    // Validate status
+    if (!task.status) {
+      errors.status = "Status is required";
+    }
+
+    // Validate priority
+    if (!task.priority) {
+      errors.priority = "Priority is required";
+    }
+
     // Validate start date
     if (!task.startDate) {
       errors.startDate = "Start date is required";
@@ -792,6 +803,7 @@ const TaskEdit = ({
     e.preventDefault();
 
     if (!validateForm()) {
+      showToast("Please correct the form errors", "error");
       return;
     }
 
@@ -974,8 +986,9 @@ const TaskEdit = ({
                 </div>
 
                 <div>
+                  {/* Description với dấu * */}
                   <label className="block text-gray-400 mb-1">
-                    Description{" "}
+                    Description *{" "}
                     <span className="text-xs text-gray-500">
                       (Max 200 characters)
                     </span>
@@ -1035,7 +1048,7 @@ const TaskEdit = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Start Date *
+                      Start Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
                     </label>
                     <div className="relative">
                       <input
@@ -1053,11 +1066,9 @@ const TaskEdit = ({
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
+                        style={{ colorScheme: 'dark' }}
                       />
-                      <Calendar
-                        size={18}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      />
+                        
                     </div>
                     {formErrors.startDate && (
                       <p className="text-red-500 text-sm mt-1">
@@ -1068,7 +1079,7 @@ const TaskEdit = ({
 
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Due Date *
+                      Due Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
                     </label>
                     <div className="relative">
                       <input
@@ -1081,11 +1092,9 @@ const TaskEdit = ({
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
+                        style={{ colorScheme: 'dark' }}
                       />
-                      <Calendar
-                        size={18}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      />
+                        
                     </div>
                     {formErrors.dueDate && (
                       <p className="text-red-500 text-sm mt-1">
@@ -1097,32 +1106,49 @@ const TaskEdit = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-400 mb-1">Status</label>
+                    <label className="block text-gray-400 mb-1">Status *</label>
                     <select
                       name="status"
                       value={task.status}
                       onChange={handleChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                      className={`w-full bg-gray-700 border ${
+                        formErrors.status ? "border-red-500" : "border-gray-600"
+                      } rounded-md py-2 px-3 text-white`}
                     >
                       <option value="NOT_STARTED">Not Started</option>
                       <option value="IN_PROGRESS">In Progress</option>
                       <option value="ON_HOLD">On Hold</option>
-                      {/* <option value="COMPLETED">Completed</option> */}
                     </select>
+                    {formErrors.status && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {formErrors.status}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-gray-400 mb-1">Priority</label>
+                    <label className="block text-gray-400 mb-1">
+                      Priority *
+                    </label>
                     <select
                       name="priority"
                       value={task.priority}
                       onChange={handleChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                      className={`w-full bg-gray-700 border ${
+                        formErrors.priority
+                          ? "border-red-500"
+                          : "border-gray-600"
+                      } rounded-md py-2 px-3 text-white`}
                     >
                       <option value="LOW">Low</option>
                       <option value="MEDIUM">Medium</option>
                       <option value="HIGH">High</option>
                     </select>
+                    {formErrors.priority && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {formErrors.priority}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1186,6 +1212,8 @@ const TaskEdit = ({
         message={successDialog.message}
         onClose={() => setSuccessDialog({ show: false, message: "" })}
       />
+
+      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };
