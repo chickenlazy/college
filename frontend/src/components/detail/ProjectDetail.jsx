@@ -236,14 +236,16 @@ const Comment = ({ comment, onReply, onDelete }) => {
               )}
 
               {/* Chỉ hiển thị nút Delete nếu người dùng hiện tại là người tạo comment */}
-              {currentUser && (currentUser.id === comment.user.id || currentUser.role === "ROLE_ADMIN") && (
-                <button
-                  className="hover:text-red-400"
-                  onClick={() => onDelete && onDelete(comment.id)}
-                >
-                  Delete
-                </button>
-              )}
+              {currentUser &&
+                (currentUser.id === comment.user.id ||
+                  currentUser.role === "ROLE_ADMIN") && (
+                  <button
+                    className="hover:text-red-400"
+                    onClick={() => onDelete && onDelete(comment.id)}
+                  >
+                    Delete
+                  </button>
+                )}
             </div>
 
             {showReplyForm && (
@@ -875,38 +877,39 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
   };
 
   // Trong useEffect để fetch comments, thêm điều kiện kiểm tra project
-useEffect(() => {
-  const fetchComments = async () => {
-    if (activeTab === "comments" && project && project.id) { // Thêm kiểm tra project và project.id
-      try {
-        setLoadingComments(true);
-        const storedUser = localStorage.getItem("user");
-        let token = null;
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          token = user.accessToken;
-        }
-
-        const response = await axios.get(
-          `http://localhost:8080/api/comments?type=PROJECT&referenceId=${project.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (activeTab === "comments" && project && project.id) {
+        // Thêm kiểm tra project và project.id
+        try {
+          setLoadingComments(true);
+          const storedUser = localStorage.getItem("user");
+          let token = null;
+          if (storedUser) {
+            const user = JSON.parse(storedUser);
+            token = user.accessToken;
           }
-        );
-        setComments(response.data || []);
-      } catch (error) {
-        console.error("Error fetching comments:", error);
-        showToast("Failed to load comments", "error");
-      } finally {
-        setLoadingComments(false);
-      }
-    }
-  };
 
-  fetchComments();
-}, [project, activeTab]); // Đảm bảo dependency list bao gồm project
+          const response = await axios.get(
+            `http://localhost:8080/api/comments?type=PROJECT&referenceId=${project.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setComments(response.data || []);
+        } catch (error) {
+          console.error("Error fetching comments:", error);
+          showToast("Failed to load comments", "error");
+        } finally {
+          setLoadingComments(false);
+        }
+      }
+    };
+
+    fetchComments();
+  }, [project, activeTab]); // Đảm bảo dependency list bao gồm project
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -1205,10 +1208,11 @@ useEffect(() => {
         isNew={true}
         projectId={project.id}
         projectName={project.name}
+        projectStartDate={project.startDate}
+        projectDueDate={project.dueDate}
         onBack={(needRefresh) => {
           setShowTaskEdit(false);
           if (needRefresh) {
-            // Fetch lại dữ liệu project khi task được thêm thành công
             fetchProjectData();
           }
         }}
@@ -1284,9 +1288,35 @@ useEffect(() => {
                   onClick={() => setStatusMenuOpen(!statusMenuOpen)}
                 >
                   <div
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color} bg-opacity-20 ${statusInfo.textColor} flex items-center gap-1`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 
+      ${
+        project.status === "COMPLETED"
+          ? "bg-green-200 text-green-800"
+          : project.status === "IN_PROGRESS"
+          ? "bg-blue-200 text-blue-800"
+          : project.status === "NOT_STARTED"
+          ? "bg-gray-200 text-gray-800"
+          : project.status === "OVER_DUE"
+          ? "bg-red-200 text-red-800"
+          : project.status === "ON_HOLD"
+          ? "bg-yellow-200 text-yellow-800"
+          : "bg-gray-200 text-gray-800"
+      }`}
                   >
-                    {statusInfo.text}
+                    {project.status === "COMPLETED" ? (
+                      <CheckCircle size={16} />
+                    ) : project.status === "IN_PROGRESS" ? (
+                      <Clock size={16} />
+                    ) : project.status === "NOT_STARTED" ? (
+                      <Clock size={16} />
+                    ) : project.status === "OVER_DUE" ? (
+                      <AlertTriangle size={16} />
+                    ) : project.status === "ON_HOLD" ? (
+                      <AlertCircle size={16} />
+                    ) : (
+                      <Clock size={16} />
+                    )}
+                    <span>{project.status.replace(/_/g, " ")}</span>
                     <ChevronDown size={12} />
                   </div>
                 </div>
@@ -1296,8 +1326,8 @@ useEffect(() => {
                       "COMPLETED",
                       "IN_PROGRESS",
                       "NOT_STARTED",
-                      "ON_HOLD",
                       "OVER_DUE",
+                      "ON_HOLD",
                     ].map((status) => (
                       <div
                         key={status}
@@ -1346,13 +1376,36 @@ useEffect(() => {
                           }
                         }}
                       >
-                        <div
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            getStatusInfo(status).color
-                          } bg-opacity-20 ${getStatusInfo(status).textColor}`}
+                        <span
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap min-w-[120px] justify-center ${
+                            status === "NOT_STARTED"
+                              ? "bg-gray-200 text-gray-800"
+                              : status === "IN_PROGRESS"
+                              ? "bg-blue-200 text-blue-800"
+                              : status === "COMPLETED"
+                              ? "bg-green-200 text-green-800"
+                              : status === "OVER_DUE"
+                              ? "bg-red-200 text-red-800"
+                              : status === "ON_HOLD"
+                              ? "bg-yellow-200 text-yellow-800"
+                              : "bg-gray-200 text-gray-800"
+                          }`}
                         >
-                          {getStatusInfo(status).text}
-                        </div>
+                          {status === "NOT_STARTED" ? (
+                            <Clock size={16} />
+                          ) : status === "IN_PROGRESS" ? (
+                            <Clock size={16} />
+                          ) : status === "COMPLETED" ? (
+                            <CheckCircle size={16} />
+                          ) : status === "OVER_DUE" ? (
+                            <AlertTriangle size={16} />
+                          ) : status === "ON_HOLD" ? (
+                            <AlertCircle size={16} />
+                          ) : (
+                            <Clock size={16} />
+                          )}
+                          <span>{status.replace(/_/g, " ")}</span>
+                        </span>
                       </div>
                     ))}
                   </div>

@@ -498,6 +498,8 @@ const TaskEdit = ({
   isNew = false,
   projectId = null,
   projectName = "",
+  projectStartDate = null,  
+  projectDueDate = null,   
   taskId = null,
   onBack,
 }) => {
@@ -508,12 +510,12 @@ const TaskEdit = ({
           description: "",
           projectId: projectId || null,
           projectName: projectName || "",
+          projectStartDate: projectStartDate || null,  
+          projectDueDate: projectDueDate || null,     
           assigneeId: null,
           assigneeName: "",
-          startDate: new Date().toISOString().split("T")[0],
-          dueDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
-            .toISOString()
-            .split("T")[0],
+          startDate: null, //new Date().toISOString().split("T")[0]
+          dueDate: null, //new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split("T")[0]
           status: "NOT_STARTED",
           priority: "MEDIUM",
           progress: 0,
@@ -637,6 +639,14 @@ const TaskEdit = ({
             throw new Error("Failed to fetch task");
           }
           const taskData = await taskResponse.json();
+
+          const projectsList = Array.isArray(projectsData)
+            ? projectsData
+            : projectsData.content;
+          const relatedProject = projectsList.find(
+            (p) => p.id === taskData.projectId
+          );
+
           setTask({
             ...taskData,
             // Chuyển đổi startDate và dueDate sang định dạng yyyy-MM-dd
@@ -648,6 +658,8 @@ const TaskEdit = ({
               : new Date(new Date().setMonth(new Date().getMonth() + 1))
                   .toISOString()
                   .split("T")[0],
+            projectStartDate: relatedProject ? relatedProject.startDate : null,
+            projectDueDate: relatedProject ? relatedProject.dueDate : null,
           });
         }
 
@@ -663,6 +675,8 @@ const TaskEdit = ({
               ...prev,
               projectId,
               projectName: project.name,
+              projectStartDate: project.startDate,
+              projectDueDate: project.dueDate,
             }));
           }
         }
@@ -717,6 +731,8 @@ const TaskEdit = ({
       ...task,
       projectId: project.id,
       projectName: project.name,
+      projectStartDate: project.startDate,
+      projectDueDate: project.dueDate,
     });
     setProjectMenuOpen(false);
 
@@ -744,6 +760,14 @@ const TaskEdit = ({
     const errors = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Log để debug
+    console.log("Task dates:", {
+      startDate: task.startDate,
+      dueDate: task.dueDate,
+      projectStartDate: task.projectStartDate,
+      projectDueDate: task.projectDueDate,
+    });
 
     // Validate task name
     if (!task.name.trim()) {
@@ -786,6 +810,33 @@ const TaskEdit = ({
       errors.dueDate = "Due date is required";
     } else if (new Date(task.dueDate) <= new Date(task.startDate)) {
       errors.dueDate = "Due date must be after start date";
+    }
+
+    if (!task.projectStartDate || !task.projectDueDate) {
+      // Thêm lỗi nếu thiếu thông tin project
+      errors.projectId =
+        "Project time information is missing. Please select project again.";
+    } else {
+      // Đảm bảo các ngày đều ở cùng một định dạng để so sánh
+      const taskStartDate = new Date(task.startDate);
+      const taskDueDate = new Date(task.dueDate);
+      const projectStartDate = new Date(task.projectStartDate);
+      const projectDueDate = new Date(task.projectDueDate);
+
+      // Loại bỏ thời gian để chỉ so sánh ngày
+      taskStartDate.setHours(0, 0, 0, 0);
+      taskDueDate.setHours(0, 0, 0, 0);
+      projectStartDate.setHours(0, 0, 0, 0);
+      projectDueDate.setHours(0, 0, 0, 0);
+
+      if (taskStartDate < projectStartDate) {
+        errors.startDate =
+          "Task start date cannot be earlier than project start date";
+      }
+
+      if (taskDueDate > projectDueDate) {
+        errors.dueDate = "Task due date cannot exceed project due date";
+      }
     }
 
     // Tính thời gian giữa startDate và dueDate (giới hạn tối đa là 1 năm)
@@ -1048,7 +1099,14 @@ const TaskEdit = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Start Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
+                      Start Date *{" "}
+                      <span className="text-xs text-gray-500">
+                        (Format: MM/DD/YYYY)
+                        {task.projectStartDate &&
+                          ` - Project starts on ${new Date(
+                            task.projectStartDate
+                          ).toLocaleDateString()}`}
+                      </span>
                     </label>
                     <div className="relative">
                       <input
@@ -1057,18 +1115,19 @@ const TaskEdit = ({
                         value={task.startDate}
                         onChange={handleChange}
                         min={
-                          isNew
+                          task.projectStartDate ||
+                          (isNew
                             ? new Date().toISOString().split("T")[0]
-                            : undefined
+                            : undefined)
                         }
+                        max={task.projectDueDate}
                         className={`w-full bg-gray-700 border ${
                           formErrors.startDate
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
-                        style={{ colorScheme: 'dark' }}
+                        style={{ colorScheme: "dark" }}
                       />
-                        
                     </div>
                     {formErrors.startDate && (
                       <p className="text-red-500 text-sm mt-1">
@@ -1079,7 +1138,14 @@ const TaskEdit = ({
 
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Due Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
+                      Due Date *{" "}
+                      <span className="text-xs text-gray-500">
+                        (Format: MM/DD/YYYY)
+                        {task.projectDueDate &&
+                          ` - Project ends on ${new Date(
+                            task.projectDueDate
+                          ).toLocaleDateString()}`}
+                      </span>
                     </label>
                     <div className="relative">
                       <input
@@ -1087,14 +1153,15 @@ const TaskEdit = ({
                         name="dueDate"
                         value={task.dueDate}
                         onChange={handleChange}
+                        min={task.startDate}
+                        max={task.projectDueDate}
                         className={`w-full bg-gray-700 border ${
                           formErrors.dueDate
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
-                        style={{ colorScheme: 'dark' }}
+                        style={{ colorScheme: "dark" }}
                       />
-                        
                     </div>
                     {formErrors.dueDate && (
                       <p className="text-red-500 text-sm mt-1">

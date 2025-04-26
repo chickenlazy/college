@@ -525,14 +525,16 @@ const Comment = ({ comment, onReply, onDelete }) => {
               )}
 
               {/* Chỉ hiển thị nút Delete nếu người dùng hiện tại là người tạo comment */}
-              {currentUser && (currentUser.id === comment.user.id || currentUser.role === "ROLE_ADMIN") && (
-                <button
-                  className="hover:text-red-400"
-                  onClick={() => onDelete && onDelete(comment.id)}
-                >
-                  Delete
-                </button>
-              )}
+              {currentUser &&
+                (currentUser.id === comment.user.id ||
+                  currentUser.role === "ROLE_ADMIN") && (
+                  <button
+                    className="hover:text-red-400"
+                    onClick={() => onDelete && onDelete(comment.id)}
+                  >
+                    Delete
+                  </button>
+                )}
             </div>
 
             {showReplyForm && (
@@ -611,12 +613,10 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [subtaskStartDate, setSubtaskStartDate] = useState(
-    new Date().toISOString().split("T")[0]
+    null //new Date().toISOString().split("T")[0]
   ); // Thêm state cho startDate
   const [subtaskDueDate, setSubtaskDueDate] = useState(
-    new Date(new Date().setMonth(new Date().getMonth() + 1))
-      .toISOString()
-      .split("T")[0]
+    null // new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split("T")[0]
   ); // Thêm state cho dueDate
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -758,19 +758,40 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
       errors.dueDate = "Due date is required";
     }
 
-    // Validate date logic
+    // Kiểm tra subtaskDueDate phải sau subtaskStartDate
     if (subtaskStartDate && subtaskDueDate) {
-      const startDate = new Date(subtaskStartDate);
-      const dueDate = new Date(subtaskDueDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const subtaskStart = new Date(subtaskStartDate);
+      const subtaskDue = new Date(subtaskDueDate);
 
-      if (startDate < today) {
-        errors.startDate = "Start date cannot be in the past";
+      // Set hours để so sánh chính xác ngày
+      subtaskStart.setHours(0, 0, 0, 0);
+      subtaskDue.setHours(0, 0, 0, 0);
+
+      if (subtaskDue < subtaskStart) {
+        errors.dueDate = "Due date must be after start date";
+      }
+    }
+
+    // Kiểm tra startDate và dueDate của subtask phải thuộc vào khoảng thời gian của task
+    if (subtaskStartDate && subtaskDueDate) {
+      const subtaskStart = new Date(subtaskStartDate);
+      const subtaskDue = new Date(subtaskDueDate);
+      const taskStart = new Date(task.startDate);
+      const taskDue = new Date(task.dueDate);
+
+      // Set hours để so sánh chính xác ngày
+      subtaskStart.setHours(0, 0, 0, 0);
+      subtaskDue.setHours(0, 0, 0, 0);
+      taskStart.setHours(0, 0, 0, 0);
+      taskDue.setHours(0, 0, 0, 0);
+
+      if (subtaskStart < taskStart) {
+        errors.startDate =
+          "Subtask start date cannot be earlier than task start date";
       }
 
-      if (dueDate < startDate) {
-        errors.dueDate = "Due date must be after start date";
+      if (subtaskDue > taskDue) {
+        errors.dueDate = "Subtask due date cannot exceed task due date";
       }
     }
 
@@ -1199,9 +1220,11 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm text-gray-400 mb-1">
-                          Start Date *{" "}
+                          Start Date *
                           <span className="text-xs text-gray-500">
-                            (Format: MM/DD/YYYY)
+                            (Format: MM/DD/YYYY - Must be between{" "}
+                            {formatDate(task.startDate)} and{" "}
+                            {formatDate(task.dueDate)})
                           </span>
                         </label>
                         <div className="relative">
@@ -1212,7 +1235,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                                 ? "border-red-500"
                                 : "border-gray-600"
                             } rounded-md py-3 px-4 text-white`}
-                            style={{ colorScheme: 'dark' }}
+                            style={{ colorScheme: "dark" }}
                             value={subtaskStartDate}
                             onChange={(e) => {
                               setSubtaskStartDate(e.target.value);
@@ -1224,9 +1247,9 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                                 }));
                               }
                             }}
-                            min={new Date().toISOString().split("T")[0]} // Chỉ cho phép chọn từ ngày hiện tại
+                            min={task.startDate}
+                            max={task.dueDate}
                           />
-                          
                         </div>
                         {subtaskErrors.startDate && (
                           <p className="text-red-500 text-sm mt-1">
@@ -1236,9 +1259,11 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                       </div>
                       <div>
                         <label className="block text-sm text-gray-400 mb-1">
-                          Due Date *{" "}
+                          Due Date *
                           <span className="text-xs text-gray-500">
-                            (Format: MM/DD/YYYY)
+                            (Format: MM/DD/YYYY - Must be between{" "}
+                            {formatDate(subtaskStartDate || task.startDate)} and{" "}
+                            {formatDate(task.dueDate)})
                           </span>
                         </label>
                         <div className="relative">
@@ -1249,7 +1274,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                                 ? "border-red-500"
                                 : "border-gray-600"
                             } rounded-md py-3 px-4 text-white`}
-                            style={{ colorScheme: 'dark' }}
+                            style={{ colorScheme: "dark" }}
                             value={subtaskDueDate}
                             onChange={(e) => {
                               setSubtaskDueDate(e.target.value);
@@ -1261,12 +1286,9 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                                 }));
                               }
                             }}
-                            min={
-                              subtaskStartDate ||
-                              new Date().toISOString().split("T")[0]
-                            }
+                            min={subtaskStartDate || task.startDate}
+                            max={task.dueDate}
                           />
-                          
                         </div>
                         {subtaskErrors.dueDate && (
                           <p className="text-red-500 text-sm mt-1">
