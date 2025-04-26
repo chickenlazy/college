@@ -50,6 +50,8 @@ public class ExcelExportService {
             Font subHeaderFont = createSubHeaderFont(workbook);
             Font normalFont = createNormalFont(workbook);
             Font boldFont = createBoldFont(workbook);
+            Font italicFont = createItalicFont(workbook);
+            Font managerFont = createManagerFont(workbook);
 
             // Tạo cell styles
             CellStyle headerStyle = createHeaderStyle(workbook, headerFont);
@@ -61,15 +63,35 @@ public class ExcelExportService {
             CellStyle completedStyle = createCompletedStyle(workbook, normalFont);
             CellStyle pendingStyle = createPendingStyle(workbook, normalFont);
             CellStyle overdueStyle = createOverdueStyle(workbook, normalFont);
+            CellStyle italicStyle = createItalicStyle(workbook, italicFont);
+            CellStyle managerStyle = createManagerStyle(workbook, managerFont);
+
+            // Tạo cell styles cho dòng chẵn lẻ
+            CellStyle evenRowStyle = createEvenRowStyle(workbook, normalFont);
+            CellStyle oddRowStyle = createOddRowStyle(workbook, normalFont);
+            CellStyle evenRowCenteredStyle = createEvenRowCenteredStyle(workbook, normalFont);
+            CellStyle oddRowCenteredStyle = createOddRowCenteredStyle(workbook, normalFont);
 
             // Tạo sheet thông tin dự án
             Sheet projectSheet = createProjectInfoSheet(workbook, project, tasks, headerStyle, subHeaderStyle, normalStyle, boldStyle, dateStyle);
 
             // Tạo sheet Tasks
-            Sheet tasksSheet = createTasksSheet(workbook, tasks, headerStyle, subHeaderStyle, normalStyle, boldStyle, dateStyle, centeredStyle, completedStyle, pendingStyle, overdueStyle);
+            Sheet tasksSheet = createTasksSheet(workbook, tasks, headerStyle, subHeaderStyle, normalStyle,
+                    boldStyle, dateStyle, centeredStyle, completedStyle,
+                    pendingStyle, overdueStyle, italicStyle,
+                    evenRowStyle, oddRowStyle, evenRowCenteredStyle, oddRowCenteredStyle);
 
             // Tạo sheet Members
-            Sheet membersSheet = createMembersSheet(workbook, project, headerStyle, subHeaderStyle, normalStyle, centeredStyle);
+            Sheet membersSheet = createMembersSheet(workbook, project, headerStyle, subHeaderStyle,
+                    normalStyle, centeredStyle, managerStyle,
+                    evenRowStyle, oddRowStyle, evenRowCenteredStyle, oddRowCenteredStyle);
+
+            // Tùy chỉnh sheet và căn chỉnh cột tự động
+            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+                Sheet sheet = workbook.getSheetAt(i);
+                sheet.setDisplayGridlines(false);
+                sheet.createFreezePane(0, 2); // Đóng băng các dòng tiêu đề
+            }
 
             // Viết workbook vào ByteArrayOutputStream
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -77,6 +99,8 @@ public class ExcelExportService {
             return outputStream.toByteArray();
         }
     }
+
+    // ===== CREATE FONTS =====
 
     private Font createHeaderFont(Workbook workbook) {
         Font font = workbook.createFont();
@@ -107,6 +131,23 @@ public class ExcelExportService {
         return font;
     }
 
+    private Font createItalicFont(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setItalic(true);
+        font.setFontHeightInPoints((short) 11);
+        return font;
+    }
+
+    private Font createManagerFont(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short) 11);
+        font.setColor(IndexedColors.DARK_BLUE.getIndex());
+        return font;
+    }
+
+    // ===== CREATE CELL STYLES =====
+
     private CellStyle createHeaderStyle(Workbook workbook, Font font) {
         CellStyle style = workbook.createCellStyle();
         style.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
@@ -133,6 +174,7 @@ public class ExcelExportService {
         CellStyle style = workbook.createCellStyle();
         style.setFont(font);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
         setBorders(style);
         return style;
     }
@@ -141,6 +183,26 @@ public class ExcelExportService {
         CellStyle style = workbook.createCellStyle();
         style.setFont(font);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        setBorders(style);
+        return style;
+    }
+
+    private CellStyle createItalicStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        setBorders(style);
+        return style;
+    }
+
+    private CellStyle createManagerStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         setBorders(style);
         return style;
     }
@@ -149,6 +211,7 @@ public class ExcelExportService {
         CellStyle style = workbook.createCellStyle();
         style.setFont(font);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
         CreationHelper createHelper = workbook.getCreationHelper();
         style.setDataFormat(createHelper.createDataFormat().getFormat("dd/MM/yyyy"));
         setBorders(style);
@@ -197,6 +260,47 @@ public class ExcelExportService {
         return style;
     }
 
+    // Các style cho dòng chẵn/lẻ để tạo hiệu ứng sọc màu
+    private CellStyle createEvenRowStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        setBorders(style);
+        return style;
+    }
+
+    private CellStyle createOddRowStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        setBorders(style);
+        return style;
+    }
+
+    private CellStyle createEvenRowCenteredStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        setBorders(style);
+        return style;
+    }
+
+    private CellStyle createOddRowCenteredStyle(Workbook workbook, Font font) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        setBorders(style);
+        return style;
+    }
+
     private void setBorders(CellStyle style) {
         style.setBorderTop(BorderStyle.THIN);
         style.setBorderBottom(BorderStyle.THIN);
@@ -209,24 +313,48 @@ public class ExcelExportService {
                                          CellStyle boldStyle, CellStyle dateStyle) {
         Sheet sheet = workbook.createSheet("Thông tin dự án");
 
+        CellStyle highlightStyle = workbook.createCellStyle();
+        highlightStyle.cloneStyleFrom(normalStyle);
+        highlightStyle.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
+        highlightStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle labelStyle = workbook.createCellStyle();
+        labelStyle.cloneStyleFrom(boldStyle);
+        labelStyle.setFillForegroundColor(IndexedColors.BLUE.getIndex());
+        labelStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        Font labelFont = workbook.createFont();
+        labelFont.setBold(true);
+        labelFont.setColor(IndexedColors.WHITE.getIndex());
+        labelFont.setFontHeightInPoints((short) 11);
+        labelStyle.setFont(labelFont);
+
+        Font highlightFont = workbook.createFont();
+        highlightFont.setBold(true);
+        highlightFont.setFontHeightInPoints((short) 11);
+        highlightStyle.setFont(highlightFont);
+
         // Set column widths
         sheet.setColumnWidth(0, 5000);
         sheet.setColumnWidth(1, 12000);
 
+        // Tạo header trang
         Row titleRow = sheet.createRow(0);
+        titleRow.setHeightInPoints(30); // Điều chỉnh chiều cao dòng
+
         Cell titleCell = titleRow.createCell(0);
         titleCell.setCellValue("BÁO CÁO CHI TIẾT DỰ ÁN");
         titleCell.setCellStyle(headerStyle);
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 1));
 
         // Dòng trống
-        sheet.createRow(1);
+        sheet.createRow(1).setHeightInPoints(10);
 
         // Thông tin dự án
         Row projectRow = sheet.createRow(2);
         Cell projectLabelCell = projectRow.createCell(0);
         projectLabelCell.setCellValue("Tên dự án:");
-        projectLabelCell.setCellStyle(boldStyle);
+        projectLabelCell.setCellStyle(labelStyle);
 
         Cell projectValueCell = projectRow.createCell(1);
         projectValueCell.setCellValue(project.getName());
@@ -236,7 +364,7 @@ public class ExcelExportService {
         Row idRow = sheet.createRow(3);
         Cell idLabelCell = idRow.createCell(0);
         idLabelCell.setCellValue("Mã dự án:");
-        idLabelCell.setCellStyle(boldStyle);
+        idLabelCell.setCellStyle(labelStyle);
 
         Cell idValueCell = idRow.createCell(1);
         idValueCell.setCellValue("PRJ-" + String.format("%04d", project.getId()));
@@ -246,7 +374,7 @@ public class ExcelExportService {
         Row descRow = sheet.createRow(4);
         Cell descLabelCell = descRow.createCell(0);
         descLabelCell.setCellValue("Mô tả:");
-        descLabelCell.setCellStyle(boldStyle);
+        descLabelCell.setCellStyle(labelStyle);
 
         Cell descValueCell = descRow.createCell(1);
         descValueCell.setCellValue(project.getDescription() != null ? project.getDescription() : "");
@@ -256,7 +384,7 @@ public class ExcelExportService {
         Row startRow = sheet.createRow(5);
         Cell startLabelCell = startRow.createCell(0);
         startLabelCell.setCellValue("Ngày bắt đầu:");
-        startLabelCell.setCellStyle(boldStyle);
+        startLabelCell.setCellStyle(labelStyle);
 
         Cell startValueCell = startRow.createCell(1);
         if (project.getStartDate() != null) {
@@ -271,7 +399,7 @@ public class ExcelExportService {
         Row dueRow = sheet.createRow(6);
         Cell dueLabelCell = dueRow.createCell(0);
         dueLabelCell.setCellValue("Ngày kết thúc dự kiến:");
-        dueLabelCell.setCellStyle(boldStyle);
+        dueLabelCell.setCellStyle(labelStyle);
 
         Cell dueValueCell = dueRow.createCell(1);
         if (project.getDueDate() != null) {
@@ -286,7 +414,7 @@ public class ExcelExportService {
         Row statusRow = sheet.createRow(7);
         Cell statusLabelCell = statusRow.createCell(0);
         statusLabelCell.setCellValue("Trạng thái:");
-        statusLabelCell.setCellStyle(boldStyle);
+        statusLabelCell.setCellStyle(labelStyle);
 
         Cell statusValueCell = statusRow.createCell(1);
         statusValueCell.setCellValue(getStatusText(project.getStatus().name()));
@@ -296,7 +424,7 @@ public class ExcelExportService {
         Row managerRow = sheet.createRow(8);
         Cell managerLabelCell = managerRow.createCell(0);
         managerLabelCell.setCellValue("Quản lý dự án:");
-        managerLabelCell.setCellStyle(boldStyle);
+        managerLabelCell.setCellStyle(labelStyle);
 
         Cell managerValueCell = managerRow.createCell(1);
         if (project.getManager() != null) {
@@ -310,7 +438,7 @@ public class ExcelExportService {
         Row tagsRow = sheet.createRow(9);
         Cell tagsLabelCell = tagsRow.createCell(0);
         tagsLabelCell.setCellValue("Tags:");
-        tagsLabelCell.setCellStyle(boldStyle);
+        tagsLabelCell.setCellStyle(labelStyle);
 
         Cell tagsValueCell = tagsRow.createCell(1);
         if (project.getTags() != null && !project.getTags().isEmpty()) {
@@ -333,18 +461,51 @@ public class ExcelExportService {
         Row tasksCountRow = sheet.createRow(10);
         Cell tasksCountLabelCell = tasksCountRow.createCell(0);
         tasksCountLabelCell.setCellValue("Tiến độ dự án:");
-        tasksCountLabelCell.setCellStyle(boldStyle);
+        tasksCountLabelCell.setCellStyle(labelStyle);
 
         Cell tasksCountValueCell = tasksCountRow.createCell(1);
         tasksCountValueCell.setCellValue(String.format("%d/%d công việc hoàn thành (%.1f%%)",
                 completedTasks, totalTasks, progress));
         tasksCountValueCell.setCellStyle(normalStyle);
 
+        // Tổng số thành viên
+        int totalMembers = 0;
+        if (project.getUsers() != null) {
+            totalMembers = project.getUsers().size();
+            if (project.getManager() != null && project.getUsers().contains(project.getManager())) {
+                // Nếu manager cũng là thành viên, tránh đếm trùng
+                totalMembers = totalMembers - 1;
+            }
+        }
+        if (project.getManager() != null) {
+            totalMembers++; // Cộng thêm manager
+        }
+
+        Row membersCountRow = sheet.createRow(11);
+        Cell membersCountLabelCell = membersCountRow.createCell(0);
+        membersCountLabelCell.setCellValue("Tổng số thành viên:");
+        membersCountLabelCell.setCellStyle(labelStyle);
+
+        Cell membersCountValueCell = membersCountRow.createCell(1);
+        membersCountValueCell.setCellValue(totalMembers + " thành viên");
+        membersCountValueCell.setCellStyle(normalStyle);
+
+        projectValueCell.setCellStyle(highlightStyle);
+        statusValueCell.setCellStyle(highlightStyle);
+        tasksCountValueCell.setCellStyle(highlightStyle);
+
+        idValueCell.setCellStyle(highlightStyle);          // Mã dự án
+        membersCountValueCell.setCellStyle(highlightStyle); // Tổng số thành viên
+        managerValueCell.setCellStyle(highlightStyle);   // Quản lý dự án
+
+        // Dòng trống
+        sheet.createRow(12).setHeightInPoints(15);
+
         // Export date
-        Row exportRow = sheet.createRow(12);
+        Row exportRow = sheet.createRow(13);
         Cell exportLabelCell = exportRow.createCell(0);
         exportLabelCell.setCellValue("Ngày xuất báo cáo:");
-        exportLabelCell.setCellStyle(boldStyle);
+        exportLabelCell.setCellStyle(labelStyle);
 
         Cell exportValueCell = exportRow.createCell(1);
         exportValueCell.setCellValue(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
@@ -357,7 +518,10 @@ public class ExcelExportService {
                                    CellStyle subHeaderStyle, CellStyle normalStyle,
                                    CellStyle boldStyle, CellStyle dateStyle,
                                    CellStyle centeredStyle, CellStyle completedStyle,
-                                   CellStyle pendingStyle, CellStyle overdueStyle) {
+                                   CellStyle pendingStyle, CellStyle overdueStyle,
+                                   CellStyle italicStyle,
+                                   CellStyle evenRowStyle, CellStyle oddRowStyle,
+                                   CellStyle evenRowCenteredStyle, CellStyle oddRowCenteredStyle) {
         Sheet sheet = workbook.createSheet("Danh sách công việc");
 
         // Set column widths
@@ -366,12 +530,14 @@ public class ExcelExportService {
         sheet.setColumnWidth(2, 5000);  // Ngày bắt đầu
         sheet.setColumnWidth(3, 5000);  // Ngày kết thúc
         sheet.setColumnWidth(4, 3500);  // Trạng thái
-        sheet.setColumnWidth(5, 5000);  // Người tạo
+        sheet.setColumnWidth(5, 5000);  // Người phụ trách
         sheet.setColumnWidth(6, 3500);  // Độ ưu tiên
-        sheet.setColumnWidth(7, 4000);  // Subtasks
+        sheet.setColumnWidth(7, 4000);  // Tiến độ
 
         // Header
         Row headerRow = sheet.createRow(0);
+        headerRow.setHeightInPoints(30); // Điều chỉnh chiều cao dòng
+
         Cell headerCell = headerRow.createCell(0);
         headerCell.setCellValue("DANH SÁCH CÔNG VIỆC");
         headerCell.setCellStyle(headerStyle);
@@ -379,7 +545,9 @@ public class ExcelExportService {
 
         // Subheader
         Row subheaderRow = sheet.createRow(1);
-        String[] headers = {"STT", "Tên công việc", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái", "Người tạo", "Độ ưu tiên", "Subtasks"};
+        subheaderRow.setHeightInPoints(20); // Điều chỉnh chiều cao dòng
+
+        String[] headers = {"STT", "Tên công việc", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái", "Người phụ trách", "Độ ưu tiên", "Tiến độ"};
 
         for (int i = 0; i < headers.length; i++) {
             Cell cell = subheaderRow.createCell(i);
@@ -390,19 +558,25 @@ public class ExcelExportService {
         // Tasks data
         int rowNum = 2;
         int taskIndex = 1;
+        boolean isEvenRow = false;
 
         for (Task task : tasks) {
             Row row = sheet.createRow(rowNum++);
+            isEvenRow = !isEvenRow; // Đảo trạng thái chẵn/lẻ
+
+            // Chọn style dựa vào dòng chẵn/lẻ
+            CellStyle rowStyle = isEvenRow ? evenRowStyle : oddRowStyle;
+            CellStyle rowCenteredStyle = isEvenRow ? evenRowCenteredStyle : oddRowCenteredStyle;
 
             // STT
             Cell cell0 = row.createCell(0);
             cell0.setCellValue(taskIndex++);
-            cell0.setCellStyle(centeredStyle);
+            cell0.setCellStyle(rowCenteredStyle);
 
             // Tên công việc
             Cell cell1 = row.createCell(1);
             cell1.setCellValue(task.getName());
-            cell1.setCellStyle(normalStyle);
+            cell1.setCellStyle(boldStyle); // Task chính luôn in đậm
 
             // Ngày bắt đầu
             Cell cell2 = row.createCell(2);
@@ -411,7 +585,7 @@ public class ExcelExportService {
                 cell2.setCellStyle(dateStyle);
             } else {
                 cell2.setCellValue("Chưa xác định");
-                cell2.setCellStyle(centeredStyle);
+                cell2.setCellStyle(rowCenteredStyle);
             }
 
             // Ngày kết thúc
@@ -421,7 +595,7 @@ public class ExcelExportService {
                 cell3.setCellStyle(dateStyle);
             } else {
                 cell3.setCellValue("Chưa xác định");
-                cell3.setCellStyle(centeredStyle);
+                cell3.setCellStyle(rowCenteredStyle);
             }
 
             // Trạng thái
@@ -438,14 +612,14 @@ public class ExcelExportService {
                 cell4.setCellStyle(pendingStyle);
             }
 
-            // Người tạo
+            // Người tạo/phụ trách
             Cell cell5 = row.createCell(5);
             if (task.getCreatedBy() != null) {
                 cell5.setCellValue(task.getCreatedBy().getFullName());
             } else {
                 cell5.setCellValue("N/A");
             }
-            cell5.setCellStyle(normalStyle);
+            cell5.setCellStyle(rowStyle);
 
             // Độ ưu tiên
             Cell cell6 = row.createCell(6);
@@ -454,9 +628,9 @@ public class ExcelExportService {
             } else {
                 cell6.setCellValue("Trung bình");
             }
-            cell6.setCellStyle(centeredStyle);
+            cell6.setCellStyle(rowCenteredStyle);
 
-            // Subtasks
+            // Tiến độ subtasks
             Cell cell7 = row.createCell(7);
             Set<Subtask> subtasks = task.getSubtasks();
             if (subtasks != null && !subtasks.isEmpty()) {
@@ -465,20 +639,25 @@ public class ExcelExportService {
             } else {
                 cell7.setCellValue("0/0 hoàn thành");
             }
-            cell7.setCellStyle(centeredStyle);
+            cell7.setCellStyle(rowCenteredStyle);
 
             // If task has subtasks, create rows for them
             if (subtasks != null && !subtasks.isEmpty()) {
                 for (Subtask subtask : subtasks) {
                     Row subtaskRow = sheet.createRow(rowNum++);
+                    isEvenRow = !isEvenRow; // Đảo trạng thái chẵn/lẻ
+
+                    // Chọn style dựa vào dòng chẵn/lẻ
+                    CellStyle subtaskRowStyle = isEvenRow ? evenRowStyle : oddRowStyle;
+                    CellStyle subtaskRowCenteredStyle = isEvenRow ? evenRowCenteredStyle : oddRowCenteredStyle;
 
                     // Empty cell for STT
-                    subtaskRow.createCell(0).setCellStyle(normalStyle);
+                    subtaskRow.createCell(0).setCellStyle(subtaskRowStyle);
 
                     // Subtask name with indent
                     Cell subtaskNameCell = subtaskRow.createCell(1);
-                    subtaskNameCell.setCellValue("    - " + subtask.getName());
-                    subtaskNameCell.setCellStyle(normalStyle);
+                    subtaskNameCell.setCellValue("    → " + subtask.getName());
+                    subtaskNameCell.setCellStyle(italicStyle); // Subtasks in nghiêng
 
                     // Start date
                     Cell subtaskStartCell = subtaskRow.createCell(2);
@@ -487,7 +666,7 @@ public class ExcelExportService {
                         subtaskStartCell.setCellStyle(dateStyle);
                     } else {
                         subtaskStartCell.setCellValue("");
-                        subtaskStartCell.setCellStyle(normalStyle);
+                        subtaskStartCell.setCellStyle(subtaskRowStyle);
                     }
 
                     // Due date
@@ -497,7 +676,7 @@ public class ExcelExportService {
                         subtaskDueCell.setCellStyle(dateStyle);
                     } else {
                         subtaskDueCell.setCellValue("");
-                        subtaskDueCell.setCellStyle(normalStyle);
+                        subtaskDueCell.setCellStyle(subtaskRowStyle);
                     }
 
                     // Status
@@ -506,18 +685,18 @@ public class ExcelExportService {
                     subtaskStatusCell.setCellValue(isCompleted ? "Hoàn thành" : "Chưa hoàn thành");
                     subtaskStatusCell.setCellStyle(isCompleted ? completedStyle : pendingStyle);
 
-                    // Assignee
+                    // Người phụ trách (assignee)
                     Cell subtaskAssigneeCell = subtaskRow.createCell(5);
                     if (subtask.getAssignee() != null) {
                         subtaskAssigneeCell.setCellValue(subtask.getAssignee().getFullName());
                     } else {
                         subtaskAssigneeCell.setCellValue("Chưa phân công");
                     }
-                    subtaskAssigneeCell.setCellStyle(normalStyle);
+                    subtaskAssigneeCell.setCellStyle(subtaskRowStyle);
 
                     // Empty cells for remaining columns
                     for (int i = 6; i <= 7; i++) {
-                        subtaskRow.createCell(i).setCellStyle(normalStyle);
+                        subtaskRow.createCell(i).setCellStyle(subtaskRowStyle);
                     }
                 }
             }
@@ -528,7 +707,9 @@ public class ExcelExportService {
 
     private Sheet createMembersSheet(Workbook workbook, Project project, CellStyle headerStyle,
                                      CellStyle subHeaderStyle, CellStyle normalStyle,
-                                     CellStyle centeredStyle) {
+                                     CellStyle centeredStyle, CellStyle managerStyle,
+                                     CellStyle evenRowStyle, CellStyle oddRowStyle,
+                                     CellStyle evenRowCenteredStyle, CellStyle oddRowCenteredStyle) {
         Sheet sheet = workbook.createSheet("Thành viên dự án");
 
         // Set column widths
@@ -538,17 +719,22 @@ public class ExcelExportService {
         sheet.setColumnWidth(3, 4000);  // Số điện thoại
         sheet.setColumnWidth(4, 5000);  // Phòng ban
         sheet.setColumnWidth(5, 5000);  // Vị trí
+        sheet.setColumnWidth(6, 3500);  // Vai trò
 
         // Header
         Row headerRow = sheet.createRow(0);
+        headerRow.setHeightInPoints(30); // Điều chỉnh chiều cao dòng
+
         Cell headerCell = headerRow.createCell(0);
         headerCell.setCellValue("DANH SÁCH THÀNH VIÊN DỰ ÁN");
         headerCell.setCellStyle(headerStyle);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
 
         // Subheader
         Row subheaderRow = sheet.createRow(1);
-        String[] headers = {"STT", "Họ và tên", "Email", "Số điện thoại", "Phòng ban", "Vị trí"};
+        subheaderRow.setHeightInPoints(20); // Điều chỉnh chiều cao dòng
+
+        String[] headers = {"STT", "Họ và tên", "Email", "Số điện thoại", "Phòng ban", "Vị trí", "Vai trò"};
 
         for (int i = 0; i < headers.length; i++) {
             Cell cell = subheaderRow.createCell(i);
@@ -559,40 +745,51 @@ public class ExcelExportService {
         // Add project manager first
         int rowNum = 2;
         int memberIndex = 1;
+        boolean isEvenRow = false;
 
         if (project.getManager() != null) {
             User manager = project.getManager();
             Row managerRow = sheet.createRow(rowNum++);
+            isEvenRow = !isEvenRow;
 
             // STT
             Cell cell0 = managerRow.createCell(0);
             cell0.setCellValue(memberIndex++);
-            cell0.setCellStyle(centeredStyle);
+            CellStyle managerCenteredStyle = workbook.createCellStyle();
+            managerCenteredStyle.cloneStyleFrom(managerStyle);
+            managerCenteredStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            cell0.setCellStyle(managerCenteredStyle);
 
             // Họ và tên
             Cell cell1 = managerRow.createCell(1);
-            cell1.setCellValue(manager.getFullName() + " (Quản lý)");
-            cell1.setCellStyle(normalStyle);
+            cell1.setCellValue(manager.getFullName());
+            cell1.setCellStyle(managerStyle);
 
             // Email
             Cell cell2 = managerRow.createCell(2);
             cell2.setCellValue(manager.getEmail());
-            cell2.setCellStyle(normalStyle);
+            cell2.setCellStyle(managerStyle);
 
             // Số điện thoại
             Cell cell3 = managerRow.createCell(3);
             cell3.setCellValue(manager.getPhoneNumber() != null ? manager.getPhoneNumber() : "");
-            cell3.setCellStyle(normalStyle);
+            cell3.setCellStyle(managerStyle);
 
             // Phòng ban
             Cell cell4 = managerRow.createCell(4);
             cell4.setCellValue(manager.getDepartment() != null ? manager.getDepartment() : "");
-            cell4.setCellStyle(normalStyle);
+            cell4.setCellStyle(managerStyle);
 
             // Vị trí
             Cell cell5 = managerRow.createCell(5);
             cell5.setCellValue(manager.getPosition() != null ? manager.getPosition() : "");
-            cell5.setCellStyle(normalStyle);
+            cell5.setCellStyle(managerStyle);
+
+            // Vai trò
+            Cell cell6 = managerRow.createCell(6);
+            cell6.setCellValue("Quản lý dự án");
+            cell6.setCellStyle(managerStyle);
         }
 
         // Team members
@@ -604,36 +801,46 @@ public class ExcelExportService {
                 }
 
                 Row row = sheet.createRow(rowNum++);
+                isEvenRow = !isEvenRow;
+
+                // Chọn style dựa vào dòng chẵn/lẻ
+                CellStyle rowStyle = isEvenRow ? evenRowStyle : oddRowStyle;
+                CellStyle rowCenteredStyle = isEvenRow ? evenRowCenteredStyle : oddRowCenteredStyle;
 
                 // STT
                 Cell cell0 = row.createCell(0);
                 cell0.setCellValue(memberIndex++);
-                cell0.setCellStyle(centeredStyle);
+                cell0.setCellStyle(rowCenteredStyle);
 
                 // Họ và tên
                 Cell cell1 = row.createCell(1);
                 cell1.setCellValue(user.getFullName());
-                cell1.setCellStyle(normalStyle);
+                cell1.setCellStyle(rowStyle);
 
                 // Email
                 Cell cell2 = row.createCell(2);
                 cell2.setCellValue(user.getEmail());
-                cell2.setCellStyle(normalStyle);
+                cell2.setCellStyle(rowStyle);
 
                 // Số điện thoại
                 Cell cell3 = row.createCell(3);
                 cell3.setCellValue(user.getPhoneNumber() != null ? user.getPhoneNumber() : "");
-                cell3.setCellStyle(normalStyle);
+                cell3.setCellStyle(rowStyle);
 
                 // Phòng ban
                 Cell cell4 = row.createCell(4);
                 cell4.setCellValue(user.getDepartment() != null ? user.getDepartment() : "");
-                cell4.setCellStyle(normalStyle);
+                cell4.setCellStyle(rowStyle);
 
                 // Vị trí
                 Cell cell5 = row.createCell(5);
                 cell5.setCellValue(user.getPosition() != null ? user.getPosition() : "");
-                cell5.setCellStyle(normalStyle);
+                cell5.setCellStyle(rowStyle);
+
+                // Vai trò
+                Cell cell6 = row.createCell(6);
+                cell6.setCellValue("Thành viên");
+                cell6.setCellStyle(rowCenteredStyle);
             }
         }
 

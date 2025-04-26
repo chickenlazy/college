@@ -525,7 +525,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
               )}
 
               {/* Chỉ hiển thị nút Delete nếu người dùng hiện tại là người tạo comment */}
-              {currentUser && currentUser.id === comment.user.id && (
+              {currentUser && (currentUser.id === comment.user.id || currentUser.role === "ROLE_ADMIN") && (
                 <button
                   className="hover:text-red-400"
                   onClick={() => onDelete && onDelete(comment.id)}

@@ -106,9 +106,9 @@ public class ProjectTaskScheduler {
 
     /**
      * Chạy mỗi giờ để kiểm tra và cập nhật trạng thái COMPLETED cho các project và task
-     * Cron expression: "0 15 * * * *" = chạy vào phút thứ 15 của mỗi giờ
+     * Cron expression: "0 0 * * * *" = chạy vào phút thứ 0 của mỗi giờ
      */
-    @Scheduled(cron = "0 15 * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void updateCompletedStatus() {
         Date now = new Date();
@@ -195,7 +195,7 @@ public class ProjectTaskScheduler {
         return count;
     }
 
-    @Scheduled(cron = "0 30 * * * *") // Chạy vào phút thứ 30 của mỗi giờ
+    @Scheduled(cron = "0 0 * * * *") // Chạy vào phút thứ 0 của mỗi giờ
     @Transactional
     public void sendDeadlineNotifications() {
         Date now = new Date();
@@ -330,6 +330,117 @@ public class ProjectTaskScheduler {
                 notificationService.createNotification(notification);
             }
         }
+    }
+
+    /**
+     * Chạy mỗi giờ để cập nhật trạng thái IN_PROGRESS cho các project và task
+     * Cron expression: "0 0 * * * *" = chạy vào phút thứ 0 của mỗi giờ
+     */
+    @Scheduled(cron = "0 0 * * * *")
+    @Transactional
+    public void updateInProgressStatus() {
+        Date now = new Date();
+
+        // Cập nhật task thành IN_PROGRESS nếu có subtask chưa completed
+        int updatedTasks = updateTasksWithIncompleteSubtasks(now);
+
+        // Cập nhật project thành IN_PROGRESS nếu có task chưa completed
+        int updatedProjects = updateProjectsWithIncompleteTasks(now);
+
+        logger.debug("Background task completed: {} projects and {} tasks updated to IN_PROGRESS status",
+                updatedProjects, updatedTasks);
+    }
+
+    /**
+     * Cập nhật trạng thái IN_PROGRESS cho các project có task chưa completed
+     * @param now Thời gian hiện tại
+     * @return Số lượng project đã được cập nhật
+     */
+    private int updateProjectsWithIncompleteTasks(Date now) {
+        // Lấy tất cả project không ở trạng thái IN_PROGRESS và COMPLETED
+        List<Project> projects = projectRepository.findByStatusNotIn(
+                List.of(ProjectStatus.IN_PROGRESS, ProjectStatus.COMPLETED));
+        int count = 0;
+
+        for (Project project : projects) {
+            List<Task> tasks = taskRepository.findByProjectId(project.getId());
+
+            // Skip dự án không có task nào
+            if (tasks.isEmpty()) {
+                continue;
+            }
+
+            boolean hasIncompleteTasks = false;
+            boolean hasCompletedTasks = false;
+
+            for (Task task : tasks) {
+                if (task.getStatus() != TaskStatus.COMPLETED) {
+                    hasIncompleteTasks = true;
+                } else {
+                    hasCompletedTasks = true;
+                }
+
+                // Nếu có ít nhất một task đã hoàn thành và một task chưa hoàn thành
+                if (hasIncompleteTasks && hasCompletedTasks) {
+                    break;
+                }
+            }
+
+            // Nếu có task chưa hoàn thành, cập nhật trạng thái project thành IN_PROGRESS
+            if (hasIncompleteTasks) {
+                project.setStatus(ProjectStatus.IN_PROGRESS);
+                project.setLastModifiedDate(now);
+                projectRepository.save(project);
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Cập nhật trạng thái IN_PROGRESS cho các task có subtask chưa completed
+     * @param now Thời gian hiện tại
+     * @return Số lượng task đã được cập nhật
+     */
+    private int updateTasksWithIncompleteSubtasks(Date now) {
+        // Lấy tất cả task không ở trạng thái IN_PROGRESS và COMPLETED
+        List<Task> tasks = taskRepository.findByStatusNotIn(
+                List.of(TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED));
+        int count = 0;
+
+        for (Task task : tasks) {
+            // Skip task không có subtask nào
+            if (task.getSubtasks() == null || task.getSubtasks().isEmpty()) {
+                continue;
+            }
+
+            boolean hasIncompleteSubtasks = false;
+            boolean hasCompletedSubtasks = false;
+
+            for (Subtask subtask : task.getSubtasks()) {
+                if (!subtask.getCompleted()) {
+                    hasIncompleteSubtasks = true;
+                } else {
+                    hasCompletedSubtasks = true;
+                }
+
+                // Nếu có ít nhất một subtask đã hoàn thành và một subtask chưa hoàn thành
+                if (hasIncompleteSubtasks && hasCompletedSubtasks) {
+                    break;
+                }
+            }
+
+            // Nếu có subtask chưa hoàn thành, cập nhật trạng thái task thành IN_PROGRESS
+            if (hasIncompleteSubtasks) {
+                task.setStatus(TaskStatus.IN_PROGRESS);
+                task.setLastModifiedDate(now);
+                taskRepository.save(task);
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private String formatDate(Date date) {

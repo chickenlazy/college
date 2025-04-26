@@ -27,4 +27,6 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     List<Project> findByStatusNot(ProjectStatus status);
 
     List<Project> findByDueDateBetweenAndStatusNot(Date start, Date end, ProjectStatus status);
+
+    List<Project> findByStatusNotIn(List<ProjectStatus> statuses);
 }
