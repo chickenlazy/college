@@ -354,6 +354,36 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public ApiResponse verifyResetCode(String email, String resetCode) {
+        // Tìm user bằng email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với email: " + email));
+
+        // Kiểm tra mã xác nhận
+        if (user.getResetCode() == null || !user.getResetCode().equals(resetCode)) {
+            throw new BadCredentialsException("Mã xác nhận không đúng");
+        }
+
+        // Kiểm tra thời gian hiệu lực của mã
+        if (user.getResetCodeExpiry() == null || user.getResetCodeExpiry().isBefore(LocalDateTime.now())) {
+            // Xóa mã reset hết hạn
+            user.setResetCode(null);
+            user.setResetCodeExpiry(null);
+            userRepository.save(user);
+
+            throw new BadCredentialsException("Mã xác nhận đã hết hạn. Vui lòng yêu cầu mã mới.");
+        }
+
+        // Mã xác nhận đúng và còn hiệu lực, kéo dài thời gian hiệu lực
+        // Có thể đặt thời gian dài hơn, ví dụ 30 phút
+        user.setResetCodeExpiry(LocalDateTime.now().plusMinutes(30));
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Mã xác nhận hợp lệ. Bạn có thể đặt lại mật khẩu.");
+    }
+
+    @Override
+    @Transactional
     public ApiResponse verifyAndResetPassword(String email, String resetCode, String newPassword) {
         // Tìm user bằng email
         User user = userRepository.findByEmail(email)
@@ -364,14 +394,14 @@ public class UserServiceImpl implements UserService {
             throw new BadCredentialsException("Mã xác nhận không đúng");
         }
 
-        // Kiểm tra thời gian hiệu lực
+        // Kiểm tra thời gian hiệu lực - Không cần kiểm tra 60 giây nữa
         if (user.getResetCodeExpiry() == null || user.getResetCodeExpiry().isBefore(LocalDateTime.now())) {
             // Xóa mã reset hết hạn
             user.setResetCode(null);
             user.setResetCodeExpiry(null);
             userRepository.save(user);
 
-            throw new BadCredentialsException("Mã xác nhận đã hết hạn. Vui lòng yêu cầu mã mới.");
+            throw new BadCredentialsException("Phiên đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu mã mới.");
         }
 
         // Kiểm tra mật khẩu mới hợp lệ

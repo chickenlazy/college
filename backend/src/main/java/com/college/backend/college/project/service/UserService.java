@@ -43,4 +43,7 @@ public interface UserService {
      * @return ApiResponse kết quả đặt lại mật khẩu
      */
     ApiResponse verifyAndResetPassword(String email, String resetCode, String newPassword);
+
+    // Thêm vào interface UserService
+    ApiResponse verifyResetCode(String email, String resetCode);
 }

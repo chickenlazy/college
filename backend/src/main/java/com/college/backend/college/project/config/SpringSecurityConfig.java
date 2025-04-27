@@ -50,6 +50,7 @@ public class SpringSecurityConfig {
                 .authorizeHttpRequests((authorize) -> {
                     authorize.requestMatchers("/api/auth/**").permitAll()
                             .requestMatchers("/api/users/forgot-password").permitAll()
+                            .requestMatchers("/api/users/verify-reset-code").permitAll()
                             .requestMatchers("/api/users/reset-password").permitAll()
                             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                             .anyRequest().authenticated();

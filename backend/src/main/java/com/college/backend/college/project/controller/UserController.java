@@ -132,4 +132,15 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * API để xác thực mã và kéo dài thời gian hiệu lực
+     */
+    @PostMapping("/verify-reset-code")
+    public ResponseEntity<ApiResponse> verifyResetCode(@RequestBody VerifyResetCodeRequest request) {
+        ApiResponse response = userService.verifyResetCode(
+                request.getEmail(),
+                request.getResetCode());
+        return ResponseEntity.ok(response);
+    }
+
 }

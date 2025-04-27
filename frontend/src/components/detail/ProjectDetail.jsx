@@ -1323,10 +1323,10 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                 {statusMenuOpen && (
                   <div className="absolute left-0 mt-1 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700 min-w-[171px] w-auto">
                     {[
-                      "COMPLETED",
+                      // "COMPLETED",
                       "IN_PROGRESS",
-                      "NOT_STARTED",
-                      "OVER_DUE",
+                      // "NOT_STARTED",
+                      // "OVER_DUE",
                       "ON_HOLD",
                     ].map((status) => (
                       <div
@@ -1530,8 +1530,20 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Project Tasks</h2>
                   <button
-                    className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                    onClick={() => setShowTaskEdit(true)}
+                    className={`px-3 py-2 ${
+                      project.status === "IN_PROGRESS"
+                        ? "bg-purple-600 hover:bg-purple-700"
+                        : "bg-gray-600 cursor-not-allowed opacity-60"
+                    } rounded flex items-center`}
+                    onClick={() =>
+                      project.status === "IN_PROGRESS" && setShowTaskEdit(true)
+                    }
+                    disabled={project.status !== "IN_PROGRESS"}
+                    title={
+                      project.status !== "IN_PROGRESS"
+                        ? "Project must be in progress to add tasks"
+                        : ""
+                    }
                   >
                     <Plus size={16} className="mr-2" />
                     Add Task

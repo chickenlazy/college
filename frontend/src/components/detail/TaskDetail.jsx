@@ -989,10 +989,10 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
               {statusMenuOpen && (
                 <div className="absolute left-0 mt-1 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700 min-w-[171px] w-auto">
                   {[
-                    "COMPLETED",
+                    // "COMPLETED",
                     "IN_PROGRESS",
-                    "NOT_STARTED",
-                    "OVER_DUE",
+                    // "NOT_STARTED",
+                    // "OVER_DUE",
                     "ON_HOLD",
                   ].map((status) => (
                     <div
@@ -1169,8 +1169,14 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-semibold">Subtasks</h3>
                 <button
-                  className="text-sm text-purple-500 hover:text-purple-400 flex items-center"
-                  onClick={() => setShowAddSubtask(!showAddSubtask)}
+                  className={`text-sm ${
+                    task.status === "IN_PROGRESS"
+                      ? "text-purple-500 hover:text-purple-400"
+                      : "text-gray-500 cursor-not-allowed opacity-60"
+                  } flex items-center`}
+                  onClick={() => task.status === "IN_PROGRESS" && setShowAddSubtask(!showAddSubtask)}
+                  disabled={task.status !== "IN_PROGRESS"}
+                  title={task.status !== "IN_PROGRESS" ? "Task must be in progress to add subtasks" : ""}
                 >
                   <Plus size={16} className="mr-1" />
                   Add Subtask
