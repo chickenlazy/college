@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import ExportExcelButton from "../utils/export-excel";
 import axios from "axios";
 import {
   Loader,
@@ -89,7 +88,7 @@ const StatsCard = ({ title, value, icon }) => {
 const SectionHeader = ({ title, viewAllLink }) => (
   <div className="flex justify-between items-center mb-4">
     <h2 className="text-lg font-semibold">{title}</h2>
-    {viewAllLink && (
+    {/* {viewAllLink && (
       <a
         href={viewAllLink}
         className="text-purple-500 text-sm flex items-center hover:underline"
@@ -97,7 +96,7 @@ const SectionHeader = ({ title, viewAllLink }) => (
         View All
         <ChevronRight size={16} />
       </a>
-    )}
+    )} */}
   </div>
 );
 
@@ -281,10 +280,6 @@ if (loading) {
     <div className="bg-gray-900 text-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-xl font-bold">DASHBOARD SUMMARY</h1>
-
-        <div className="flex items-center space-x-4">
-          <ExportExcelButton dashboardData={dashboardData} />
-        </div>
       </div>
 
       {/* Stats Cards */}

@@ -58,7 +58,7 @@ public class ProjectServiceImpl implements ProjectService {
         this.notificationService = notificationService;
     }
 
-    private ProjectResponse mapProjectToProjectResponse(Project project) {
+    ProjectResponse mapProjectToProjectResponse(Project project) {
         int totalTaskCount = taskRepository.countByProjectId(project.getId());
         int totalCompletedTaskCount = taskRepository.countByProjectIdAndStatus(project.getId(), TaskStatus.COMPLETED);
         double progress = totalTaskCount > 0 ? (double) totalCompletedTaskCount / totalTaskCount * 100 : 0;
@@ -213,6 +213,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + id));
 
         ProjectStatus oldStatus = project.getStatus();
+        // Lưu manager cũ để so sánh
+        User oldManager = project.getManager();
 
         // Cập nhật các thông tin cơ bản
         ProjectMapper.INSTANCE.updateProjectFromRequest(projectRequest, project);
@@ -227,10 +229,11 @@ public class ProjectServiceImpl implements ProjectService {
         project.setLastModifiedDate(new Date());
 
         // Cập nhật manager nếu có
+        User newManager = null;
         if (projectRequest.getManagerId() != null) {
-            User manager = userRepository.findById(projectRequest.getManagerId())
+            newManager = userRepository.findById(projectRequest.getManagerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Manager not found with ID: " + projectRequest.getManagerId()));
-            project.setManager(manager);
+            project.setManager(newManager);
         } else {
             project.setManager(null);
         }
@@ -259,6 +262,100 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Lưu project đã cập nhật
         Project updatedProject = projectRepository.save(project);
+
+        // Kiểm tra thay đổi manager
+        if (oldManager != null && newManager != null && !oldManager.getId().equals(newManager.getId())) {
+            // Thông báo cho manager mới
+            NotificationRequest newManagerNotification = new NotificationRequest();
+            newManagerNotification.setTitle("Bổ nhiệm quản lý dự án");
+            newManagerNotification.setContent("Bạn đã được bổ nhiệm làm quản lý cho dự án \"" + updatedProject.getName() + "\"");
+            newManagerNotification.setType(NotificationType.PROJECT);
+            newManagerNotification.setReferenceId(updatedProject.getId());
+            newManagerNotification.setUserId(newManager.getId());
+            notificationService.createNotification(newManagerNotification);
+
+            // Thông báo cho manager cũ
+            NotificationRequest oldManagerNotification = new NotificationRequest();
+            oldManagerNotification.setTitle("Thay đổi quản lý dự án");
+            oldManagerNotification.setContent("Bạn không còn là quản lý của dự án \"" + updatedProject.getName() + "\"");
+            oldManagerNotification.setType(NotificationType.PROJECT);
+            oldManagerNotification.setReferenceId(updatedProject.getId());
+            oldManagerNotification.setUserId(oldManager.getId());
+            notificationService.createNotification(oldManagerNotification);
+
+            // Thông báo cho tất cả thành viên về việc thay đổi manager
+            if (updatedProject.getUsers() != null && !updatedProject.getUsers().isEmpty()) {
+                NotificationRequest teamNotification = new NotificationRequest();
+                teamNotification.setTitle("Thay đổi quản lý dự án");
+                teamNotification.setContent(newManager.getFullName() + " đã được bổ nhiệm thay thế cho " +
+                        oldManager.getFullName() + " làm quản lý trong dự án \"" +
+                        updatedProject.getName() + "\"");
+                teamNotification.setType(NotificationType.PROJECT);
+                teamNotification.setReferenceId(updatedProject.getId());
+
+                // Lấy danh sách ID của tất cả thành viên
+                Integer[] teamUserIds = updatedProject.getUsers().stream()
+                        .map(User::getId)
+                        .toArray(Integer[]::new);
+
+                // Gửi thông báo hàng loạt cho tất cả thành viên
+                notificationService.createBulkNotifications(teamNotification, teamUserIds);
+            }
+        } else if (oldManager == null && newManager != null) {
+            // Trường hợp thêm mới manager (trước đó không có)
+            NotificationRequest newManagerNotification = new NotificationRequest();
+            newManagerNotification.setTitle("Bổ nhiệm quản lý dự án");
+            newManagerNotification.setContent("Bạn đã được bổ nhiệm làm quản lý cho dự án \"" + updatedProject.getName() + "\"");
+            newManagerNotification.setType(NotificationType.PROJECT);
+            newManagerNotification.setReferenceId(updatedProject.getId());
+            newManagerNotification.setUserId(newManager.getId());
+            notificationService.createNotification(newManagerNotification);
+
+            // Thông báo cho tất cả thành viên về việc bổ nhiệm manager mới
+            if (updatedProject.getUsers() != null && !updatedProject.getUsers().isEmpty()) {
+                NotificationRequest teamNotification = new NotificationRequest();
+                teamNotification.setTitle("Bổ nhiệm quản lý dự án mới");
+                teamNotification.setContent(newManager.getFullName() + " đã được bổ nhiệm làm quản lý mới cho dự án \"" +
+                        updatedProject.getName() + "\"");
+                teamNotification.setType(NotificationType.PROJECT);
+                teamNotification.setReferenceId(updatedProject.getId());
+
+                // Lấy danh sách ID của tất cả thành viên
+                Integer[] teamUserIds = updatedProject.getUsers().stream()
+                        .map(User::getId)
+                        .toArray(Integer[]::new);
+
+                // Gửi thông báo hàng loạt cho tất cả thành viên
+                notificationService.createBulkNotifications(teamNotification, teamUserIds);
+            }
+        } else if (oldManager != null && newManager == null) {
+            // Trường hợp gỡ bỏ manager (không còn manager nữa)
+            NotificationRequest oldManagerNotification = new NotificationRequest();
+            oldManagerNotification.setTitle("Thay đổi quản lý dự án");
+            oldManagerNotification.setContent("Bạn không còn là quản lý của dự án \"" + updatedProject.getName() + "\"");
+            oldManagerNotification.setType(NotificationType.PROJECT);
+            oldManagerNotification.setReferenceId(updatedProject.getId());
+            oldManagerNotification.setUserId(oldManager.getId());
+            notificationService.createNotification(oldManagerNotification);
+
+            // Thông báo cho tất cả thành viên về việc gỡ bỏ manager
+            if (updatedProject.getUsers() != null && !updatedProject.getUsers().isEmpty()) {
+                NotificationRequest teamNotification = new NotificationRequest();
+                teamNotification.setTitle("Thay đổi quản lý dự án");
+                teamNotification.setContent(oldManager.getFullName() + " không còn là quản lý của dự án \"" +
+                        updatedProject.getName() + "\" nữa");
+                teamNotification.setType(NotificationType.PROJECT);
+                teamNotification.setReferenceId(updatedProject.getId());
+
+                // Lấy danh sách ID của tất cả thành viên
+                Integer[] teamUserIds = updatedProject.getUsers().stream()
+                        .map(User::getId)
+                        .toArray(Integer[]::new);
+
+                // Gửi thông báo hàng loạt cho tất cả thành viên
+                notificationService.createBulkNotifications(teamNotification, teamUserIds);
+            }
+        }
 
         // Trong phương thức updateProject
         if (oldStatus != updatedProject.getStatus()) {

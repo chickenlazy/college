@@ -9,7 +9,7 @@ import {
   Plus,
   Edit,
   RotateCcw,
-  MoreVertical,
+  Upload,
   CheckCircle,
   AlertTriangle,
   Pause,
@@ -28,6 +28,36 @@ import {
 } from "lucide-react";
 import ProjectDetail from "../detail/ProjectDetail";
 import ProjectEdit from "../edit/ProjectEdit";
+
+// Error Details Dialog Component
+const ErrorDetailsDialog = ({ isOpen, onClose, title, errors }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
+        <h2 className="text-xl font-bold mb-4">{title}</h2>
+        <div className="max-h-80 overflow-y-auto">
+          <ul className="list-disc pl-5 space-y-2">
+            {errors.map((error, index) => (
+              <li key={index} className="text-red-400">
+                {error}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex justify-end mt-6">
+          <button
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const formatDescription = (description) => {
   if (!description) return null;
@@ -345,7 +375,7 @@ const ActionButtons = ({
   openProjectDetail,
   openProjectEdit,
   onDelete,
-  onExport
+  onExport,
 }) => {
   return (
     <div className="flex gap-2">
@@ -440,6 +470,12 @@ const Project = () => {
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [errorDetails, setErrorDetails] = useState({
+    show: false,
+    title: "",
+    errors: [],
+  });
+  const [importLoading, setImportLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({
     show: false,
     projectId: null,
@@ -551,6 +587,118 @@ const Project = () => {
     setCurrentPage(pageNumber);
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      const response = await axios.get(
+        "http://localhost:8080/api/excel/template/project",
+        {
+          responseType: "blob",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "project_import_template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showToast("Template downloaded successfully", "success");
+    } catch (err) {
+      console.error("Error downloading template:", err);
+      showToast("Failed to download template", "error");
+    }
+  };
+
+  // Thêm hàm xử lý import Excel
+  const handleImportExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Reset input để có thể chọn lại cùng một file
+    event.target.value = null;
+
+    // Kiểm tra định dạng file
+    const fileExt = file.name.split(".").pop().toLowerCase();
+    if (fileExt !== "xlsx" && fileExt !== "xls") {
+      showToast("Please upload an Excel file (.xlsx or .xls)", "error");
+      return;
+    }
+
+    // Kiểm tra kích thước file (tối đa 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("File size exceeds 5MB limit", "error");
+      return;
+    }
+
+    setImportLoading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      const response = await axios.post(
+        "http://localhost:8080/api/excel/import/project",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setImportLoading(false);
+      setSuccessDialog({
+        show: true,
+        message: "Project imported successfully!",
+      });
+      refreshData();
+    } catch (err) {
+      setImportLoading(false);
+      console.error("Error importing project:", err);
+
+      let errorMessage = "Failed to import project";
+
+      if (err.response && err.response.data) {
+        if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        }
+
+        // Nếu API trả về danh sách lỗi chi tiết
+        if (err.response.data.errors && err.response.data.errors.length > 0) {
+          setErrorDetails({
+            show: true,
+            title: "Import Errors",
+            errors: err.response.data.errors,
+          });
+          return;
+        }
+      }
+
+      showToast(errorMessage, "error");
+    }
+  };
+
   // Handle items per page change
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
@@ -565,46 +713,51 @@ const Project = () => {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
+
       // Gọi API với responseType là 'blob' để nhận dữ liệu dạng file
       const response = await axios.get(
         `http://localhost:8080/api/projects/${projectId}/export`,
         {
-          responseType: 'blob',
+          responseType: "blob",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-  
+
       // Tạo URL object từ blob response
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      
+
       // Tạo link để download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      
+
       // Lấy thông tin project từ danh sách hiện tại để có tên
-      const project = projects.find(p => p.id === projectId);
+      const project = projects.find((p) => p.id === projectId);
       let projectName = "unknown";
-      
+
       if (project) {
         // Thay thế các ký tự không hợp lệ cho tên file
-        projectName = project.name.replace(/[\\/:*?"<>|]/g, "_").substring(0, 30);
+        projectName = project.name
+          .replace(/[\\/:*?"<>|]/g, "_")
+          .substring(0, 30);
       }
-      
+
       // Tạo tên file chuẩn theo định dạng
-      const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const currentDate = new Date()
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, "");
       const filename = `${projectId}_${projectName}_${currentDate}.xlsx`;
-      
-      link.setAttribute('download', filename);
+
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Giải phóng URL object
       window.URL.revokeObjectURL(url);
-      
+
       showToast("Project exported successfully", "success");
     } catch (err) {
       console.error("Error exporting project:", err);
@@ -719,11 +872,32 @@ const Project = () => {
                 <span>New</span>
               </button>
               <button
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 rounded-md"
+                onClick={() => document.getElementById("import-excel").click()}
+              >
+                <FileDown size={18} />
+                <span>Import Excel</span>
+              </button>
+              <input
+                type="file"
+                id="import-excel"
+                className="hidden"
+                accept=".xlsx, .xls"
+                onChange={handleImportExcel}
+              />
+              <button
                 className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"
                 onClick={handleReset}
               >
                 <RotateCcw size={18} />
                 <span>Reset</span>
+              </button>
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-md"
+                onClick={handleDownloadTemplate}
+              >
+                <Table size={18} />
+                <span>Download Template</span>
               </button>
             </div>
 
@@ -825,6 +999,16 @@ const Project = () => {
             )}
           </div>
 
+          {/* Error Details Dialog */}
+          <ErrorDetailsDialog
+            isOpen={errorDetails.show}
+            onClose={() =>
+              setErrorDetails({ show: false, title: "", errors: [] })
+            }
+            title={errorDetails.title}
+            errors={errorDetails.errors}
+          />
+
           {/* Pagination */}
           <Pagination
             currentPage={currentPage}
@@ -859,6 +1043,19 @@ const Project = () => {
           type={toast.type}
           onClose={() => setToast(null)}
         />
+      )}
+
+      {/* Overlay hiển thị khi đang import */}
+      {importLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md shadow-xl flex flex-col items-center">
+            <Loader size={40} className="text-purple-500 animate-spin mb-4" />
+            <h2 className="text-xl font-bold">Importing project...</h2>
+            <p className="text-gray-400 mt-2">
+              Please wait while we process your Excel file.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -187,7 +187,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
         } lg:left-0`}
       >
         <div className="p-4 flex items-center">
-          <h1 className="text-2xl font-bold text-purple-500">HaUI</h1>
+          <h1 className="text-2xl font-bold text-purple-500">Enter Track</h1>
         </div>
 
         <nav className="flex-1 mt-4">

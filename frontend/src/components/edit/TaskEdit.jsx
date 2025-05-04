@@ -83,27 +83,6 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
               </svg>
             </div>
           </div>
-
-          {/* <div>
-            <label className="text-sm text-gray-400 mb-2 block">
-              Filter by status:
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {uniqueStatuses.map((status) => (
-                <button
-                  key={status}
-                  className={`px-3 py-1 text-sm rounded-full whitespace-nowrap transition-colors ${
-                    selectedStatusFilter === status
-                      ? "bg-purple-600 text-white"
-                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  }`}
-                  onClick={() => setSelectedStatusFilter(status)}
-                >
-                  {status === "All" ? "All" : status.replace(/_/g, " ")}
-                </button>
-              ))}
-            </div>
-          </div> */}
         </div>
 
         {/* Projects list */}
@@ -157,19 +136,9 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
                     <h4 className="font-medium text-white">{project.name}</h4>
                     <div className="flex items-center flex-wrap mt-1">
                       <span
-                        className={`text-xs bg-opacity-20 px-2 py-0.5 rounded-full ${
-                          project.status === "NOT_STARTED"
-                            ? "bg-gray-600 text-gray-300"
-                            : project.status === "IN_PROGRESS"
-                            ? "bg-blue-600 text-blue-300"
-                            : project.status === "COMPLETED"
-                            ? "bg-green-600 text-green-300"
-                            : project.status === "ON_HOLD"
-                            ? "bg-yellow-600 text-yellow-300"
-                            : "bg-gray-600 text-gray-300"
-                        }`}
+                        className={`text-xs bg-opacity-20 px-2 py-0.5 rounded-full bg-blue-600 text-blue-300`}
                       >
-                        {project.status.replace(/_/g, " ")}
+                        {project.managerName}
                       </span>
                     </div>
                   </div>
@@ -498,8 +467,8 @@ const TaskEdit = ({
   isNew = false,
   projectId = null,
   projectName = "",
-  projectStartDate = null,  
-  projectDueDate = null,   
+  projectStartDate = null,
+  projectDueDate = null,
   taskId = null,
   onBack,
 }) => {
@@ -510,8 +479,8 @@ const TaskEdit = ({
           description: "",
           projectId: projectId || null,
           projectName: projectName || "",
-          projectStartDate: projectStartDate || null,  
-          projectDueDate: projectDueDate || null,     
+          projectStartDate: projectStartDate || null,
+          projectDueDate: projectDueDate || null,
           assigneeId: null,
           assigneeName: "",
           startDate: null, //new Date().toISOString().split("T")[0]
@@ -710,6 +679,23 @@ const TaskEdit = ({
     );
   };
 
+  // Đặt đoạn code này vào bên trong hàm component TaskEdit,
+// ngang hàng với các lệnh useState và các useEffect khác.
+
+useEffect(() => {
+  // Nếu có toast đang hiển thị
+  if (toast) {
+    // Thiết lập một timer để ẩn toast sau 3 giây (có thể điều chỉnh thời gian này)
+    const timer = setTimeout(() => {
+      setToast(null); // Gọi setToast(null) để ẩn toast
+    }, 3000); // Thời gian hiển thị toast: 3000ms = 3 giây
+
+    // Hàm cleanup: xóa timer nếu component bị unmount
+    // hoặc nếu trạng thái toast thay đổi trước khi timer kết thúc
+    return () => clearTimeout(timer);
+  }
+}, [toast, setToast]); // Dependency: chạy lại effect khi toast hoặc setToast thay đổi
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setTask({
@@ -745,110 +731,144 @@ const TaskEdit = ({
     }
   };
 
-  // // Sửa đoạn code từ dòng 422-429
-  // const handleAssigneeSelect = (user) => {
-  //   setTask({
-  //     ...task,
-  //     assigneeId: user.id,
-  //     assigneeName: user.fullName,
-  //     assigneeRole: user.role,
-  //   });
-  //   setAssigneeMenuOpen(false);
-  // };
 
   const validateForm = () => {
-    const errors = {};
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Log để debug
-    console.log("Task dates:", {
-      startDate: task.startDate,
-      dueDate: task.dueDate,
-      projectStartDate: task.projectStartDate,
-      projectDueDate: task.projectDueDate,
-    });
-
-    // Validate task name
-    if (!task.name.trim()) {
-      errors.name = "Task name is required";
-    } else if (task.name.length > 100) {
-      errors.name = "Task name cannot exceed 100 characters";
-    }
-
-    // Validate description (bắt buộc nhập)
-    if (!task.description?.trim()) {
-      errors.description = "Description is required";
-    } else if (task.description.length > 200) {
-      errors.description = "Description cannot exceed 200 characters";
-    }
-
-    // Validate project selection
-    if (!task.projectId) {
-      errors.projectId = "Project is required";
-    }
-
-    // Validate status
-    if (!task.status) {
-      errors.status = "Status is required";
-    }
-
-    // Validate priority
-    if (!task.priority) {
-      errors.priority = "Priority is required";
-    }
-
-    // Validate start date
-    if (!task.startDate) {
-      errors.startDate = "Start date is required";
-    } else if (isNew && new Date(task.startDate) < today) {
-      errors.startDate = "Start date cannot be in the past";
-    }
-
-    // Validate due date
-    if (!task.dueDate) {
-      errors.dueDate = "Due date is required";
-    } else if (new Date(task.dueDate) <= new Date(task.startDate)) {
-      errors.dueDate = "Due date must be after start date";
-    }
-
-    if (!task.projectStartDate || !task.projectDueDate) {
-      // Thêm lỗi nếu thiếu thông tin project
-      errors.projectId =
-        "Project time information is missing. Please select project again.";
-    } else {
-      // Đảm bảo các ngày đều ở cùng một định dạng để so sánh
-      const taskStartDate = new Date(task.startDate);
-      const taskDueDate = new Date(task.dueDate);
-      const projectStartDate = new Date(task.projectStartDate);
-      const projectDueDate = new Date(task.projectDueDate);
-
-      // Loại bỏ thời gian để chỉ so sánh ngày
-      taskStartDate.setHours(0, 0, 0, 0);
-      taskDueDate.setHours(0, 0, 0, 0);
-      projectStartDate.setHours(0, 0, 0, 0);
-      projectDueDate.setHours(0, 0, 0, 0);
-
-      if (taskStartDate < projectStartDate) {
-        errors.startDate =
-          "Task start date cannot be earlier than project start date";
-      }
-
-      if (taskDueDate > projectDueDate) {
-        errors.dueDate = "Task due date cannot exceed project due date";
-      }
-    }
-
-    // Tính thời gian giữa startDate và dueDate (giới hạn tối đa là 1 năm)
-    const timeDiff = new Date(task.dueDate) - new Date(task.startDate);
-    const daysDiff = timeDiff / (1000 * 3600 * 24);
-    if (daysDiff > 365) {
-      errors.dueDate = "Task duration cannot exceed 1 year";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+        const errors = {};
+        // Tính toán ngày hôm nay một lần duy nhất và chuẩn hóa về đầu ngày
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+    
+        // --- Kiểm tra các trường bắt buộc khác (giữ nguyên) ---
+    
+        // Validate task name
+        if (!task.name?.trim()) {
+          errors.name = "Task name is required";
+        } else if (task.name.length > 100) {
+          errors.name = "Task name cannot exceed 100 characters";
+        }
+    
+        // Validate description
+        if (!task.description?.trim()) {
+          errors.description = "Description is required";
+        } else if (task.description.length > 200) {
+          errors.description = "Description cannot exceed 200 characters";
+        }
+    
+        // Validate project selection
+        if (!task.projectId) {
+          errors.projectId = "Project is required";
+        }
+    
+        // Validate status
+        if (!task.status) {
+          errors.status = "Status is required";
+        }
+    
+        // Validate priority
+        if (!task.priority) {
+          errors.priority = "Priority is required";
+        }
+    
+        // --- LOGIC KIỂM TRA NGÀY THÁNG ĐÃ SỬA ĐỔI ---
+    
+        // Bước 1: Kiểm tra xem chuỗi ngày bắt đầu và ngày kết thúc có tồn tại không
+        const startDateProvided = !!task.startDate; // True nếu task.startDate không rỗng, null, undefined
+        const dueDateProvided = !!task.dueDate;   // True nếu task.dueDate không rỗng, null, undefined
+    
+        // Bước 2: Thiết lập lỗi "bắt buộc" nếu thiếu
+        if (!startDateProvided) {
+          errors.startDate = "Start date is required";
+        }
+    
+        if (!dueDateProvided) {
+          errors.dueDate = "Due date is required";
+        }
+    
+        // Bước 3: Chỉ thực hiện tạo đối tượng Date và các so sánh NẾU cả hai ngày đều đã được cung cấp dưới dạng chuỗi
+        if (startDateProvided && dueDateProvided) {
+          const taskStartDate = new Date(task.startDate);
+          const taskDueDate = new Date(task.dueDate);
+    
+          // Bước 4: Kiểm tra xem đối tượng Date tạo ra có hợp lệ không (phòng trường hợp chuỗi không đúng định dạng)
+          // type="date" trên input thường ngăn điều này, nhưng kiểm tra thêm sẽ an toàn hơn
+          if (isNaN(taskStartDate.getTime())) {
+            errors.startDate = "Invalid start date format";
+            // Đánh dấu là không hợp lệ để không thực hiện các so sánh phụ thuộc vào ngày này
+            startDateProvided = false;
+          }
+          if (isNaN(taskDueDate.getTime())) {
+            errors.dueDate = "Invalid due date format";
+            // Đánh dấu là không hợp lệ
+            dueDateProvided = false;
+          }
+    
+          // Bước 5: Tiếp tục thực hiện các so sánh ngày NẾU cả hai ngày vẫn được coi là hợp lệ sau khi parse
+          if (startDateProvided && dueDateProvided) {
+            // Chuẩn hóa ngày về đầu ngày để so sánh chính xác hơn
+            taskStartDate.setHours(0, 0, 0, 0);
+            taskDueDate.setHours(0, 0, 0, 0);
+    
+            // Kiểm tra 5a: Ngày bắt đầu không được ở trong quá khứ (chỉ cho task mới)
+            if (isNew && taskStartDate < today) {
+              errors.startDate = "Start date cannot be in the past";
+            }
+    
+            // Kiểm tra 5b: Ngày kết thúc phải sau ngày bắt đầu
+            // Lỗi này có thể ghi đè lỗi "Start date cannot be in the past" nếu cả hai đều đúng
+            if (taskDueDate <= taskStartDate) {
+              errors.dueDate = "Due date must be after start date";
+            }
+    
+            // Kiểm tra 5c & 5d: So sánh với ngày của project (chỉ khi project và ngày tháng project tồn tại)
+            if (task.projectId && task.projectStartDate && task.projectDueDate) {
+              const projectStartDate = new Date(task.projectStartDate);
+              const projectDueDate = new Date(task.projectDueDate);
+              projectStartDate.setHours(0, 0, 0, 0); // Normalize
+              projectDueDate.setHours(0, 0, 0, 0); // Normalize
+    
+              // Kiểm tra ngày bắt đầu task so với ngày bắt đầu project
+              // Lỗi này có thể ghi đè các lỗi startDate trước đó (như lỗi quá khứ)
+              if (taskStartDate < projectStartDate) {
+                errors.startDate = "Task start date cannot be earlier than project start date";
+              }
+    
+              // Kiểm tra ngày kết thúc task so với ngày kết thúc project
+              // Lỗi này có thể ghi đè các lỗi dueDate trước đó (như lỗi dueDate <= startDate)
+              if (taskDueDate > projectDueDate) {
+                errors.dueDate = "Task due date cannot exceed project due date";
+              }
+            } else if (task.projectId && (!task.projectStartDate || !task.projectDueDate)) {
+              // Trường hợp đặc biệt: Đã chọn project nhưng thông tin ngày tháng project bị thiếu (lỗi dữ liệu)
+              // Giữ lại logic báo lỗi projectId như ban đầu, tránh ghi đè lỗi 'Project is required' nếu đó là lỗi ban đầu
+              if (!errors.projectId) {
+                errors.projectId = "Selected project is missing date information.";
+              }
+            }
+    
+    
+            // Kiểm tra 5e: Thời gian task không quá 1 năm
+            // Tính khoảng thời gian bằng miliseconds, sau đó đổi ra ngày
+            const timeDiff = taskDueDate.getTime() - taskStartDate.getTime();
+            const daysDiff = timeDiff / (1000 * 3600 * 24);
+            if (daysDiff > 365) {
+              // Lỗi này có thể ghi đè lỗi dueDate trước đó
+              errors.dueDate = "Task duration cannot exceed 1 year";
+            }
+    
+          } // Kết thúc khối if kiểm tra tính hợp lệ sau parse
+        } // Kết thúc khối if kiểm tra chuỗi ngày có tồn tại
+    
+        // --- Kết thúc LOGIC KIỂM TRA NGÀY THÁNG ---
+    
+        // Log đối tượng lỗi trước khi cập nhật state (có thể bỏ dòng này khi deploy)
+        // console.log("Validation errors:", errors);
+    
+        // Cập nhật state formErrors
+        setFormErrors(errors);
+    
+        // Trả về true nếu không có lỗi, false nếu có lỗi
+        return Object.keys(errors).length === 0;
+      };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
