@@ -1,5 +1,15 @@
 package com.college.backend.college.project.controller;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import org.apache.commons.io.IOUtils;
+
 import com.college.backend.college.project.request.FileUpdateRequest;
 import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.FileDeleteResponse;
@@ -140,10 +150,34 @@ public class FileController {
      * @return URL để download file
      */
     @GetMapping("/{fileId}/download")
-    public ResponseEntity<ApiResponse> getDownloadUrl(@PathVariable Integer fileId) {
-        String downloadUrl = fileService.generateDownloadUrl(fileId);
-        ApiResponse response = new ApiResponse(true, downloadUrl);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Resource> downloadFile(@PathVariable Integer fileId) {
+        try {
+            // Lấy thông tin file từ database
+            FileResponse fileInfo = fileService.getFileById(fileId);
+
+            // Tải file từ Cloudinary
+            URL url = new URL(fileInfo.getPath());
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            // Đọc nội dung file
+            InputStream inputStream = connection.getInputStream();
+
+            // Tạo resource để trả về
+            ByteArrayResource resource = new ByteArrayResource(IOUtils.toByteArray(inputStream));
+
+            // Đóng kết nối
+            connection.disconnect();
+
+            // Thiết lập headers cho response
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(fileInfo.getContentType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + fileInfo.getOriginalName() + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**

@@ -17,6 +17,7 @@ import com.college.backend.college.project.response.FileListResponse;
 import com.college.backend.college.project.response.FileResponse;
 import com.college.backend.college.project.service.FileService;
 import com.college.backend.college.project.service.NotificationService;
+import org.apache.commons.compress.utils.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -318,5 +322,25 @@ public class FileServiceImpl implements FileService {
         }
 
         return pathPart;
+    }
+
+    @Override
+    public byte[] downloadFile(Integer fileId) throws IOException {
+        ProjectFile file = projectFileRepository.findById(fileId)
+                .orElseThrow(() -> new ResourceNotFoundException("File not found with ID: " + fileId));
+
+        // Tải file từ Cloudinary
+        URL url = new URL(file.getPath());
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        // Đọc nội dung file
+        InputStream inputStream = connection.getInputStream();
+        byte[] fileContent = IOUtils.toByteArray(inputStream);
+
+        // Đóng kết nối
+        connection.disconnect();
+
+        return fileContent;
     }
 }

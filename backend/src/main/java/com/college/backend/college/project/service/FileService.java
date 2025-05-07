@@ -85,4 +85,12 @@ public interface FileService {
      * @return danh sách thông tin file của người dùng
      */
     List<FileResponse> getFilesByUser(Integer userId);
+
+    /**
+     * Tải file về máy từ Cloudinary
+     *
+     * @param fileId id của file cần tải về
+     * @return Đường dẫn tạm thời của file đã tải về hoặc null nếu có lỗi
+     */
+    byte[] downloadFile(Integer fileId) throws IOException;
 }
