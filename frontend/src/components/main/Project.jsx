@@ -871,13 +871,13 @@ const Project = () => {
                 <Plus size={18} />
                 <span>New</span>
               </button>
-              <button
+              {/* <button
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 rounded-md"
                 onClick={() => document.getElementById("import-excel").click()}
               >
                 <FileDown size={18} />
                 <span>Import Excel</span>
-              </button>
+              </button> */}
               <input
                 type="file"
                 id="import-excel"

@@ -79,4 +79,6 @@ public class Project {
     )
     private Set<Tag> tags;
 
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ProjectFile> files;
 }

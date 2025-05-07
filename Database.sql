@@ -126,6 +126,24 @@ CREATE TABLE comments (
   FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
+CREATE TABLE project_files (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  content_type VARCHAR(100) NOT NULL,
+  size BIGINT NOT NULL,
+  path VARCHAR(500) NOT NULL,
+  description TEXT,
+  project_id INT NOT NULL,
+  uploaded_by INT NOT NULL,
+  upload_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (uploaded_by) REFERENCES users(id)
+);
+
+CREATE INDEX idx_project_files_project_id ON project_files(project_id);
+
 -- Cập nhật câu lệnh INSERT vào bảng `users`
 INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position, status)
 VALUES
@@ -297,3 +315,11 @@ VALUES
   ('Đã lên lịch phỏng vấn thêm 5 người dùng vào tuần tới', 'PROJECT', 2, 3, 4),
   ('Tôi sẽ cập nhật trong ngày mai', 'TASK', 2, 5, 5),
   ('Đã kiểm tra và fix lỗi, cần review lại', 'SUBTASK', 2, 6, 6);
+  
+INSERT INTO project_files (name, original_name, content_type, size, path, description, project_id, uploaded_by)
+VALUES
+  ('f123e456.pdf', 'Project_Requirements.pdf', 'application/pdf', 2456789, '/storage/projects/1/f123e456.pdf', 'Project requirements document', 1, 2),
+  ('f789a012.zip', 'Design_Mockups.zip', 'application/zip', 15678900, '/storage/projects/1/f789a012.zip', 'UI design mockups', 1, 3),
+  ('f345b678.docx', 'Meeting_Notes.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 345670, '/storage/projects/1/f345b678.docx', 'Meeting notes from kickoff', 1, 4),
+  ('f901c234.xlsx', 'Budget_Plan.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 789456, '/storage/projects/1/f901c234.xlsx', 'Project budget planning', 1, 2),
+  ('f567d890.png', 'Logo_Design.png', 'image/png', 456789, '/storage/projects/2/f567d890.png', 'Logo design for mobile app', 2, 3);

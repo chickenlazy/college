@@ -91,4 +91,7 @@ public class User {
     // Thêm vào class User
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Comment> comments;
+
+    @OneToMany(mappedBy = "uploadedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<ProjectFile> uploadedFiles;
 }

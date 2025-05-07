@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
+  File,
+  Upload,
+  Download,
+  Archive,
+  Image,
+  Monitor,
+  Info,
   ChevronLeft,
   Edit,
   Trash2,
@@ -17,13 +24,12 @@ import {
   AlertCircle,
   AlertTriangle,
   FileText,
-  Paperclip,
+  FileSpreadsheet,
   Link2,
   MoreVertical,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
-  Download,
   Tag,
   X,
 } from "lucide-react";
@@ -55,6 +61,479 @@ const getDaysRemaining = (endDateString) => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   return diffDays;
+};
+
+// File Manager Component
+const FileManager = ({ projectId }) => {
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    fileId: null,
+  });
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [projectId]);
+
+  const fetchFiles = async () => {
+    setLoading(true);
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      // Gọi API thật để lấy danh sách file
+      const response = await axios.get(
+        `http://localhost:8080/api/files/project/${projectId}`, // URL của API get files by project
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+  
+      // Cấu trúc response theo FileListResponse
+      setFiles(response.data.files);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+      setLoading(false);
+      showToast("Failed to load files", "error");
+    }
+  };
+
+  const handleDeleteFile = (fileId) => {
+    setConfirmDelete({
+      show: true,
+      fileId,
+    });
+  };
+
+  const confirmDeleteFile = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      // Gọi API xóa file
+      await axios.delete(
+        `http://localhost:8080/api/files/${confirmDelete.fileId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+  
+      // Cập nhật state sau khi xóa
+      setFiles(files.filter((file) => file.id !== confirmDelete.fileId));
+      showToast("File deleted successfully", "success");
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      showToast("Failed to delete file", "error");
+    } finally {
+      setConfirmDelete({
+        show: false,
+        fileId: null,
+      });
+    }
+  };
+
+  const handleDownloadFile = async (file) => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+  
+      showToast(`Đang lấy đường dẫn download cho ${file.originalName}...`, "info");
+  
+      // Gọi API để lấy URL download
+      const response = await axios.get(
+        `http://localhost:8080/api/files/${file.id}/download`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+  
+      console.log('response: ', response);
+      // Lấy URL từ response dựa vào cấu trúc ApiResponse
+      const downloadUrl = response.data.message;
+      
+      // Thay vì mở cửa sổ mới, tạo một thẻ a và giả lập click
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      // Thiết lập download attribute để buộc browser tải file thay vì chuyển hướng
+      link.setAttribute('download', file.originalName);
+      // Thêm thẻ vào DOM, gọi click, và xóa thẻ
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showToast(`Đang tải xuống ${file.originalName}`, "success");
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      showToast("Không thể tải xuống tệp", "error");
+    }
+  };
+
+  const handleFileUploaded = (newFiles) => {
+    setFiles([...newFiles, ...files]);
+    showToast(`${newFiles.length} file(s) uploaded successfully`, "success");
+  };
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Project Files</h2>
+      </div>
+
+      <FileUpload projectId={projectId} onFileUploaded={handleFileUploaded} />
+
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          <p className="mt-2 text-gray-400">Loading files...</p>
+        </div>
+      ) : (
+        <FileList
+          files={files}
+          onDelete={handleDeleteFile}
+          onDownload={handleDownloadFile}
+        />
+      )}
+
+      {/* Confirmation Dialog for Deleting File */}
+      {confirmDelete.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
+            <h2 className="text-xl font-bold mb-4">Delete File</h2>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete this file? This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
+                onClick={() => setConfirmDelete({ show: false, fileId: null })}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
+                onClick={confirmDeleteFile}
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-4 right-4 ${
+            toast.type === "success"
+              ? "bg-green-600"
+              : toast.type === "error"
+              ? "bg-red-600"
+              : toast.type === "info"
+              ? "bg-blue-600"
+              : "bg-yellow-600"
+          } text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle size={20} />
+          ) : toast.type === "error" ? (
+            <AlertTriangle size={20} />
+          ) : toast.type === "info" ? (
+            <Info size={20} />
+          ) : (
+            <AlertCircle size={20} />
+          )}
+          <span>{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Component upload file
+const FileUpload = ({ projectId, onFileUploaded }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      uploadFiles(files);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files.length) {
+      uploadFiles(files);
+    }
+  };
+
+  const uploadFiles = async (files) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+  
+    // Tạo form data để upload
+    const formData = new FormData();
+    formData.append("projectId", projectId);
+    
+    // Thêm user ID từ localStorage
+    const storedUser = localStorage.getItem("user");
+    let userId = null;
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      userId = user.id; // Lấy userId từ user đã đăng nhập
+      token = user.accessToken;
+    }
+    formData.append("userId", userId);
+    
+    // Có thể thêm mô tả chung cho tất cả file
+    // formData.append("description", "Upload from project page");
+  
+    // Thêm các files vào formData - sửa thành đúng tên tham số
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i]);
+    }
+  
+    try {
+      // Tạo progress simulation
+      const simulateProgress = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(simulateProgress);
+            return prev;
+          }
+          return prev + 5;
+        });
+      }, 100);
+  
+      // Gọi API thật thay vì giả lập
+      const response = await axios.post(
+        "http://localhost:8080/api/files/multiple", // URL của API upload multiple files
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+  
+      clearInterval(simulateProgress);
+      setUploadProgress(100);
+  
+      // Xử lý response từ API thật
+      onFileUploaded(response.data); // response.data sẽ là danh sách FileResponse
+      setIsUploading(false);
+      setUploadProgress(0);
+  
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      setIsUploading(false);
+      setUploadProgress(0);
+      alert("Failed to upload files");
+    }
+  };
+
+  return (
+    <div className="mb-4">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+          isDragging
+            ? "border-purple-500 bg-purple-500 bg-opacity-10"
+            : "border-gray-600 hover:border-purple-500"
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {isUploading ? (
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 mb-4 relative">
+              <svg
+                className="animate-spin w-16 h-16 text-purple-500"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-purple-500 font-medium">
+                  {uploadProgress}%
+                </span>
+              </div>
+            </div>
+            <p>Uploading files...</p>
+          </div>
+        ) : (
+          <>
+            <Upload size={40} className="mx-auto text-gray-400 mb-3" />
+            <p className="text-gray-300 mb-1">Drag & drop files here</p>
+            <p className="text-gray-400 text-sm">or click to browse</p>
+          </>
+        )}
+        <input
+          type="file"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          multiple
+        />
+      </div>
+    </div>
+  );
+};
+
+// Component hiển thị danh sách file
+const FileList = ({ files, onDelete, onDownload }) => {
+  // Hàm để xác định icon dựa trên loại file
+  const getFileIcon = (fileName) => {
+    const extension = fileName.split(".").pop().toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "svg"].includes(extension)) {
+      return <Image size={16} />;
+    } else if (["doc", "docx", "pdf", "txt"].includes(extension)) {
+      return <FileText size={16} />;
+    } else if (["xls", "xlsx", "csv"].includes(extension)) {
+      return <FileSpreadsheet size={16} />;
+    } else if (["ppt", "pptx"].includes(extension)) {
+      return <Monitor size={16} />;
+    } else if (["zip", "rar", "7z"].includes(extension)) {
+      return <Archive size={16} />;
+    } else {
+      return <File size={16} />;
+    }
+  };
+
+  // Format file size
+  const formatFileSize = (sizeInBytes) => {
+    if (sizeInBytes < 1024) {
+      return `${sizeInBytes} B`;
+    } else if (sizeInBytes < 1024 * 1024) {
+      return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+    } else if (sizeInBytes < 1024 * 1024 * 1024) {
+      return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+    } else {
+      return `${(sizeInBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {files.length === 0 ? (
+        <div className="text-center py-8 bg-gray-800 rounded-lg">
+          <FileText size={40} className="mx-auto text-gray-500 mb-2" />
+          <p className="text-gray-400">No files uploaded yet.</p>
+        </div>
+      ) : (
+        files.map((file) => (
+          <div
+            key={file.id}
+            className="bg-gray-800 rounded-lg p-3 flex items-center justify-between"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gray-700 rounded">
+                {getFileIcon(file.originalName)}
+              </div>
+              <div>
+                <h4 className="font-medium">{file.originalName}</h4>
+                <div className="flex text-xs text-gray-400 mt-1 space-x-3">
+                  <span className="flex items-center">
+                    <Clock size={12} className="mr-1" />
+                    {formatDate(file.uploadDate)}
+                  </span>
+                  <span>{formatFileSize(file.size)}</span>
+                  <span className="flex items-center">
+                    <User size={12} className="mr-1" />
+                    {file.uploadedBy}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                className="p-2 hover:bg-gray-700 rounded-full text-blue-400"
+                onClick={() => onDownload(file)}
+                title="Download File"
+              >
+                <Download size={18} />
+              </button>
+              <button
+                className="p-2 hover:bg-gray-700 rounded-full text-red-400"
+                onClick={() => onDelete(file.id)}
+                title="Delete File"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
 };
 
 // Get status color and icon
@@ -1520,6 +1999,12 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                 active={activeTab === "comments"}
                 onClick={() => setActiveTab("comments")}
               />
+              <Tab
+                icon={<FileText size={18} />}
+                label="Files"
+                active={activeTab === "files"}
+                onClick={() => setActiveTab("files")}
+              />
             </div>
           </div>
 
@@ -1937,6 +2422,12 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === "files" && (
+              <div>
+                <FileManager projectId={project.id} />
               </div>
             )}
           </div>
