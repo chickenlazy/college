@@ -839,7 +839,7 @@ const Project = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-950 text-white">
+    <div className="p-6 bg-gray-950 text-white rounded-lg">
       {showProjectDetail ? (
         <ProjectDetail
           project={selectedProject}
@@ -892,13 +892,13 @@ const Project = () => {
                 <RotateCcw size={18} />
                 <span>Reset</span>
               </button>
-              <button
+              {/* <button
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-md"
                 onClick={handleDownloadTemplate}
               >
                 <Table size={18} />
                 <span>Download Template</span>
-              </button>
+              </button> */}
             </div>
 
             <div className="flex items-center gap-2">

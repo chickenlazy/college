@@ -277,9 +277,9 @@ if (loading) {
   const { stats, recentProjects, upcomingDeadlines, teamWorkload } = dashboardData.data;
 
   return (
-    <div className="bg-gray-900 text-white rounded-lg p-6">
+    <div className="bg-gray-950 text-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-xl font-bold">DASHBOARD SUMMARY</h1>
+        <h1 className="text-xl font-bold">DASHBOARD</h1>
       </div>
 
       {/* Stats Cards */}

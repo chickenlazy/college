@@ -17,7 +17,7 @@ import {
   Menu,
   ClipboardList,
   ChevronDown,
-  LogOut ,
+  LogOut,
   Settings,
   ListChecks,
   Kanban,
@@ -109,7 +109,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
   const renderComponent = () => {
     if (user && activeComponent && !hasAccess(activeComponent)) {
       return (
-        <div className="bg-gray-900 rounded-lg p-6">
+        <div className="bg-gray-950 rounded-lg p-6">
           <h2 className="text-xl font-bold mb-6">Access Denied</h2>
           <div className="h-96 flex items-center justify-center text-gray-500">
             <p>You don't have permission to access this resource</p>
@@ -145,7 +145,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
         return <UserProfile user={user} />;
       default:
         return (
-          <div className="bg-gray-900 rounded-lg p-6">
+          <div className="bg-gray-950 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-6">404 - NOT FOUND</h2>
             <div className="h-96 flex items-center justify-center text-gray-500">
               <p>The requested page does not exist</p>
@@ -157,14 +157,14 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (isUserMenuOpen && !event.target.closest('.user-menu-container')) {
+      if (isUserMenuOpen && !event.target.closest(".user-menu-container")) {
         setIsUserMenuOpen(false);
       }
     }
-    
-    document.addEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isUserMenuOpen]);
 
@@ -179,10 +179,10 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-950 text-white">
+    <div className="flex h-screen bg-black text-white">
       {/* Sidebar */}
       <div
-        className={`fixed lg:static lg:flex flex-col w-64 h-full bg-gray-900 transition-all duration-300 z-50 ${
+        className={`fixed lg:static lg:flex flex-col w-64 h-full bg-gray-900 border-r border-gray-700 transition-all duration-300 z-50 ${
           isMenuOpen ? "left-0" : "-left-64"
         } lg:left-0`}
       >
@@ -202,7 +202,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
                     activeComponent === "dashboard"
                       ? "bg-purple-600 text-white"
-                      : "hover:bg-gray-800"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <LayoutDashboard size={20} />
@@ -220,7 +220,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
                     activeComponent === "project"
                       ? "bg-purple-600 text-white"
-                      : "hover:bg-gray-800"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <FolderKanban size={20} />
@@ -238,7 +238,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
                     activeComponent === "teamTask"
                       ? "bg-purple-600 text-white"
-                      : "hover:bg-gray-800"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <ListChecks size={20} />
@@ -256,7 +256,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
                     activeComponent === "userProject"
                       ? "bg-purple-600 text-white"
-                      : "hover:bg-gray-800"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <FolderKanban size={20} />
@@ -274,7 +274,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
                     activeComponent === "subTask"
                       ? "bg-purple-600 text-white"
-                      : "hover:bg-gray-800"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <ClipboardList size={20} />
@@ -292,7 +292,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
                     activeComponent === "userManagement"
                       ? "bg-purple-600 text-white"
-                      : "hover:bg-gray-800"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <User size={20} />
@@ -308,77 +308,77 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation */}
         <header className="bg-gray-900 py-3 px-4">
-  <div className="flex justify-between items-center">
-    <button
-      className="lg:hidden text-gray-400 hover:text-white"
-      onClick={() => setIsMenuOpen(!isMenuOpen)}
-    >
-      <Menu size={24} />
-    </button>
-    
-    <div className="flex items-center ml-auto gap-4">
-      <NotificationCenter />
-      
-      {/* User Profile Dropdown - Cách 1 */}
-      <div className="flex items-center gap-2 relative user-menu-container">
-        <button 
-          className="flex items-center gap-2 p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white"
-          onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-        >
-          <User size={20} />
-          <span className="hidden md:inline">
-            {user ? user.fullName : ""}
-          </span>
-          <ChevronDown size={16} />
-        </button>
-        
-        {isUserMenuOpen && (
-          <div className="absolute top-full right-0 mt-1 bg-gray-800 text-white rounded-md shadow-lg p-2 z-10 min-w-[200px]">
-            <ul>
-              <li>
+          <div className="flex justify-between items-center">
+            <button
+              className="lg:hidden text-gray-400 hover:text-white"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <Menu size={24} />
+            </button>
+
+            <div className="flex items-center ml-auto gap-4">
+              <NotificationCenter />
+
+              {/* User Profile Dropdown - Cách 1 */}
+              <div className="flex items-center gap-2 relative user-menu-container">
                 <button
-                  onClick={() => {
-                    setActiveComponent("userProfile");
-                    setIsUserMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded"
+                  className="flex items-center gap-2 p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
-                  <User size={16} className="mr-2" />
-                  Profile
+                  <User size={20} />
+                  <span className="hidden md:inline">
+                    {user ? user.fullName : ""}
+                  </span>
+                  <ChevronDown size={16} />
                 </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => {
-                    setActiveComponent("settings");
-                    setIsUserMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded"
-                >
-                  <Settings size={16} className="mr-2" />
-                  Settings
-                </button>
-              </li>
-              <li className="border-t border-gray-700 my-1"></li>
-              <li>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded text-red-400 hover:text-red-300"
-                >
-                  <LogOut size={16} className="mr-2" />
-                  Logout
-                </button>
-              </li>
-            </ul>
+
+                {isUserMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 bg-gray-800 text-white rounded-md shadow-lg p-2 z-10 min-w-[200px]">
+                    <ul>
+                      <li>
+                        <button
+                          onClick={() => {
+                            setActiveComponent("userProfile");
+                            setIsUserMenuOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded"
+                        >
+                          <User size={16} className="mr-2" />
+                          Profile
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          onClick={() => {
+                            setActiveComponent("settings");
+                            setIsUserMenuOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded"
+                        >
+                          <Settings size={16} className="mr-2" />
+                          Settings
+                        </button>
+                      </li>
+                      <li className="border-t border-gray-700 my-1"></li>
+                      <li>
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded text-red-400 hover:text-red-300"
+                        >
+                          <LogOut size={16} className="mr-2" />
+                          Logout
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
-  </div>
-</header>
+        </header>
 
         {/* Dashboard Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-950">
+        <main className="flex-1 overflow-y-auto p-6 bg-black">
           {renderComponent()}
         </main>
       </div>
