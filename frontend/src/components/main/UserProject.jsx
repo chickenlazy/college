@@ -300,11 +300,11 @@ const Pagination = ({
           <option value={20}>20</option>
           <option value={50}>50</option>
         </select>
-        <span>entries</span>
+        <span>mục</span>
       </div>
 
       <div className="text-sm">
-        Showing page {currentPage} of {totalPages} ({totalItems} total items)
+        Đang hiển thị {currentPage} of {totalPages} ({totalItems} total items)
       </div>
 
       <div className="flex items-center gap-2">

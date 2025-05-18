@@ -227,11 +227,11 @@ const Pagination = ({
           <option value={20}>20</option>
           <option value={50}>50</option>
         </select>
-        <span>entries</span>
+        <span>mục</span>
       </div>
 
       <div className="text-sm">
-        Showing page {currentPage} of {totalPages}
+        Đang hiển thị {currentPage} of {totalPages}
       </div>
 
       <div className="flex items-center gap-2">
@@ -600,7 +600,7 @@ const UserManagement = () => {
         />
       ) : (
         <>
-          <h1 className="text-2xl font-bold mb-4">USER MANAGEMENT</h1>
+          <h1 className="text-2xl font-bold mb-4">QUẢN LÝ NGƯỜI DÙNG</h1>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
@@ -628,7 +628,7 @@ const UserManagement = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search by Name or Email"
+                  placeholder="Tìm kiếm theo Name hoặc Email"
                   className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-64"
                   value={search}
                   onChange={(e) => {

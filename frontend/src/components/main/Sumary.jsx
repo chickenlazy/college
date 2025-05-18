@@ -279,28 +279,28 @@ if (loading) {
   return (
     <div className="bg-gray-950 text-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-xl font-bold">DASHBOARD</h1>
+        <h1 className="text-xl font-bold">THỐNG KÊ</h1>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard
-          title="Total Projects"
+          title="Tổng dự án"
           value={stats.totalProjects}
           icon={<FolderKanban size={20} className="text-purple-500" />}
         />
         <StatsCard
-          title="In Progress Projects"
+          title="Dự án đang tiến hành"
           value={stats.inProgressProjects}
           icon={<Clock size={20} className="text-blue-500" />}
         />
         <StatsCard
-          title="Completed Projects"
+          title="Dự án đã hoàn thành"
           value={stats.completedProjects}
           icon={<CheckCircle size={20} className="text-green-500" />}
         />
         <StatsCard
-          title="Total Tasks"
+          title="Tổng nhiệm vụ"
           value={stats.totalTasks}
           icon={<ListChecks size={20} className="text-indigo-500" />}
         />
@@ -312,7 +312,7 @@ if (loading) {
         <div className="col-span-12 lg:col-span-6">
           {/* Recent Projects */}
           <div className="mb-6">
-            <SectionHeader title="Recent Projects" viewAllLink="/projects" />
+            <SectionHeader title="Dự án gần đây" viewAllLink="/projects" />
             <div className="space-y-4">
               {recentProjects && recentProjects.length > 0 ? (
                 recentProjects
@@ -330,7 +330,7 @@ if (loading) {
           
           {/* Team Workload - Auto height with no scrolling */}
           <div>
-            <SectionHeader title="Team Workload" viewAllLink="/users" />
+            <SectionHeader title="Thành viên" viewAllLink="/users" />
             <div className="bg-gray-800 rounded-lg p-4">
               {teamWorkload && teamWorkload.length > 0 ? (
                 teamWorkload.map((member) => (
@@ -349,7 +349,7 @@ if (loading) {
         <div className="col-span-12 lg:col-span-6">
           {/* Upcoming Deadlines - Auto height with no scrolling */}
           <div className="mb-6">
-            <SectionHeader title="Upcoming Deadlines" viewAllLink="/tasks" />
+            <SectionHeader title="Deadline sắp tới" viewAllLink="/tasks" />
             <div className="bg-gray-800 rounded-lg p-4">
               {upcomingDeadlines && upcomingDeadlines.length > 0 ? (
                 upcomingDeadlines.map((item) => (
@@ -365,7 +365,7 @@ if (loading) {
 
           {/* Project Status Summary */}
           <div>
-            <SectionHeader title="Status Summary" />
+            <SectionHeader title="Trạng thái chung" />
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-800 rounded-lg p-4">
                 <h3 className="text-base font-medium mb-4">Project Status</h3>

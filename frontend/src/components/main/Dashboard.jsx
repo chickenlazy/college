@@ -206,7 +206,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   }`}
                 >
                   <LayoutDashboard size={20} />
-                  <span>Dashboard</span>
+                  <span>THỐNG KÊ</span>
                 </button>
               </li>
             )}
@@ -224,7 +224,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   }`}
                 >
                   <FolderKanban size={20} />
-                  <span>Project</span>
+                  <span>DỰ ÁN</span>
                 </button>
               </li>
             )}
@@ -242,7 +242,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   }`}
                 >
                   <ListChecks size={20} />
-                  <span>Team Task</span>
+                  <span>NHIỆM VỤ</span>
                 </button>
               </li>
             )}
@@ -260,7 +260,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   }`}
                 >
                   <FolderKanban size={20} />
-                  <span>Project</span>
+                  <span>DỰ ÁN</span>
                 </button>
               </li>
             )}
@@ -278,7 +278,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   }`}
                 >
                   <ClipboardList size={20} />
-                  <span>Sub Task</span>
+                  <span>NHIỆM VỤ</span>
                 </button>
               </li>
             )}
@@ -296,7 +296,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                   }`}
                 >
                   <User size={20} />
-                  <span>User Management</span>
+                  <span>NGƯỜI DÙNG</span>
                 </button>
               </li>
             )}
