@@ -85,7 +85,12 @@ const formatName = (name) => {
 const StatusBadge = ({ status }) => {
   let color;
   let icon;
-  let displayText = status;
+  let displayText =
+    status === "ACTIVE"
+      ? "Kích hoạt"
+      : status === "INACTIVE"
+      ? "Vô hiệu hóa"
+      : status;
 
   switch (status) {
     case "ACTIVE":
@@ -114,7 +119,20 @@ const StatusBadge = ({ status }) => {
 // Role Badge Component
 const RoleBadge = ({ role }) => {
   let color;
-  let displayText = role.replace("ROLE_", "");
+  let displayText;
+  switch (role) {
+    case "ROLE_ADMIN":
+      displayText = "Quản trị viên";
+      break;
+    case "ROLE_MANAGER":
+      displayText = "Quản lý";
+      break;
+    case "ROLE_USER":
+      displayText = "Người dùng";
+      break;
+    default:
+      displayText = role.replace("ROLE_", "");
+  }
 
   switch (role) {
     case "ROLE_ADMIN":
@@ -186,7 +204,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
@@ -196,7 +214,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             }}
           >
             <Check size={16} />
-            Confirm
+            Xác nhận
           </button>
         </div>
       </div>
@@ -216,7 +234,7 @@ const Pagination = ({
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 gap-4">
       <div className="flex items-center gap-2">
-        <span>Show</span>
+        <span>Hiển thị</span>
         <select
           className="bg-gray-800 border border-gray-700 rounded-md p-1"
           value={itemsPerPage}
@@ -231,7 +249,7 @@ const Pagination = ({
       </div>
 
       <div className="text-sm">
-        Đang hiển thị {currentPage} of {totalPages}
+        Trang {currentPage} / {totalPages}
       </div>
 
       <div className="flex items-center gap-2">
@@ -308,7 +326,7 @@ const ActionButtons = ({
       <button
         className="p-2 rounded-full bg-green-600 text-white"
         onClick={() => openUserDetail(user)}
-        title="View Details"
+        title="Xem chi tiết"
       >
         <Eye size={16} />
       </button>
@@ -318,7 +336,11 @@ const ActionButtons = ({
         } text-white`}
         onClick={() => !isAdmin && openUserEdit(user)}
         disabled={isAdmin}
-        title={isAdmin ? "Cannot edit Admin users" : "Edit User"}
+        title={
+          isAdmin
+            ? "Không thể chỉnh sửa người dùng Admin"
+            : "Chỉnh sửa người dùng"
+        }
       >
         <Edit size={16} />
       </button>
@@ -334,10 +356,10 @@ const ActionButtons = ({
         disabled={isAdmin}
         title={
           isAdmin
-            ? "Cannot change Admin status"
+            ? "Không thể thay đổi trạng thái Admin"
             : user.status === "ACTIVE"
-            ? "Deactivate User"
-            : "Activate User"
+            ? "Vô hiệu hóa người dùng"
+            : "Kích hoạt người dùng"
         }
       >
         <Power size={16} />
@@ -349,12 +371,12 @@ const ActionButtons = ({
 // Filter Tabs Component
 const FilterTabs = ({ activeFilter, onFilterChange }) => {
   const filters = [
-    { id: "all", label: "All" },
-    { id: "ROLE_ADMIN", label: "Admin" },
-    { id: "ROLE_MANAGER", label: "Manager" },
-    { id: "ROLE_USER", label: "User" },
-    { id: "ACTIVE", label: "Active" },
-    { id: "INACTIVE", label: "Inactive" },
+    { id: "all", label: "Tất cả" },
+    { id: "ROLE_ADMIN", label: "Quản trị viên" },
+    { id: "ROLE_MANAGER", label: "Quản lý" },
+    { id: "ROLE_USER", label: "Người dùng" },
+    { id: "ACTIVE", label: "Kích hoạt" },
+    { id: "INACTIVE", label: "Vô hiệu hóa" },
   ];
 
   return (
@@ -453,7 +475,7 @@ const UserManagement = () => {
       setLoading(false);
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError("Failed to load users. Please try again later.");
+      setError("Không thể tải dữ liệu người dùng. Vui lòng thử lại sau.");
       setLoading(false);
     }
   };
@@ -565,13 +587,13 @@ const UserManagement = () => {
         }
       );
 
-      const action =
-        confirmDialog.action === "deactivate" ? "deactivated" : "activated";
-      showSuccessDialog(`User ${action} successfully`);
+      const actionVi =
+        confirmDialog.action === "deactivate" ? "vô hiệu hóa" : "kích hoạt";
+      showSuccessDialog(`Người dùng đã được ${actionVi} thành công`);
       refreshData();
     } catch (err) {
       console.error("Error toggling user status:", err);
-      showToast("Failed to update user status", "error");
+      showToast("Không thể cập nhật trạng thái người dùng", "error");
     }
   };
 
@@ -613,14 +635,14 @@ const UserManagement = () => {
                 }}
               >
                 <Plus size={18} />
-                <span>New</span>
+                <span>Thêm</span>
               </button>
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"
                 onClick={handleReset}
               >
                 <RotateCcw size={18} />
-                <span>Reset</span>
+                <span>Làm mới</span>
               </button>
             </div>
 
@@ -628,7 +650,7 @@ const UserManagement = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo Name hoặc Email"
+                  placeholder="Tìm kiếm theo tên, email"
                   className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-64"
                   value={search}
                   onChange={(e) => {
@@ -661,25 +683,23 @@ const UserManagement = () => {
                   size={36}
                   className="text-purple-500 animate-spin mb-4"
                 />
-                <p className="text-gray-400">Loading user data...</p>
+                <p className="text-gray-400">Đang tải dữ liệu người dùng...</p>
               </div>
             ) : error ? (
               <div className="text-center p-4 text-red-500">{error}</div>
             ) : users.length === 0 ? (
-              <div className="text-center p-4">No users found</div>
+              <div className="text-center p-4">Không tìm thấy người dùng</div>
             ) : (
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-900 text-left">
-                    <th className="p-4 border-b border-gray-800">Name</th>
-                    <th className="p-4 border-b border-gray-800">Department</th>
-                    <th className="p-4 border-b border-gray-800">Position</th>
-                    <th className="p-4 border-b border-gray-800">Role</th>
-                    <th className="p-4 border-b border-gray-800">Status</th>
-                    <th className="p-4 border-b border-gray-800">
-                      Created Date
-                    </th>
-                    <th className="p-4 border-b border-gray-800">Action</th>
+                    <th className="p-4 border-b border-gray-800">Tên</th>
+                    <th className="p-4 border-b border-gray-800">Phòng ban</th>
+                    <th className="p-4 border-b border-gray-800">Chức vụ</th>
+                    <th className="p-4 border-b border-gray-800">Vai trò</th>
+                    <th className="p-4 border-b border-gray-800">Trạng thái</th>
+                    <th className="p-4 border-b border-gray-800">Ngày tạo</th>
+                    <th className="p-4 border-b border-gray-800">Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -736,12 +756,14 @@ const UserManagement = () => {
         onClose={() => setConfirmDialog({ ...confirmDialog, show: false })}
         onConfirm={confirmToggleStatus}
         title={`${
-          confirmDialog.action === "deactivate" ? "Deactivate" : "Activate"
-        } User`}
-        message={`Are you sure you want to ${confirmDialog.action} this user? ${
+          confirmDialog.action === "deactivate" ? "Vô hiệu hóa" : "Kích hoạt"
+        } người dùng`}
+        message={`Bạn có chắc chắn muốn ${
+          confirmDialog.action === "deactivate" ? "vô hiệu hóa" : "kích hoạt"
+        } người dùng này không? ${
           confirmDialog.action === "deactivate"
-            ? "This will prevent them from logging in."
-            : "This will allow them to log in again."
+            ? "Điều này sẽ ngăn họ đăng nhập."
+            : "Điều này sẽ cho phép họ đăng nhập lại."
         }`}
       />
 

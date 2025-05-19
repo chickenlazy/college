@@ -43,7 +43,26 @@ const formatDate = (dateString) => {
 const StatusBadge = ({ status }) => {
   let color;
   let icon;
-  let displayText = status.replace(/_/g, " ");
+  let displayText;
+  switch (status) {
+    case "NOT_STARTED":
+      displayText = "Chưa bắt đầu";
+      break;
+    case "IN_PROGRESS":
+      displayText = "Đang tiến hành";
+      break;
+    case "COMPLETED":
+      displayText = "Hoàn thành";
+      break;
+    case "OVER_DUE":
+      displayText = "Quá hạn";
+      break;
+    case "ON_HOLD":
+      displayText = "Tạm dừng";
+      break;
+    default:
+      displayText = status.replace(/_/g, " ");
+  }
 
   switch (status) {
     case "NOT_STARTED":
@@ -103,7 +122,13 @@ const PriorityBadge = ({ priority }) => {
     <span
       className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${color}`}
     >
-      {priority}
+      {priority === "HIGH"
+        ? "Cao"
+        : priority === "MEDIUM"
+        ? "Trung bình"
+        : priority === "LOW"
+        ? "Thấp"
+        : priority}
     </span>
   );
 };
@@ -111,12 +136,12 @@ const PriorityBadge = ({ priority }) => {
 // Filter Tabs Component
 const FilterTabs = ({ activeFilter, onFilterChange }) => {
   const filters = [
-    { id: "all", label: "All Tasks" },
-    { id: "NOT_STARTED", label: "Not Started" },
-    { id: "IN_PROGRESS", label: "In Progress" },
-    { id: "COMPLETED", label: "Completed" },
-    { id: "ON_HOLD", label: "On Hold" },
-    { id: "OVER_DUE", label: "Over Due" },
+    { id: "all", label: "Tất cả" },
+    { id: "NOT_STARTED", label: "Chưa bắt đầu" },
+    { id: "IN_PROGRESS", label: "Đang tiến hành" },
+    { id: "COMPLETED", label: "Hoàn thành" },
+    { id: "ON_HOLD", label: "Tạm dừng" },
+    { id: "OVER_DUE", label: "Quá hạn" },
   ];
 
   return (
@@ -150,7 +175,7 @@ const Pagination = ({
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 gap-4">
       <div className="flex items-center gap-2">
-        <span>Show</span>
+        <span>Hiển thị</span>
         <select
           className="bg-gray-800 border border-gray-700 rounded-md p-1"
           value={itemsPerPage}
@@ -165,7 +190,7 @@ const Pagination = ({
       </div>
 
       <div className="text-sm">
-        Đang hiển thị {currentPage} of {totalPages}
+        Trang {currentPage} / {totalPages}
       </div>
 
       <div className="flex items-center gap-2">
@@ -231,21 +256,21 @@ const ActionButtons = ({ task, onDelete, onEdit, onView }) => {
     <div className="flex gap-2">
       <button
         className="p-2 rounded-full bg-green-600 text-white"
-        title="View Details"
+        title="Xem chi tiết"
         onClick={() => onView(task)}
       >
         <Eye size={16} />
       </button>
       <button
         className="p-2 rounded-full bg-blue-600 text-white"
-        title="Edit Task"
+        title="Chỉnh sửa công việc"
         onClick={() => onEdit(task)}
       >
         <Edit size={16} />
       </button>
       <button
         className="p-2 rounded-full bg-red-600 text-white"
-        title="Delete Task"
+        title="Xóa công việc"
         onClick={() => onDelete(task.id)}
       >
         <Trash2 size={16} />
@@ -301,7 +326,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
@@ -311,7 +336,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             }}
           >
             <Trash2 size={16} />
-            Delete
+            Xóa
           </button>
         </div>
       </div>
@@ -327,14 +352,14 @@ const SuccessDialog = ({ isOpen, message, onClose }) => {
       const timer = setTimeout(() => {
         onClose();
       }, 1500);
-      
+
       // Cleanup timer khi component unmount hoặc isOpen thay đổi
       return () => clearTimeout(timer);
     }
   }, [isOpen, onClose]);
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in flex flex-col items-center">
@@ -374,7 +399,7 @@ const TeamTask = () => {
   const showSuccessDialog = (message) => {
     setSuccessDialog({
       show: true,
-      message: message
+      message: message,
     });
   };
 
@@ -407,7 +432,7 @@ const TeamTask = () => {
       setShowTaskEdit(false);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching task details:", err);
+      console.error("Lỗi khi tải chi tiết công việc:", err);
       setLoading(false);
     }
   };
@@ -450,80 +475,80 @@ const TeamTask = () => {
         }
       );
 
-      showSuccessDialog("Task deleted successfully!");
+      showSuccessDialog("Công việc đã được xóa thành công!");
       refreshData();
     } catch (err) {
-      console.error("Error deleting task:", err);
-      showToast("Failed to delete task", "error");
+      console.error("Lỗi khi xóa công việc:", err);
+      showToast("Không thể xóa công việc", "error");
     }
   };
 
   // Thêm hàm showToast
- const showToast = (message, type = "error") => {
+  const showToast = (message, type = "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-// Cập nhật hàm fetchTasks để xử lý khác biệt cho ROLE_USER
-const fetchTasks = async (
-  page = currentPage,
-  size = itemsPerPage,
-  searchTerm = search,
-  filterStatus = activeFilter
-) => {
-  setLoading(true);
-  try {
-    // Lấy thông tin user từ localStorage
-    const storedUser = localStorage.getItem("user");
-    let token = null;
-    let userId = null;
-    let userRole = null;
-    
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      token = user.accessToken;
-      userId = user.id;
-      userRole = user.role;
+  // Cập nhật hàm fetchTasks để xử lý khác biệt cho ROLE_USER
+  const fetchTasks = async (
+    page = currentPage,
+    size = itemsPerPage,
+    searchTerm = search,
+    filterStatus = activeFilter
+  ) => {
+    setLoading(true);
+    try {
+      // Lấy thông tin user từ localStorage
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      let userId = null;
+      let userRole = null;
+
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+        userId = user.id;
+        userRole = user.role;
+      }
+
+      const params = {
+        page: page,
+        size: size,
+      };
+
+      // Thêm tham số tìm kiếm nếu có
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      // Thêm tham số lọc status nếu không phải "all"
+      if (filterStatus !== "all") {
+        params.status = filterStatus;
+      }
+
+      // Xác định URL API dựa trên vai trò người dùng
+      let apiUrl = "http://localhost:8080/api/tasks";
+      if (userRole === "ROLE_MANAGER") {
+        apiUrl = `http://localhost:8080/api/tasks/user/${userId}`;
+      }
+
+      const response = await axios.get(apiUrl, {
+        params: params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setApiData(response.data);
+      setTasks(response.data.content);
+      setError(null); // Reset error
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Không thể tải dữ liệu công việc. Vui lòng thử lại sau.");
+      setLoading(false);
     }
-
-    const params = {
-      page: page,
-      size: size,
-    };
-
-    // Thêm tham số tìm kiếm nếu có
-    if (searchTerm) {
-      params.search = searchTerm;
-    }
-
-    // Thêm tham số lọc status nếu không phải "all"
-    if (filterStatus !== "all") {
-      params.status = filterStatus;
-    }
-
-    // Xác định URL API dựa trên vai trò người dùng
-    let apiUrl = "http://localhost:8080/api/tasks";
-    if (userRole === "ROLE_MANAGER") {
-      apiUrl = `http://localhost:8080/api/tasks/user/${userId}`;
-    }
-
-    const response = await axios.get(apiUrl, {
-      params: params,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    
-    setApiData(response.data);
-    setTasks(response.data.content);
-    setError(null); // Reset error
-    setLoading(false);
-  } catch (err) {
-    console.error("Error fetching tasks:", err);
-    setError("Failed to load tasks. Please try again later.");
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -625,14 +650,14 @@ const fetchTasks = async (
                 }}
               >
                 <Plus size={18} />
-                <span>New</span>
+                <span>Thêm</span>
               </button>
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"
                 onClick={handleReset}
               >
                 <RotateCcw size={18} />
-                <span>Reset</span>
+                <span>Làm mới</span>
               </button>
             </div>
 
@@ -640,7 +665,7 @@ const fetchTasks = async (
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo Name"
+                  placeholder="Tìm kiếm theo tên"
                   className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-64"
                   value={search}
                   onChange={(e) => {
@@ -674,32 +699,34 @@ const fetchTasks = async (
                   size={36}
                   className="text-purple-500 animate-spin mb-4"
                 />
-                <p className="text-gray-400">Loading task data...</p>
+                <p className="text-gray-400">Đang tải dữ liệu công việc...</p>
               </div>
             ) : error ? (
               <div className="text-center p-4 text-red-500">{error}</div>
             ) : currentTasks.length === 0 ? (
-              <div className="text-center p-4">No tasks found</div>
+              <div className="text-center p-4">
+                Không tìm thấy công việc nào
+              </div>
             ) : (
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-900 text-left">
                     <th className="p-3 border-b border-gray-700">
-                      <div className="flex items-center gap-2">Name</div>
+                      <div className="flex items-center gap-2">Tên</div>
                     </th>
                     <th className="p-3 border-b border-gray-700">
-                      <div className="flex items-center gap-2">Project</div>
+                      <div className="flex items-center gap-2">Dự án</div>
                     </th>
                     <th className="p-3 border-b border-gray-700">
-                      <div className="flex items-center gap-2">Due Date</div>
+                      <div className="flex items-center gap-2">Ngày hạn</div>
                     </th>
                     <th className="p-3 border-b border-gray-700">
-                      <div className="flex items-center gap-2">Priority</div>
+                      <div className="flex items-center gap-2">Độ ưu tiên</div>
                     </th>
                     <th className="p-3 border-b border-gray-700">
-                      <div className="flex items-center gap-2">Status</div>
+                      <div className="flex items-center gap-2">Trạng thái</div>
                     </th>
-                    <th className="p-3 border-b border-gray-700">Actions</th>
+                    <th className="p-3 border-b border-gray-700">Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -711,14 +738,16 @@ const fetchTasks = async (
                             size={36}
                             className="text-purple-500 animate-spin mb-4"
                           />
-                          <p className="text-gray-400">Loading task data...</p>
+                          <p className="text-gray-400">
+                            Đang tải dữ liệu công việc...
+                          </p>
                         </div>
                       </td>
                     </tr>
                   ) : currentTasks.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="p-4 text-center">
-                        No tasks found
+                        Không tìm thấy công việc nào
                       </td>
                     </tr>
                   ) : (
@@ -778,14 +807,14 @@ const fetchTasks = async (
         </>
       )}
 
-<ConfirmationDialog
+      <ConfirmationDialog
         isOpen={deleteConfirm.show}
         onClose={() => setDeleteConfirm({ show: false, taskId: null })}
         onConfirm={confirmDeleteTask}
-        title="Delete Task"
-        message="Are you sure you want to delete this task? This action cannot be undone."
+        title="Xóa công việc"
+        message="Bạn có chắc chắn muốn xóa công việc này không? Hành động này không thể hoàn tác."
       />
-      
+
       {/* Success Dialog */}
       <SuccessDialog
         isOpen={successDialog.show}

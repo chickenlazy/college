@@ -44,7 +44,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
       <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-750">
-          <h3 className="text-lg font-medium text-white">Add Team Member</h3>
+          <h3 className="text-lg font-medium text-white">Thêm thành viên</h3>
           <button
             className="p-2 hover:bg-gray-700 hover:text-white text-gray-400 rounded-full transition-colors"
             onClick={onClose}
@@ -58,7 +58,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search members by name..."
+              placeholder="Tìm kiếm thành viên theo tên..."
               className="w-full bg-gray-700 rounded-md px-4 py-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -127,7 +127,9 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
                 <path d="M7.7 7.8a7 7 0 0 0-1.2 3.8c0 .7.1 1.4.3 2"></path>
                 <path d="M12 12a7 7 0 0 0 1.3 4"></path>
               </svg>
-              <p className="text-base mb-2">No matching members found</p>
+              <p className="text-base mb-2">
+                Không tìm thấy thành viên phù hợp
+              </p>
               {searchTerm && (
                 <button
                   className="mt-2 text-sm text-purple-400 hover:text-purple-300 py-1 px-3 rounded-md hover:bg-gray-700"
@@ -136,7 +138,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
                     setSelectedRoleFilter("All");
                   }}
                 >
-                  Clear filters
+                  Xóa bộ lọc
                 </button>
               )}
             </div>
@@ -203,14 +205,14 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
         {/* Footer */}
         <div className="p-4 border-t border-gray-700 bg-gray-750 flex justify-between items-center">
           <span className="text-sm text-gray-400">
-            Showing {filteredUsers.length} of {availableUsers.length} available
-            members
+            Hiển thị {filteredUsers.length} trong số {availableUsers.length}{" "}
+            thành viên khả dụng
           </span>
           <button
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
         </div>
       </div>
@@ -586,39 +588,39 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
 
     // Validate project name
     if (!project?.name?.trim()) {
-      errors.name = "Project name is required";
+      errors.name = "Tên dự án không được để trống";
     } else if (project.name.length > 100) {
-      errors.name = "Project name cannot exceed 100 characters";
+      errors.name = "Tên dự án không được vượt quá 100 ký tự";
     }
 
     // Validate description (giờ bắt buộc nhập)
     if (!project?.description?.trim()) {
-      errors.description = "Description is required";
+      errors.description = "Mô tả không được để trống";
     } else if (project.description.length > 200) {
-      errors.description = "Description cannot exceed 200 characters";
+      errors.description = "Mô tả không được vượt quá 200 ký tự";
     }
 
     // Validate status
     if (!project.status) {
-      errors.status = "Status is required";
+      errors.status = "Trạng thái không được để trống";
     }
 
     // Validate manager
     if (!project.managerId) {
-      errors.managerId = "Manager is required";
+      errors.managerId = "Quản lý dự án không được để trống";
     }
 
     // Validate dates
     if (!project.startDate) {
-      errors.startDate = "Start date is required";
+      errors.startDate = "Ngày bắt đầu không được để trống";
     } else if (isNew && new Date(project.startDate) < today) {
-      errors.startDate = "Start date cannot be in the past";
+      errors.startDate = "Ngày bắt đầu không thể là ngày trong quá khứ";
     }
 
     if (!project.dueDate) {
-      errors.dueDate = "Due date is required";
+      errors.dueDate = "Ngày kết thúc không được để trống";
     } else if (new Date(project.dueDate) <= new Date(project.startDate)) {
-      errors.dueDate = "Due date must be after start date";
+      errors.dueDate = "Ngày kết thúc phải sau ngày bắt đầu";
     }
 
     // Validate maximum project duration (2 years)
@@ -626,7 +628,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       const timeDiff = new Date(project.dueDate) - new Date(project.startDate);
       const daysDiff = timeDiff / (1000 * 3600 * 24);
       if (daysDiff > 730) {
-        errors.dueDate = "Project duration cannot exceed 2 years";
+        errors.dueDate = "Thời gian dự án không được vượt quá 2 năm";
       }
     }
 
@@ -650,7 +652,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     }
 
     if (!validateForm()) {
-      showToast("Please correct the form errors", "error");
+      showToast("Vui lòng sửa các lỗi trong biểu mẫu", "error");
       return;
     }
 
@@ -658,8 +660,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     if (new Date(project.startDate) > new Date(project.dueDate)) {
       setFormErrors((prevErrors) => ({
         ...prevErrors,
-        startDate: "Start date cannot be after due date",
-        dueDate: "Due date cannot be before start date",
+        startDate: "Ngày bắt đầu không thể sau ngày kết thúc",
+        dueDate: "Ngày kết thúc không thể trước ngày bắt đầu",
       }));
       return;
     }
@@ -707,7 +709,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
         });
 
         // Hiển thị dialog thành công thay vì toast
-        showSuccessDialog("Project created successfully!");
+        showSuccessDialog("Dự án đã được tạo thành công!");
 
         // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
         setTimeout(() => {
@@ -726,7 +728,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
         );
 
         // Hiển thị dialog thành công thay vì toast
-        showSuccessDialog("Project updated successfully!");
+        showSuccessDialog("Dự án đã được cập nhật thành công!");
 
         // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
         setTimeout(() => {
@@ -736,9 +738,9 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
     } catch (error) {
       console.error("Error saving project:", error);
       setApiError(
-        `Failed to ${isNew ? "create" : "update"} project. ${
+        `${isNew ? "Tạo" : "Cập nhật"} dự án thất bại. ${
           error.response?.data?.message ||
-          "Please check your input and try again."
+          "Vui lòng kiểm tra thông tin nhập vào và thử lại."
         }`
       );
       setSavingData(false);
@@ -788,7 +790,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
             disabled={savingData}
           >
             <Save size={18} className="mr-2" />
-            {savingData ? "Saving..." : "Save"}
+            {savingData ? "Đang lưu..." : "Lưu"}
           </button>
         </div>
       </div>
@@ -804,14 +806,14 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
           {/* Left Column - Basic Info */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-gray-800 rounded-lg p-4">
-              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+              <h2 className="text-lg font-semibold mb-4">Thông tin cơ bản</h2>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 mb-1">
-                    Project Name *{" "}
+                    Tên{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 100 characters)
+                      (Tối đa 100 ký tự)
                     </span>
                   </label>
                   <input
@@ -823,7 +825,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     className={`w-full bg-gray-700 border ${
                       formErrors.name ? "border-red-500" : "border-gray-600"
                     } rounded-md py-2 px-3 text-white`}
-                    placeholder="Enter project name"
+                    placeholder="Nhập tên dự án"
                   />
                   {formErrors.name && (
                     <p className="text-red-500 text-sm mt-1">
@@ -838,9 +840,9 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                 <div>
                   {/* Description với dấu * */}
                   <label className="block text-gray-400 mb-1">
-                    Description *
+                    Mô tả{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 200 characters)
+                      (Tối đa 200 ký tự)
                     </span>
                   </label>
                   <textarea
@@ -853,7 +855,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                         ? "border-red-500"
                         : "border-gray-600"
                     } rounded-md py-2 px-3 text-white h-32 resize-none`}
-                    placeholder="Enter project description"
+                    placeholder="Nhập mô tả dự án"
                   ></textarea>
                   {formErrors.description && (
                     <p className="text-red-500 text-sm mt-1">
@@ -868,7 +870,10 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Start Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
+                      Ngày bắt đầu{" "}
+                      <span className="text-xs text-gray-500">
+                        (Format: MM/DD/YYYY)
+                      </span>
                     </label>
                     <div className="relative">
                       <input
@@ -882,9 +887,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
-                        style={{ colorScheme: 'dark' }}
+                        style={{ colorScheme: "dark" }}
                       />
-                       
                     </div>
                     {formErrors.startDate && (
                       <p className="text-red-500 text-sm mt-1">
@@ -895,7 +899,10 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
 
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Due Date * <span className="text-xs text-gray-500">(Format: MM/DD/YYYY)</span>
+                      Ngày kết thúc{" "}
+                      <span className="text-xs text-gray-500">
+                        (Format: MM/DD/YYYY)
+                      </span>
                     </label>
                     <div className="relative">
                       <input
@@ -908,9 +915,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                             ? "border-red-500"
                             : "border-gray-600"
                         } rounded-md py-2 px-3 text-white`}
-                        style={{ colorScheme: 'dark' }}
+                        style={{ colorScheme: "dark" }}
                       />
-                       
                     </div>
                     {formErrors.dueDate && (
                       <p className="text-red-500 text-sm mt-1">
@@ -921,7 +927,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                 </div>
 
                 <div>
-                  <label className="block text-gray-400 mb-1">Status *</label>
+                  <label className="block text-gray-400 mb-1">Trạng thái</label>
                   <select
                     name="status"
                     value={project.status}
@@ -930,9 +936,9 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                       formErrors.status ? "border-red-500" : "border-gray-600"
                     } rounded-md py-2 px-3 text-white`}
                   >
-                    <option value="NOT_STARTED">Not Started</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="ON_HOLD">On Hold</option>
+                    <option value="NOT_STARTED">Chưa bắt đầu</option>
+                    <option value="IN_PROGRESS">Đang tiến hành</option>
+                    <option value="ON_HOLD">Tạm dừng</option>
                   </select>
                   {formErrors.status && (
                     <p className="text-red-500 text-sm mt-1">
@@ -941,7 +947,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1">Manager *</label>
+                  <label className="block text-gray-400 mb-1">Quản lý</label>
                   {currentUser && currentUser.role === "ROLE_ADMIN" ? (
                     <div className="relative">
                       <button
@@ -953,8 +959,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                           {project.managerId
                             ? allManagers.find(
                                 (m) => m.id === project.managerId
-                              )?.fullName || "Select a manager"
-                            : "Select a manager"}
+                              )?.fullName || "Chọn quản lý"
+                            : "Chọn quản lý"}
                         </span>
                         <Plus size={16} />
                       </button>
@@ -984,7 +990,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
             {/* Tags Section */}
             <div className="bg-gray-800 rounded-lg p-4">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Tags</h2>
+                <h2 className="text-lg font-semibold">Nhãn</h2>
                 <div className="relative">
                   <button
                     type="button"
@@ -992,13 +998,13 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
                   >
                     <Plus size={16} className="mr-1" />
-                    Add Tag
+                    Thêm nhãn
                   </button>
 
                   <DropdownMenu
                     isOpen={tagsMenuOpen}
                     onClose={() => setTagsMenuOpen(false)}
-                    title="Select Tags"
+                    title="Chọn nhãn"
                   >
                     <div className="space-y-2">
                       {allTags && project && project.tagIds
@@ -1020,7 +1026,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
 
               <div className="flex flex-wrap gap-2">
                 {selectedTagsDetails.length === 0 ? (
-                  <p className="text-gray-400 text-sm">No tags added yet.</p>
+                  <p className="text-gray-400 text-sm">Chưa thêm nhãn.</p>
                 ) : (
                   selectedTagsDetails.map((tag) => (
                     <TagBadge
@@ -1038,7 +1044,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
           <div className="space-y-6">
             <div className="bg-gray-800 rounded-lg p-4">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Team Members</h2>
+                <h2 className="text-lg font-semibold">Thành viên</h2>
                 <div className="relative">
                   <button
                     type="button"
@@ -1046,7 +1052,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     onClick={() => setMembersMenuOpen(!membersMenuOpen)}
                   >
                     <Plus size={16} className="mr-1" />
-                    Add Member
+                    Thêm thành viên
                   </button>
                   <MemberModal
                     isOpen={membersMenuOpen}
@@ -1062,7 +1068,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                 {selectedUsersDetails.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Users size={48} className="mx-auto mb-3 opacity-50" />
-                    <p>No team members added yet.</p>
+                    <p>Chưa thêm thành viên.</p>
                   </div>
                 ) : (
                   selectedUsersDetails.map((user) => (

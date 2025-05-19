@@ -17,9 +17,9 @@ import {
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
+  return date.toLocaleDateString("vi-VN", {
     day: "numeric",
+    month: "numeric",
   });
 };
 
@@ -66,7 +66,17 @@ const StatusBadge = ({ status }) => {
     <span
       className={`px-2 py-1 rounded-full text-xs font-medium ${color} ${bgColor}`}
     >
-      {status.replace(/_/g, " ")}
+      {status === "NOT_STARTED"
+        ? "Chưa bắt đầu"
+        : status === "IN_PROGRESS"
+        ? "Đang tiến hành"
+        : status === "COMPLETED"
+        ? "Hoàn thành"
+        : status === "ON_HOLD"
+        ? "Tạm dừng"
+        : status === "OVER_DUE"
+        ? "Quá hạn"
+        : status.replace(/_/g, " ")}
     </span>
   );
 };
@@ -112,7 +122,7 @@ const ProjectCard = ({ project }) => {
       </div>
       <div className="mb-3">
         <div className="flex justify-between text-sm text-gray-400 mb-1">
-          <span>Progress</span>
+          <span>Tiến độ</span>
           <span>{project.progress.toFixed(1)}%</span>
         </div>
         <div className="w-full bg-gray-700 rounded-full h-1.5">
@@ -130,15 +140,13 @@ const ProjectCard = ({ project }) => {
       </div>
       <div className="flex items-center text-sm text-gray-400">
         <Calendar size={14} className="mr-1" />
-        <span>Due: {formatDate(project.dueDate)}</span>
-        <span className="ml-2">
-          ({daysRemaining} day{daysRemaining !== 1 ? "s" : ""} left)
-        </span>
+        <span>Hạn: {formatDate(project.dueDate)}</span>
+        <span className="ml-2">(còn {daysRemaining} ngày)</span>
       </div>
       {project.manager && (
         <div className="flex items-center mt-2 text-sm text-gray-400">
           <User size={14} className="mr-1" />
-          <span>Manager: {project.manager.fullName}</span>
+          <span>Quản lý: {project.manager.fullName}</span>
         </div>
       )}
     </div>
@@ -161,14 +169,14 @@ const DeadlineItem = ({ item }) => (
               : "bg-purple-900 text-purple-200"
           }`}
         >
-          {item.type === "task" ? "TASK" : "PROJECT"}
+          {item.type === "task" ? "CÔNG VIỆC" : "DỰ ÁN"}
         </span>
       </div>
     </div>
     <div className="text-sm text-right mr-4">
       <div>{formatDate(item.dueDate)}</div>
       <div className="text-xs text-gray-400">
-        {getDaysRemaining(item.dueDate)} days left
+        Còn {getDaysRemaining(item.dueDate)} ngày
       </div>
     </div>
     <div>
@@ -193,7 +201,7 @@ const TeamWorkloadRow = ({ member }) => (
       <div className="font-medium">
         {member.completedTasks}/{member.assignedTasks}
       </div>
-      <div className="text-xs text-gray-400">Tasks Completed</div>
+      <div className="text-xs text-gray-400">Công việc đã hoàn thành</div>
     </div>
   </div>
 );
@@ -232,7 +240,9 @@ const Dashboard = () => {
         setLoading(false);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
-        setError("Failed to load dashboard data. Please try again later.");
+        setError(
+          "Không thể tải dữ liệu bảng điều khiển. Vui lòng thử lại sau."
+        );
         setLoading(false);
       }
     };
@@ -240,15 +250,15 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-// Thay thế đoạn loading hiện tại trong Dashboard
-if (loading) {
-  return (
-    <div className="flex flex-col justify-center items-center h-screen">
-      <Loader size={36} className="text-purple-500 animate-spin mb-4" />
-      <p className="text-gray-400">Loading dashboard data...</p>
-    </div>
-  );
-}
+  // Thay thế đoạn loading hiện tại trong Dashboard
+  if (loading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen">
+        <Loader size={36} className="text-purple-500 animate-spin mb-4" />
+        <p className="text-gray-400">Đang tải dữ liệu bảng điều khiển...</p>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -259,7 +269,7 @@ if (loading) {
             className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             onClick={() => window.location.reload()}
           >
-            Retry
+            Thử lại
           </button>
         </div>
       </div>
@@ -269,17 +279,18 @@ if (loading) {
   if (!dashboardData || !dashboardData.data) {
     return (
       <div className="flex justify-center items-center h-full">
-        <div className="text-gray-500">No dashboard data available</div>
+        <div className="text-gray-500">Không có dữ liệu bảng điều khiển</div>
       </div>
     );
   }
 
-  const { stats, recentProjects, upcomingDeadlines, teamWorkload } = dashboardData.data;
+  const { stats, recentProjects, upcomingDeadlines, teamWorkload } =
+    dashboardData.data;
 
   return (
     <div className="bg-gray-950 text-white rounded-lg p-6">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-xl font-bold">THỐNG KÊ</h1>
+        <h1 className="text-2xl font-bold mb-4">THỐNG KÊ</h1>
       </div>
 
       {/* Stats Cards */}
@@ -322,12 +333,12 @@ if (loading) {
                   ))
               ) : (
                 <div className="bg-gray-800 rounded-lg p-4 text-center text-gray-400">
-                  No recent projects
+                  Không có dự án gần đây
                 </div>
               )}
             </div>
           </div>
-          
+
           {/* Team Workload - Auto height with no scrolling */}
           <div>
             <SectionHeader title="Thành viên" viewAllLink="/users" />
@@ -338,7 +349,7 @@ if (loading) {
                 ))
               ) : (
                 <div className="text-center text-gray-400 py-4">
-                  No team workload data
+                  Không có dữ liệu về khối lượng công việc của thành viên
                 </div>
               )}
             </div>
@@ -357,7 +368,7 @@ if (loading) {
                 ))
               ) : (
                 <div className="text-center text-gray-400 py-4">
-                  No upcoming deadlines
+                  Không có hạn chót sắp tới
                 </div>
               )}
             </div>
@@ -368,48 +379,92 @@ if (loading) {
             <SectionHeader title="Trạng thái chung" />
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-base font-medium mb-4">Project Status</h3>
+                <h3 className="text-base font-medium mb-4">Trạng thái dự án</h3>
                 <div className="space-y-3">
-                  {Object.entries(dashboardData.data.projectStatus).map(([status, count]) => (
-                    <div key={status} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <div className={`w-3 h-3 rounded-full mr-2 ${
-                          status === 'completed' ? 'bg-green-500' :
-                          status === 'inProgress' ? 'bg-blue-500' :
-                          status === 'notStarted' ? 'bg-gray-500' :
-                          status === 'onHold' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}></div>
-                        <span className="text-sm capitalize">
-                          {status.replace(/([A-Z])/g, ' $1').trim()}
-                        </span>
+                  {Object.entries(dashboardData.data.projectStatus).map(
+                    ([status, count]) => (
+                      <div
+                        key={status}
+                        className="flex justify-between items-center"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className={`w-3 h-3 rounded-full mr-2 ${
+                              status === "completed"
+                                ? "bg-green-500"
+                                : status === "inProgress"
+                                ? "bg-blue-500"
+                                : status === "notStarted"
+                                ? "bg-gray-500"
+                                : status === "onHold"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                            }`}
+                          ></div>
+                          <span className="text-sm">
+                            {status === "completed"
+                              ? "Hoàn thành"
+                              : status === "inProgress"
+                              ? "Đang tiến hành"
+                              : status === "notStarted"
+                              ? "Chưa bắt đầu"
+                              : status === "onHold"
+                              ? "Tạm dừng"
+                              : status === "overDue"
+                              ? "Quá hạn"
+                              : status.replace(/([A-Z])/g, " $1").trim()}
+                          </span>
+                        </div>
+                        <span className="font-medium">{count}</span>
                       </div>
-                      <span className="font-medium">{count}</span>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
-              
+
               <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-base font-medium mb-4">Task Status</h3>
+                <h3 className="text-base font-medium mb-4">
+                  Trạng thái nhiệm vụ
+                </h3>
                 <div className="space-y-3">
-                  {Object.entries(dashboardData.data.taskStatus).map(([status, count]) => (
-                    <div key={status} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <div className={`w-3 h-3 rounded-full mr-2 ${
-                          status === 'completed' ? 'bg-green-500' :
-                          status === 'inProgress' ? 'bg-blue-500' :
-                          status === 'notStarted' ? 'bg-gray-500' :
-                          status === 'onHold' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`}></div>
-                        <span className="text-sm capitalize">
-                          {status.replace(/([A-Z])/g, ' $1').trim()}
-                        </span>
+                  {Object.entries(dashboardData.data.taskStatus).map(
+                    ([status, count]) => (
+                      <div
+                        key={status}
+                        className="flex justify-between items-center"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className={`w-3 h-3 rounded-full mr-2 ${
+                              status === "completed"
+                                ? "bg-green-500"
+                                : status === "inProgress"
+                                ? "bg-blue-500"
+                                : status === "notStarted"
+                                ? "bg-gray-500"
+                                : status === "onHold"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                            }`}
+                          ></div>
+                          <span className="text-sm">
+                            {status === "completed"
+                              ? "Hoàn thành"
+                              : status === "inProgress"
+                              ? "Đang tiến hành"
+                              : status === "notStarted"
+                              ? "Chưa bắt đầu"
+                              : status === "onHold"
+                              ? "Tạm dừng"
+                              : status === "overDue"
+                              ? "Quá hạn"
+                              : status.replace(/([A-Z])/g, " $1").trim()}
+                          </span>
+                        </div>
+                        <span className="font-medium">{count}</span>
                       </div>
-                      <span className="font-medium">{count}</span>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             </div>

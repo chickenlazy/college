@@ -46,7 +46,7 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
       <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-750">
-          <h3 className="text-lg font-medium text-white">Select Project</h3>
+          <h3 className="text-lg font-medium text-white">Chọn dự án</h3>
           <button
             className="p-2 hover:bg-gray-700 hover:text-white text-gray-400 rounded-full transition-colors"
             onClick={onClose}
@@ -60,7 +60,7 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search projects by name..."
+              placeholder="Tìm kiếm dự án theo tên..."
               className="w-full bg-gray-700 rounded-md px-4 py-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -108,7 +108,7 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
                 <path d="M7.7 7.8a7 7 0 0 0-1.2 3.8c0 .7.1 1.4.3 2"></path>
                 <path d="M12 12a7 7 0 0 0 1.3 4"></path>
               </svg>
-              <p className="text-base mb-2">No matching projects found</p>
+              <p className="text-base mb-2">Không tìm thấy dự án phù hợp</p>
               {searchTerm && (
                 <button
                   className="mt-2 text-sm text-purple-400 hover:text-purple-300 py-1 px-3 rounded-md hover:bg-gray-700"
@@ -117,7 +117,7 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
                     setSelectedStatusFilter("All");
                   }}
                 >
-                  Clear filters
+                  Xóa bộ lọc
                 </button>
               )}
             </div>
@@ -167,13 +167,13 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
         {/* Footer */}
         <div className="p-4 border-t border-gray-700 bg-gray-750 flex justify-between items-center">
           <span className="text-sm text-gray-400">
-            Showing {filteredProjects.length} of {projects.length} projects
+            Hiển thị {filteredProjects.length} trong số {projects.length} dự án
           </span>
           <button
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
         </div>
       </div>
@@ -263,7 +263,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-md"
@@ -272,7 +272,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
               onClose();
             }}
           >
-            Delete
+            Xóa
           </button>
         </div>
       </div>
@@ -404,15 +404,15 @@ const Subtask = ({ subtask, onChange, onRemove, users }) => {
           <span className="text-xs">
             {subtask.assigneeId
               ? users.find((u) => u.id === subtask.assigneeId)?.fullName ||
-                "Select"
-              : "Assign"}
+                "Chọn"
+              : "Phân công"}
           </span>
         </div>
 
         <DropdownMenu
           isOpen={assigneeMenuOpen}
           onClose={() => setAssigneeMenuOpen(false)}
-          title="Select Assignee"
+          title="Chọn người phụ trách"
         >
           <div className="space-y-1">
             {users.map((user) => (
@@ -563,7 +563,7 @@ const TaskEdit = ({
         }
 
         if (!projectsResponse.ok) {
-          throw new Error("Failed to fetch projects");
+          throw new Error("Lấy dữ liệu dự án thất bại");
         }
 
         const projectsData = await projectsResponse.json();
@@ -588,7 +588,7 @@ const TaskEdit = ({
         );
 
         if (!usersResponse.ok) {
-          throw new Error("Failed to fetch users");
+          throw new Error("Lấy dữ liệu người dùng thất bại");
         }
 
         const usersData = await usersResponse.json();
@@ -605,7 +605,7 @@ const TaskEdit = ({
             }
           );
           if (!taskResponse.ok) {
-            throw new Error("Failed to fetch task");
+            throw new Error("Lấy dữ liệu công việc thất bại");
           }
           const taskData = await taskResponse.json();
 
@@ -680,21 +680,21 @@ const TaskEdit = ({
   };
 
   // Đặt đoạn code này vào bên trong hàm component TaskEdit,
-// ngang hàng với các lệnh useState và các useEffect khác.
+  // ngang hàng với các lệnh useState và các useEffect khác.
 
-useEffect(() => {
-  // Nếu có toast đang hiển thị
-  if (toast) {
-    // Thiết lập một timer để ẩn toast sau 3 giây (có thể điều chỉnh thời gian này)
-    const timer = setTimeout(() => {
-      setToast(null); // Gọi setToast(null) để ẩn toast
-    }, 3000); // Thời gian hiển thị toast: 3000ms = 3 giây
+  useEffect(() => {
+    // Nếu có toast đang hiển thị
+    if (toast) {
+      // Thiết lập một timer để ẩn toast sau 3 giây (có thể điều chỉnh thời gian này)
+      const timer = setTimeout(() => {
+        setToast(null); // Gọi setToast(null) để ẩn toast
+      }, 3000); // Thời gian hiển thị toast: 3000ms = 3 giây
 
-    // Hàm cleanup: xóa timer nếu component bị unmount
-    // hoặc nếu trạng thái toast thay đổi trước khi timer kết thúc
-    return () => clearTimeout(timer);
-  }
-}, [toast, setToast]); // Dependency: chạy lại effect khi toast hoặc setToast thay đổi
+      // Hàm cleanup: xóa timer nếu component bị unmount
+      // hoặc nếu trạng thái toast thay đổi trước khi timer kết thúc
+      return () => clearTimeout(timer);
+    }
+  }, [toast, setToast]); // Dependency: chạy lại effect khi toast hoặc setToast thay đổi
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -731,150 +731,117 @@ useEffect(() => {
     }
   };
 
-
   const validateForm = () => {
-        const errors = {};
-        // Tính toán ngày hôm nay một lần duy nhất và chuẩn hóa về đầu ngày
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-    
-        // --- Kiểm tra các trường bắt buộc khác (giữ nguyên) ---
-    
-        // Validate task name
-        if (!task.name?.trim()) {
-          errors.name = "Task name is required";
-        } else if (task.name.length > 100) {
-          errors.name = "Task name cannot exceed 100 characters";
-        }
-    
-        // Validate description
-        if (!task.description?.trim()) {
-          errors.description = "Description is required";
-        } else if (task.description.length > 200) {
-          errors.description = "Description cannot exceed 200 characters";
-        }
-    
-        // Validate project selection
-        if (!task.projectId) {
-          errors.projectId = "Project is required";
-        }
-    
-        // Validate status
-        if (!task.status) {
-          errors.status = "Status is required";
-        }
-    
-        // Validate priority
-        if (!task.priority) {
-          errors.priority = "Priority is required";
-        }
-    
-        // --- LOGIC KIỂM TRA NGÀY THÁNG ĐÃ SỬA ĐỔI ---
-    
-        // Bước 1: Kiểm tra xem chuỗi ngày bắt đầu và ngày kết thúc có tồn tại không
-        const startDateProvided = !!task.startDate; // True nếu task.startDate không rỗng, null, undefined
-        const dueDateProvided = !!task.dueDate;   // True nếu task.dueDate không rỗng, null, undefined
-    
-        // Bước 2: Thiết lập lỗi "bắt buộc" nếu thiếu
-        if (!startDateProvided) {
-          errors.startDate = "Start date is required";
-        }
-    
-        if (!dueDateProvided) {
-          errors.dueDate = "Due date is required";
-        }
-    
-        // Bước 3: Chỉ thực hiện tạo đối tượng Date và các so sánh NẾU cả hai ngày đều đã được cung cấp dưới dạng chuỗi
-        if (startDateProvided && dueDateProvided) {
-          const taskStartDate = new Date(task.startDate);
-          const taskDueDate = new Date(task.dueDate);
-    
-          // Bước 4: Kiểm tra xem đối tượng Date tạo ra có hợp lệ không (phòng trường hợp chuỗi không đúng định dạng)
-          // type="date" trên input thường ngăn điều này, nhưng kiểm tra thêm sẽ an toàn hơn
-          if (isNaN(taskStartDate.getTime())) {
-            errors.startDate = "Invalid start date format";
-            // Đánh dấu là không hợp lệ để không thực hiện các so sánh phụ thuộc vào ngày này
-            startDateProvided = false;
-          }
-          if (isNaN(taskDueDate.getTime())) {
-            errors.dueDate = "Invalid due date format";
-            // Đánh dấu là không hợp lệ
-            dueDateProvided = false;
-          }
-    
-          // Bước 5: Tiếp tục thực hiện các so sánh ngày NẾU cả hai ngày vẫn được coi là hợp lệ sau khi parse
-          if (startDateProvided && dueDateProvided) {
-            // Chuẩn hóa ngày về đầu ngày để so sánh chính xác hơn
-            taskStartDate.setHours(0, 0, 0, 0);
-            taskDueDate.setHours(0, 0, 0, 0);
-    
-            // Kiểm tra 5a: Ngày bắt đầu không được ở trong quá khứ (chỉ cho task mới)
-            if (isNew && taskStartDate < today) {
-              errors.startDate = "Start date cannot be in the past";
-            }
-    
-            // Kiểm tra 5b: Ngày kết thúc phải sau ngày bắt đầu
-            // Lỗi này có thể ghi đè lỗi "Start date cannot be in the past" nếu cả hai đều đúng
-            if (taskDueDate <= taskStartDate) {
-              errors.dueDate = "Due date must be after start date";
-            }
-    
-            // Kiểm tra 5c & 5d: So sánh với ngày của project (chỉ khi project và ngày tháng project tồn tại)
-            if (task.projectId && task.projectStartDate && task.projectDueDate) {
-              const projectStartDate = new Date(task.projectStartDate);
-              const projectDueDate = new Date(task.projectDueDate);
-              projectStartDate.setHours(0, 0, 0, 0); // Normalize
-              projectDueDate.setHours(0, 0, 0, 0); // Normalize
-    
-              // Kiểm tra ngày bắt đầu task so với ngày bắt đầu project
-              // Lỗi này có thể ghi đè các lỗi startDate trước đó (như lỗi quá khứ)
-              if (taskStartDate < projectStartDate) {
-                errors.startDate = "Task start date cannot be earlier than project start date";
-              }
-    
-              // Kiểm tra ngày kết thúc task so với ngày kết thúc project
-              // Lỗi này có thể ghi đè các lỗi dueDate trước đó (như lỗi dueDate <= startDate)
-              if (taskDueDate > projectDueDate) {
-                errors.dueDate = "Task due date cannot exceed project due date";
-              }
-            } else if (task.projectId && (!task.projectStartDate || !task.projectDueDate)) {
-              // Trường hợp đặc biệt: Đã chọn project nhưng thông tin ngày tháng project bị thiếu (lỗi dữ liệu)
-              // Giữ lại logic báo lỗi projectId như ban đầu, tránh ghi đè lỗi 'Project is required' nếu đó là lỗi ban đầu
-              if (!errors.projectId) {
-                errors.projectId = "Selected project is missing date information.";
-              }
-            }
-    
-    
-            // Kiểm tra 5e: Thời gian task không quá 1 năm
-            // Tính khoảng thời gian bằng miliseconds, sau đó đổi ra ngày
-            const timeDiff = taskDueDate.getTime() - taskStartDate.getTime();
-            const daysDiff = timeDiff / (1000 * 3600 * 24);
-            if (daysDiff > 365) {
-              // Lỗi này có thể ghi đè lỗi dueDate trước đó
-              errors.dueDate = "Task duration cannot exceed 1 year";
-            }
-    
-          } // Kết thúc khối if kiểm tra tính hợp lệ sau parse
-        } // Kết thúc khối if kiểm tra chuỗi ngày có tồn tại
-    
-        // --- Kết thúc LOGIC KIỂM TRA NGÀY THÁNG ---
-    
-        // Log đối tượng lỗi trước khi cập nhật state (có thể bỏ dòng này khi deploy)
-        // console.log("Validation errors:", errors);
-    
-        // Cập nhật state formErrors
-        setFormErrors(errors);
-    
-        // Trả về true nếu không có lỗi, false nếu có lỗi
-        return Object.keys(errors).length === 0;
-      };
+    const errors = {}; // Tính toán ngày hôm nay một lần duy nhất và chuẩn hóa về đầu ngày
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // --- Kiểm tra các trường bắt buộc khác (giữ nguyên) --- // Validate task name
+
+    if (!task.name?.trim()) {
+      errors.name = "Tên công việc không được để trống";
+    } else if (task.name.length > 100) {
+      errors.name = "Tên công việc không được vượt quá 100 ký tự";
+    }
+
+    if (!task.description?.trim()) {
+      errors.description = "Mô tả không được để trống";
+    } else if (task.description.length > 200) {
+      errors.description = "Mô tả không được vượt quá 200 ký tự";
+    }
+
+    if (!task.projectId) {
+      errors.projectId = "Dự án không được để trống";
+    } // Validate status
+
+    if (!task.status) {
+      errors.status = "Trạng thái không được để trống";
+    } // Validate priority
+
+    if (!task.priority) {
+      errors.priority = "Độ ưu tiên không được để trống";
+    }
+
+    const startDateProvided = !!task.startDate; // True nếu task.startDate không rỗng, null, undefined
+    const dueDateProvided = !!task.dueDate; // True nếu task.dueDate không rỗng, null, undefined // Bước 2: Thiết lập lỗi "bắt buộc" nếu thiếu
+
+    if (!startDateProvided) {
+      errors.startDate = "Ngày bắt đầu không được để trống";
+    }
+
+    if (!dueDateProvided) {
+      errors.dueDate = "Ngày kết thúc không được để trống";
+    } // Bước 3: Chỉ thực hiện tạo đối tượng Date và các so sánh NẾU cả hai ngày đều đã được cung cấp dưới dạng chuỗi
+
+    if (startDateProvided && dueDateProvided) {
+      const taskStartDate = new Date(task.startDate);
+      const taskDueDate = new Date(task.dueDate); // Bước 4: Kiểm tra xem đối tượng Date tạo ra có hợp lệ không (phòng trường hợp chuỗi không đúng định dạng) // type="date" trên input thường ngăn điều này, nhưng kiểm tra thêm sẽ an toàn hơn
+
+      if (isNaN(taskStartDate.getTime())) {
+        errors.startDate = "Định dạng ngày bắt đầu không hợp lệ";
+        startDateProvided = false;
+      }
+      if (isNaN(taskDueDate.getTime())) {
+        errors.dueDate = "Định dạng ngày kết thúc không hợp lệ";
+        dueDateProvided = false;
+      } // Bước 5: Tiếp tục thực hiện các so sánh ngày NẾU cả hai ngày vẫn được coi là hợp lệ sau khi parse
+
+      if (startDateProvided && dueDateProvided) {
+        // Chuẩn hóa ngày về đầu ngày để so sánh chính xác hơn
+        taskStartDate.setHours(0, 0, 0, 0);
+        taskDueDate.setHours(0, 0, 0, 0); // Kiểm tra 5a: Ngày bắt đầu không được ở trong quá khứ (chỉ cho task mới)
+
+        if (isNew && taskStartDate < today) {
+          errors.startDate = "Ngày bắt đầu không thể là ngày trong quá khứ";
+        } // Kiểm tra 5b: Ngày kết thúc phải sau ngày bắt đầu // Lỗi này có thể ghi đè lỗi "Start date cannot be in the past" nếu cả hai đều đúng
+
+        if (taskDueDate <= taskStartDate) {
+          errors.dueDate = "Ngày kết thúc phải sau ngày bắt đầu";
+        } // Kiểm tra 5c & 5d: So sánh với ngày của project (chỉ khi project và ngày tháng project tồn tại)
+
+        if (task.projectId && task.projectStartDate && task.projectDueDate) {
+          const projectStartDate = new Date(task.projectStartDate);
+          const projectDueDate = new Date(task.projectDueDate);
+          projectStartDate.setHours(0, 0, 0, 0); // Normalize
+          projectDueDate.setHours(0, 0, 0, 0); // Normalize // Kiểm tra ngày bắt đầu task so với ngày bắt đầu project // Lỗi này có thể ghi đè các lỗi startDate trước đó (như lỗi quá khứ)
+
+          if (taskStartDate < projectStartDate) {
+            errors.startDate =
+              "Ngày bắt đầu công việc không thể sớm hơn ngày bắt đầu dự án";
+          } // Kiểm tra ngày kết thúc task so với ngày kết thúc project // Lỗi này có thể ghi đè các lỗi dueDate trước đó (như lỗi dueDate <= startDate)
+
+          if (taskDueDate > projectDueDate) {
+            errors.dueDate =
+              "Ngày kết thúc công việc không thể muộn hơn ngày kết thúc dự án";
+          }
+        } else if (
+          task.projectId &&
+          (!task.projectStartDate || !task.projectDueDate)
+        ) {
+          // Trường hợp đặc biệt: Đã chọn project nhưng thông tin ngày tháng project bị thiếu (lỗi dữ liệu)
+          // Giữ lại logic báo lỗi projectId như ban đầu, tránh ghi đè lỗi 'Project is required' nếu đó là lỗi ban đầu
+          if (!errors.projectId) {
+            errors.projectId = "Dự án được chọn thiếu thông tin ngày tháng";
+          }
+        } // Kiểm tra 5e: Thời gian task không quá 1 năm // Tính khoảng thời gian bằng miliseconds, sau đó đổi ra ngày
+
+        const timeDiff = taskDueDate.getTime() - taskStartDate.getTime();
+        const daysDiff = timeDiff / (1000 * 3600 * 24);
+        if (daysDiff > 365) {
+          // Lỗi này có thể ghi đè lỗi dueDate trước đó
+          errors.dueDate = "Thời gian công việc không được vượt quá 1 năm";
+        }
+      } // Kết thúc khối if kiểm tra tính hợp lệ sau parse
+    } // Kết thúc khối if kiểm tra chuỗi ngày có tồn tại // --- Kết thúc LOGIC KIỂM TRA NGÀY THÁNG --- // Log đối tượng lỗi trước khi cập nhật state (có thể bỏ dòng này khi deploy) // console.log("Validation errors:", errors); // Cập nhật state formErrors
+
+    setFormErrors(errors); // Trả về true nếu không có lỗi, false nếu có lỗi
+
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
-      showToast("Please correct the form errors", "error");
+      showToast("Vui lòng sửa các lỗi trong biểu mẫu", "error");
       return;
     }
 
@@ -920,20 +887,22 @@ useEffect(() => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to ${isNew ? "create" : "update"} task`);
+        throw new Error(`${isNew ? "Tạo" : "Cập nhật"} công việc thất bại`);
       }
 
       const result = await response.json();
-      console.log(`Task ${isNew ? "created" : "updated"}:`, result);
+      console.log(`Công việc đã được ${isNew ? "tạo" : "cập nhật"}:`, result);
 
-      showSuccessDialog(`Task ${isNew ? "created" : "updated"} successfully!`);
+      showSuccessDialog(
+        `Công việc đã được ${isNew ? "tạo" : "cập nhật"} thành công!`
+      );
 
       // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
       setTimeout(() => {
         onBack(true);
       }, 1500);
     } catch (error) {
-      showToast(`Error: ${error.message}`, "error");
+      showToast(`Lỗi: ${error.message}`, "error");
       setSubmitting(false);
     }
   };
@@ -960,18 +929,18 @@ useEffect(() => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to delete task");
+        throw new Error("Xóa công việc thất bại");
       }
 
-      showSuccessDialog("Task deleted successfully!");
+      showSuccessDialog("Công việc đã được xóa thành công!");
 
       // Tự động quay lại sau khi dialog đóng (sau 1.5 giây)
       setTimeout(() => {
         onBack(true);
       }, 1500);
     } catch (error) {
-      console.error("Error deleting task:", error);
-      showToast(`Error: ${error.message}`, "error");
+      console.error("Lỗi khi xóa công việc:", error);
+      showToast(`Lỗi: ${error.message}`, "error");
       setSubmitting(false);
     }
   };
@@ -981,7 +950,7 @@ useEffect(() => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <Loader size={36} className="text-purple-500 animate-spin mb-4" />
-        <p className="text-gray-400">Loading task data...</p>
+        <p className="text-gray-400">Đang tải dữ liệu công việc...</p>
       </div>
     );
   }
@@ -994,11 +963,11 @@ useEffect(() => {
           onClick={onBack}
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back</span>
+          <span>Quay lại</span>
         </button>
 
         <h1 className="text-xl font-bold">
-          {isNew ? "CREATE NEW TASK" : "EDIT TASK"}
+          {isNew ? "TẠO CÔNG VIỆC MỚI" : "CHỈNH SỬA CÔNG VIỆC"}
         </h1>
 
         <div className="flex space-x-2">
@@ -1011,10 +980,10 @@ useEffect(() => {
             {submitting ? (
               <>
                 <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                Saving...
+                Đang lưu...
               </>
             ) : (
-              "Save"
+              "Lưu"
             )}
           </button>
         </div>
@@ -1025,14 +994,14 @@ useEffect(() => {
           {/* Left Column - Basic Info */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-gray-800 rounded-lg p-4">
-              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+              <h2 className="text-lg font-semibold mb-4">Thông tin cơ bản</h2>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 mb-1">
-                    Task Name *{" "}
+                    Tên{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 100 characters)
+                      (Tối đa 100 ký tự)
                     </span>
                   </label>
                   <input
@@ -1043,7 +1012,7 @@ useEffect(() => {
                     className={`w-full bg-gray-700 border ${
                       formErrors.name ? "border-red-500" : "border-gray-600"
                     } rounded-md py-2 px-3 text-white`}
-                    placeholder="Enter task name"
+                    placeholder="Nhập tên công việc"
                     maxLength={100}
                   />
                   {formErrors.name && (
@@ -1059,9 +1028,9 @@ useEffect(() => {
                 <div>
                   {/* Description với dấu * */}
                   <label className="block text-gray-400 mb-1">
-                    Description *{" "}
+                    Mô tả{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 200 characters)
+                      (Tối đa 200 ký tự)
                     </span>
                   </label>
                   <textarea
@@ -1073,7 +1042,7 @@ useEffect(() => {
                         ? "border-red-500"
                         : "border-gray-600"
                     } rounded-md py-2 px-3 text-white h-32 resize-none`}
-                    placeholder="Enter task description"
+                    placeholder="Nhập mô tả công việc"
                     maxLength={200}
                   ></textarea>
                   {formErrors.description && (
@@ -1087,7 +1056,7 @@ useEffect(() => {
                 </div>
 
                 <div>
-                  <label className="block text-gray-400 mb-1">Project *</label>
+                  <label className="block text-gray-400 mb-1">Dự án</label>
                   <div className="relative">
                     <button
                       type="button"
@@ -1098,7 +1067,7 @@ useEffect(() => {
                       } rounded-md py-2 px-3 text-white text-left flex justify-between items-center`}
                       onClick={() => setProjectMenuOpen(!projectMenuOpen)}
                     >
-                      <span>{task.projectName || "Select a project"}</span>
+                      <span>{task.projectName || "Chọn một dự án"}</span>
                       <FolderKanban size={18} className="text-gray-400" />
                     </button>
 
@@ -1119,11 +1088,11 @@ useEffect(() => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Start Date *{" "}
+                      Ngày bắt đầu{" "}
                       <span className="text-xs text-gray-500">
                         (Format: MM/DD/YYYY)
                         {task.projectStartDate &&
-                          ` - Project starts on ${new Date(
+                          ` - Dự án bắt đầu vào ${new Date(
                             task.projectStartDate
                           ).toLocaleDateString()}`}
                       </span>
@@ -1158,11 +1127,11 @@ useEffect(() => {
 
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Due Date *{" "}
+                      Ngày kết thúc{" "}
                       <span className="text-xs text-gray-500">
                         (Format: MM/DD/YYYY)
                         {task.projectDueDate &&
-                          ` - Project ends on ${new Date(
+                          ` - Dự án kết thúc vào ${new Date(
                             task.projectDueDate
                           ).toLocaleDateString()}`}
                       </span>
@@ -1193,7 +1162,9 @@ useEffect(() => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-400 mb-1">Status *</label>
+                    <label className="block text-gray-400 mb-1">
+                      Trạng thái
+                    </label>
                     <select
                       name="status"
                       value={task.status}
@@ -1202,9 +1173,9 @@ useEffect(() => {
                         formErrors.status ? "border-red-500" : "border-gray-600"
                       } rounded-md py-2 px-3 text-white`}
                     >
-                      <option value="NOT_STARTED">Not Started</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="ON_HOLD">On Hold</option>
+                      <option value="NOT_STARTED">Chưa bắt đầu</option>
+                      <option value="IN_PROGRESS">Đang tiến hành</option>
+                      <option value="ON_HOLD">Tạm dừng</option>
                     </select>
                     {formErrors.status && (
                       <p className="text-red-500 text-sm mt-1">
@@ -1215,7 +1186,7 @@ useEffect(() => {
 
                   <div>
                     <label className="block text-gray-400 mb-1">
-                      Priority *
+                      Độ ưu tiên
                     </label>
                     <select
                       name="priority"
@@ -1227,9 +1198,9 @@ useEffect(() => {
                           : "border-gray-600"
                       } rounded-md py-2 px-3 text-white`}
                     >
-                      <option value="LOW">Low</option>
-                      <option value="MEDIUM">Medium</option>
-                      <option value="HIGH">High</option>
+                      <option value="LOW">Thấp</option>
+                      <option value="MEDIUM">Trung bình</option>
+                      <option value="HIGH">Cao</option>
                     </select>
                     {formErrors.priority && (
                       <p className="text-red-500 text-sm mt-1">
@@ -1246,33 +1217,35 @@ useEffect(() => {
           <div className="space-y-6">
             {/* Tips Section */}
             <div className="bg-gray-800 rounded-lg p-4">
-              <h2 className="text-lg font-semibold mb-3">Quick Tips</h2>
+              <h2 className="text-lg font-semibold mb-3">Mẹo nhanh</h2>
               <div className="space-y-2 text-sm text-gray-300">
                 <div className="flex items-start">
                   <Check
                     size={16}
                     className="text-green-500 mt-0.5 mr-2 shrink-0"
                   />
-                  <p>Set realistic due dates to ensure timely completion.</p>
+                  <p>Đặt ngày hạn thực tế để đảm bảo hoàn thành đúng hạn.</p>
                 </div>
               </div>
             </div>
 
             {!isNew && (
               <div className="bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-3">Task Information</h2>
+                <h2 className="text-lg font-semibold mb-3">
+                  Thông tin công việc
+                </h2>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Created by:</span>
+                    <span className="text-gray-400">Tạo bởi:</span>
                     <span>{task.createdByName}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Created at:</span>
+                    <span className="text-gray-400">Tạo lúc:</span>
                     <span>{new Date(task.createdDate).toLocaleString()}</span>
                   </div>
                   {task.completedDate && (
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Completed at:</span>
+                      <span className="text-gray-400">Hoàn thành lúc:</span>
                       <span>
                         {new Date(task.completedDate).toLocaleString()}
                       </span>
@@ -1290,8 +1263,8 @@ useEffect(() => {
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
-        title="Delete Task"
-        message="Are you sure you want to delete this task? This action cannot be undone."
+        title="Xóa công việc"
+        message="Bạn có chắc chắn muốn xóa công việc này? Hành động này không thể hoàn tác."
       />
 
       <SuccessDialog

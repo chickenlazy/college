@@ -103,8 +103,8 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
       setFormData(userData);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching user details:", err);
-      setError("Failed to load user details. Please try again.");
+      console.error("Lỗi khi lấy thông tin người dùng:", err);
+      setError("Không thể tải thông tin người dùng. Vui lòng thử lại.");
       setLoading(false);
     }
   };
@@ -131,7 +131,10 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
         if (!isUnique) {
           setValidationErrors((prev) => ({
             ...prev,
-            [name]: `This ${name} is already in use`,
+            [name]:
+              name === "email"
+                ? "Email này đã được sử dụng"
+                : "Tên đăng nhập này đã được sử dụng",
           }));
         }
       }, 500);
@@ -144,108 +147,120 @@ const UserEdit = ({ user, onBack, isNew = false }) => {
     const errors = {};
 
     // Validate required fields
-    if (!formData.fullName) errors.fullName = "Full name is required";
+    if (!formData.fullName) errors.fullName = "Họ và tên không được để trống";
     else if (formData.fullName.length > 100)
-      errors.fullName = "Full name cannot exceed 100 characters";
+      errors.fullName = "Họ và tên không được vượt quá 100 ký tự";
 
-    if (!formData.email) errors.email = "Email is required";
+    if (!formData.email) errors.email = "Email không được để trống";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
-      errors.email = "Email is invalid";
+      errors.email = "Email không hợp lệ";
     else if (formData.email.length > 100)
-      errors.email = "Email cannot exceed 100 characters";
+      errors.email = "Email không được vượt quá 100 ký tự";
 
-    if (!formData.username) errors.username = "Username is required";
+    if (!formData.username)
+      errors.username = "Tên đăng nhập không được để trống";
     else if (formData.username.length < 3)
-      errors.username = "Username must be at least 3 characters";
+      errors.username = "Tên đăng nhập phải có ít nhất 3 ký tự";
     else if (formData.username.length > 50)
-      errors.username = "Username cannot exceed 50 characters";
+      errors.username = "Tên đăng nhập không được vượt quá 50 ký tự";
     else if (!/^[a-zA-Z0-9_]+$/.test(formData.username))
       errors.username =
-        "Username can only contain letters, numbers and underscore";
+        "Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới";
 
     // Validate phone format (bắt buộc)
     if (!formData.phoneNumber) {
-      errors.phoneNumber = "Phone number is required";
+      errors.phoneNumber = "Số điện thoại không được để trống";
     } else if (!/^[0-9]{10,15}$/.test(formData.phoneNumber)) {
-      errors.phoneNumber = "Phone number must be 10-15 digits";
+      errors.phoneNumber = "Số điện thoại phải có 10-15 chữ số";
     }
 
     // Validate department (bắt buộc)
     if (!formData.department) {
-      errors.department = "Department is required";
+      errors.department = "Phòng ban không được để trống";
     } else if (formData.department.length > 100) {
-      errors.department = "Department name cannot exceed 100 characters";
+      errors.department = "Tên phòng ban không được vượt quá 100 ký tự";
     }
 
     // Validate position (bắt buộc)
     if (!formData.position) {
-      errors.position = "Position is required";
+      errors.position = "Chức vụ không được để trống";
     } else if (formData.position.length > 100) {
-      errors.position = "Position cannot exceed 100 characters";
+      errors.position = "Chức vụ không được vượt quá 100 ký tự";
     }
 
     // Validate address (bắt buộc)
     if (!formData.address) {
-      errors.address = "Address is required";
+      errors.address = "Địa chỉ không được để trống";
     } else if (formData.address.length > 255) {
-      errors.address = "Address cannot exceed 255 characters";
+      errors.address = "Địa chỉ không được vượt quá 255 ký tự";
     }
 
     // Validate password for new users
-// Phần validate password hiện tại
-if (isNew) {
-  if (!formData.password) errors.password = "Password is required";
-  else if (formData.password.length < 6)
-    errors.password = "Password must be at least 6 characters";
-  else if (formData.password.length > 50)
-    errors.password = "Password cannot exceed 50 characters";
-  else {
-    // Thêm kiểm tra yêu cầu phức tạp của mật khẩu
-    const hasUpperCase = /[A-Z]/.test(formData.password);
-    const hasLowerCase = /[a-z]/.test(formData.password);
-    const hasNumbers = /[0-9]/.test(formData.password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
-    
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
-      errors.password = "Password must include uppercase, lowercase, number, and special character";
-    }
-  }
+    // Phần validate password hiện tại
+    if (isNew) {
+      if (!formData.password) errors.password = "Mật khẩu không được để trống";
+      else if (formData.password.length < 6)
+        errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+      else if (formData.password.length > 50)
+        errors.password = "Mật khẩu không được vượt quá 50 ký tự";
+      else {
+        // Thêm kiểm tra yêu cầu phức tạp của mật khẩu
+        const hasUpperCase = /[A-Z]/.test(formData.password);
+        const hasLowerCase = /[a-z]/.test(formData.password);
+        const hasNumbers = /[0-9]/.test(formData.password);
+        const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+          formData.password
+        );
 
-  if (!formData.confirmPassword)
-    errors.confirmPassword = "Please confirm password";
-  else if (formData.password !== formData.confirmPassword)
-    errors.confirmPassword = "Passwords do not match";
-} else {
-  // For existing users, validate passwords only if they're provided
-  if (formData.password) {
-    if (formData.password.length < 6)
-      errors.password = "Password must be at least 6 characters";
-    else if (formData.password.length > 50)
-      errors.password = "Password cannot exceed 50 characters";
-    else {
-      // Thêm kiểm tra yêu cầu phức tạp của mật khẩu
-      const hasUpperCase = /[A-Z]/.test(formData.password);
-      const hasLowerCase = /[a-z]/.test(formData.password);
-      const hasNumbers = /[0-9]/.test(formData.password);
-      const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
-      
-      if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
-        errors.password = "Password must include uppercase, lowercase, number, and special character";
+        if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+          errors.password =
+            "Mật khẩu phải bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
+        }
+      }
+
+      if (!formData.confirmPassword)
+        errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+      else if (formData.password !== formData.confirmPassword)
+        errors.confirmPassword = "Mật khẩu không khớp";
+    } else {
+      // For existing users, validate passwords only if they're provided
+      if (formData.password) {
+        if (formData.password.length < 6)
+          errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+        else if (formData.password.length > 50)
+          errors.password = "Mật khẩu không được vượt quá 50 ký tự";
+        else {
+          // Thêm kiểm tra yêu cầu phức tạp của mật khẩu
+          const hasUpperCase = /[A-Z]/.test(formData.password);
+          const hasLowerCase = /[a-z]/.test(formData.password);
+          const hasNumbers = /[0-9]/.test(formData.password);
+          const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+            formData.password
+          );
+
+          if (
+            !hasUpperCase ||
+            !hasLowerCase ||
+            !hasNumbers ||
+            !hasSpecialChar
+          ) {
+            errors.password =
+              "Mật khẩu phải bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
+          }
+        }
+
+        if (!formData.confirmPassword)
+          errors.confirmPassword = "Vui lòng xác nhận mật khẩu mới";
+        else if (formData.password !== formData.confirmPassword)
+          errors.confirmPassword = "Mật khẩu không khớp";
       }
     }
-
-    if (!formData.confirmPassword)
-      errors.confirmPassword = "Please confirm new password";
-    else if (formData.password !== formData.confirmPassword)
-      errors.confirmPassword = "Passwords do not match";
-  }
-}
 
     // Kiểm tra unique fields
     if (formData.email && !validationErrors.email) {
       const isEmailUnique = await checkUniqueField("email", formData.email);
       if (!isEmailUnique) {
-        errors.email = "This email is already in use";
+        errors.email = "Email này đã được sử dụng";
       }
     }
 
@@ -255,7 +270,7 @@ if (isNew) {
         formData.username
       );
       if (!isUsernameUnique) {
-        errors.username = "This username is already in use";
+        errors.username = "Tên đăng nhập này đã được sử dụng";
       }
     }
 
@@ -268,7 +283,7 @@ if (isNew) {
 
     const isFormValid = await validateForm();
     if (!isFormValid) {
-      showToast("Please correct the form errors", "error");
+      showToast("Vui lòng sửa các lỗi trong biểu mẫu", "error");
       return;
     }
 
@@ -318,19 +333,21 @@ if (isNew) {
       }
 
       setSaving(false);
-      showSuccessDialog(`User ${isNew ? "created" : "updated"} successfully`);
+      showSuccessDialog(
+        `Người dùng đã được ${isNew ? "tạo" : "cập nhật"} thành công`
+      );
       setTimeout(() => {
         onBack(true);
       }, 1500);
     } catch (err) {
-      console.error(`Error ${isNew ? "creating" : "updating"} user:`, err);
+      console.error(`Lỗi khi ${isNew ? "tạo" : "cập nhật"} người dùng:`, err);
 
       // Extract error message from API response if available
       const errorMsg =
         err.response?.data?.message ||
-        `Failed to ${
-          isNew ? "create" : "update"
-        } user. Username or email already exists.`;
+        `${
+          isNew ? "Tạo" : "Cập nhật"
+        } người dùng thất bại. Tên đăng nhập hoặc email đã tồn tại.`;
 
       setError(errorMsg);
       setSaving(false);
@@ -378,7 +395,7 @@ if (isNew) {
       // Phân tích kết quả từ response mới
       return response.data.unique;
     } catch (err) {
-      console.error(`Error checking unique ${field}:`, err);
+      console.error(`Lỗi khi kiểm tra tính duy nhất của ${field}:`, err);
       return true; // Mặc định là unique nếu có lỗi
     }
   };
@@ -409,11 +426,11 @@ if (isNew) {
           disabled={saving}
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back</span>
+          <span>Quay lại</span>
         </button>
 
         <h1 className="text-xl font-bold">
-          {isNew ? "CREATE NEW USER" : "EDIT USER"}
+          {isNew ? "TẠO NGƯỜI DÙNG MỚI" : "CHỈNH SỬA NGƯỜI DÙNG"}
         </h1>
 
         <div className="flex space-x-2">
@@ -426,7 +443,7 @@ if (isNew) {
             disabled={saving}
           >
             <Save size={18} className="mr-2" />
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Đang lưu..." : "Lưu"}
           </button>
         </div>
       </div>
@@ -447,15 +464,15 @@ if (isNew) {
             {/* Basic Information */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2">
-                Basic Information
+                Thông tin cơ bản
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Full Name *{" "}
+                    Họ và tên{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 100 characters)
+                      (Tối đa 100 ký tự)
                     </span>
                   </label>
                   <input
@@ -482,9 +499,9 @@ if (isNew) {
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Email *{" "}
+                    Email{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 100 characters)
+                      (Tối đa 100 ký tự)
                     </span>
                   </label>
                   <input
@@ -511,9 +528,9 @@ if (isNew) {
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Username *{" "}
+                    Tên đăng nhập{" "}
                     <span className="text-xs text-gray-500">
-                      (3-50 characters, alphanumeric)
+                      (3-50 ký tự, chữ và số)
                     </span>
                   </label>
                   <input
@@ -539,7 +556,7 @@ if (isNew) {
                 </div>
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Phone Number *
+                    Số điện thoại
                   </label>
                   <input
                     type="text"
@@ -565,7 +582,7 @@ if (isNew) {
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Role *
+                    Vai trò
                   </label>
                   <select
                     name="role"
@@ -573,9 +590,9 @@ if (isNew) {
                     onChange={handleChange}
                     className="w-full bg-gray-800 rounded-md p-2 border border-gray-700"
                   >
-                    <option value="ROLE_ADMIN">Admin</option>
-                    <option value="ROLE_MANAGER">Manager</option>
-                    <option value="ROLE_USER">User</option>
+                    <option value="ROLE_ADMIN">Quản trị viên</option>
+                    <option value="ROLE_MANAGER">Quản lý</option>
+                    <option value="ROLE_USER">Người dùng</option>
                   </select>
                 </div>
               </div>
@@ -584,15 +601,15 @@ if (isNew) {
             {/* Professional Information */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2">
-                Professional Information
+                Thông tin nghề nghiệp
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Department *{" "}
+                    Phòng ban{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 100 characters)
+                      (Tối đa 100 ký tự)
                     </span>
                   </label>
                   <input
@@ -619,9 +636,9 @@ if (isNew) {
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Position *{" "}
+                    Chức vụ{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 100 characters)
+                      (Tối đa 100 ký tự)
                     </span>
                   </label>
                   <input
@@ -647,9 +664,9 @@ if (isNew) {
                 </div>
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Address *{" "}
+                    Địa chỉ{" "}
                     <span className="text-xs text-gray-500">
-                      (Max 255 characters)
+                      (Tối đa 255 ký tự)
                     </span>
                   </label>
                   <input
@@ -676,7 +693,7 @@ if (isNew) {
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    Status *
+                    Trạng thái
                   </label>
                   <select
                     name="status"
@@ -684,8 +701,8 @@ if (isNew) {
                     onChange={handleChange}
                     className="w-full bg-gray-800 rounded-md p-2 border border-gray-700"
                   >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">InActive</option>
+                    <option value="ACTIVE">Kích hoạt</option>
+                    <option value="INACTIVE">Vô hiệu hóa</option>
                   </select>
                 </div>
               </div>
@@ -694,13 +711,13 @@ if (isNew) {
             {/* Password Section */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg md:col-span-2">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2">
-                {isNew ? "Set Password" : "Change Password (Optional)"}
+                {isNew ? "Đặt mật khẩu" : "Thay đổi mật khẩu (Tùy chọn)"}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    {isNew ? "Password *" : "New Password"}{" "}
+                    {isNew ? "Mật khẩu *" : "Mật khẩu mới"}{" "}
                   </label>
                   <input
                     type="password"
@@ -723,7 +740,7 @@ if (isNew) {
 
                 <div>
                   <label className="block text-gray-400 text-sm mb-1">
-                    {isNew ? "Confirm Password *" : "Confirm New Password"}
+                    {isNew ? "Xác nhận mật khẩu *" : "Xác nhận mật khẩu mới"}
                   </label>
                   <input
                     type="password"

@@ -51,7 +51,7 @@ const ErrorDetailsDialog = ({ isOpen, onClose, title, errors }) => {
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
             onClick={onClose}
           >
-            Close
+            Đóng
           </button>
         </div>
       </div>
@@ -143,7 +143,7 @@ const getAssignedUsers = (users) => {
     return (
       <span className="italic text-gray-400 flex items-center">
         <X size={14} className="text-red-400 mr-1" />
-        No body assigned
+        Chưa phân công
       </span>
     );
   }
@@ -168,7 +168,26 @@ const getAssignedUsers = (users) => {
 const StatusBadge = ({ status }) => {
   let color;
   let icon;
-  let displayText = status.replace(/_/g, " ");
+  let displayText;
+  switch (status) {
+    case "NOT_STARTED":
+      displayText = "Chưa bắt đầu";
+      break;
+    case "IN_PROGRESS":
+      displayText = "Đang tiến hành";
+      break;
+    case "COMPLETED":
+      displayText = "Hoàn thành";
+      break;
+    case "OVER_DUE":
+      displayText = "Quá hạn";
+      break;
+    case "ON_HOLD":
+      displayText = "Tạm dừng";
+      break;
+    default:
+      displayText = status.replace(/_/g, " ");
+  }
 
   switch (status) {
     case "NOT_STARTED":
@@ -248,7 +267,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
@@ -258,7 +277,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             }}
           >
             <Trash2 size={16} />
-            Delete
+            Xóa
           </button>
         </div>
       </div>
@@ -293,7 +312,7 @@ const Pagination = ({
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 gap-4">
       <div className="flex items-center gap-2">
-        <span>Show</span>
+        <span>Hiển thị</span>
         <select
           className="bg-gray-800 border border-gray-700 rounded-md p-1"
           value={itemsPerPage}
@@ -308,7 +327,7 @@ const Pagination = ({
       </div>
 
       <div className="text-sm">
-        Đang hiển thị {currentPage} of {totalPages}
+        Trang {currentPage} / {totalPages}
       </div>
 
       <div className="flex items-center gap-2">
@@ -387,7 +406,7 @@ const ActionButtons = ({
           <Eye size={16} />
         </button>
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
-          View details
+          Xem chi tiết
         </div>
       </div>
 
@@ -399,7 +418,7 @@ const ActionButtons = ({
           <Edit size={16} />
         </button>
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
-          Edit project
+          Chỉnh sửa dự án
         </div>
       </div>
 
@@ -411,7 +430,7 @@ const ActionButtons = ({
           <FileSpreadsheet size={16} />
         </button>
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
-          Export to Excel
+          Xuất ra Excel
         </div>
       </div>
 
@@ -423,7 +442,7 @@ const ActionButtons = ({
           <Trash2 size={16} />
         </button>
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-xs text-white rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
-          Delete project
+          Xóa dự án
         </div>
       </div>
     </div>
@@ -549,7 +568,7 @@ const Project = () => {
       setLoading(false);
     } catch (err) {
       console.error("Error fetching projects:", err);
-      setError("Failed to load projects. Please try again later.");
+      setError("Không thể tải dữ liệu dự án. Vui lòng thử lại sau.");
       setLoading(false);
     }
   };
@@ -615,10 +634,10 @@ const Project = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      showToast("Template downloaded successfully", "success");
+      showToast("Mẫu đã được tải xuống thành công", "success");
     } catch (err) {
       console.error("Error downloading template:", err);
-      showToast("Failed to download template", "error");
+      showToast("Không thể tải xuống mẫu", "error");
     }
   };
 
@@ -633,13 +652,13 @@ const Project = () => {
     // Kiểm tra định dạng file
     const fileExt = file.name.split(".").pop().toLowerCase();
     if (fileExt !== "xlsx" && fileExt !== "xls") {
-      showToast("Please upload an Excel file (.xlsx or .xls)", "error");
+      showToast("Vui lòng tải lên tập tin Excel (.xlsx hoặc .xls)", "error");
       return;
     }
 
     // Kiểm tra kích thước file (tối đa 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showToast("File size exceeds 5MB limit", "error");
+      showToast("Kích thước tập tin vượt quá giới hạn 5MB", "error");
       return;
     }
 
@@ -670,7 +689,7 @@ const Project = () => {
       setImportLoading(false);
       setSuccessDialog({
         show: true,
-        message: "Project imported successfully!",
+        message: "Dự án đã được nhập thành công!",
       });
       refreshData();
     } catch (err) {
@@ -688,7 +707,7 @@ const Project = () => {
         if (err.response.data.errors && err.response.data.errors.length > 0) {
           setErrorDetails({
             show: true,
-            title: "Import Errors",
+            title: "Lỗi khi nhập",
             errors: err.response.data.errors,
           });
           return;
@@ -761,7 +780,7 @@ const Project = () => {
       showToast("Dự án đã được  xuất thành công", "success");
     } catch (err) {
       console.error("Error exporting project:", err);
-      showToast("Failed to export project", "error");
+      showToast("Không thể xuất dự án", "error");
     }
   };
 
@@ -829,7 +848,7 @@ const Project = () => {
       refreshData();
     } catch (err) {
       console.error("Error deleting project:", err);
-      showToast("Failed to delete project", "error");
+      showToast("Không thể xóa dự án", "error");
     }
   };
 
@@ -869,7 +888,7 @@ const Project = () => {
                 }}
               >
                 <Plus size={18} />
-                <span>New</span>
+                <span>Thêm</span>
               </button>
               {/* <button
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 rounded-md"
@@ -890,7 +909,7 @@ const Project = () => {
                 onClick={handleReset}
               >
                 <RotateCcw size={18} />
-                <span>Reset</span>
+                <span>Làm mới</span>
               </button>
               {/* <button
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-md"
@@ -905,7 +924,7 @@ const Project = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo Name"
+                  placeholder="Tìm kiếm theo tên"
                   className="pl-4 pr-10 py-2 bg-gray-800 rounded-md w-64"
                   value={search}
                   onChange={(e) => {
@@ -938,12 +957,12 @@ const Project = () => {
                   size={36}
                   className="text-purple-500 animate-spin mb-4"
                 />
-                <p className="text-gray-400">Loading project data...</p>
+                <p className="text-gray-400">Đang tải dữ liệu dự án...</p>
               </div>
             ) : error ? (
               <div className="text-center p-4 text-red-500">{error}</div>
             ) : currentProjects.length === 0 ? (
-              <div className="text-center p-4">No projects found</div>
+              <div className="text-center p-4">Không tìm thấy dự án nào</div>
             ) : (
               <table className="w-full border-collapse">
                 <thead>
@@ -967,7 +986,7 @@ const Project = () => {
                         {project.managerName || (
                           <span className="italic text-gray-400 flex items-center">
                             <X size={14} className="text-red-400 mr-1" />
-                            No manager assigned
+                            Chưa có quản lý
                           </span>
                         )}
                       </td>
@@ -1026,8 +1045,8 @@ const Project = () => {
         isOpen={deleteConfirm.show}
         onClose={() => setDeleteConfirm({ show: false, projectId: null })}
         onConfirm={confirmDeleteProject}
-        title="Delete Project"
-        message="Are you sure you want to delete this project? This action cannot be undone."
+        title="Xóa dự án"
+        message="Bạn có chắc chắn muốn xóa dự án này không? Hành động này không thể hoàn tác."
       />
 
       <SuccessDialog
@@ -1050,9 +1069,9 @@ const Project = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg p-6 max-w-md shadow-xl flex flex-col items-center">
             <Loader size={40} className="text-purple-500 animate-spin mb-4" />
-            <h2 className="text-xl font-bold">Importing project...</h2>
+            <h2 className="text-xl font-bold">Đang nhập dự án...</h2>
             <p className="text-gray-400 mt-2">
-              Please wait while we process your Excel file.
+              Vui lòng đợi trong khi chúng tôi xử lý tập tin Excel của bạn.
             </p>
           </div>
         </div>
