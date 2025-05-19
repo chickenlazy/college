@@ -433,12 +433,12 @@ const ActionButtons = ({
 // Filter Tabs Component
 const FilterTabs = ({ activeFilter, onFilterChange }) => {
   const filters = [
-    { id: "all", label: "All" },
-    { id: "NOT_STARTED", label: "Not Started" },
-    { id: "IN_PROGRESS", label: "In Progress" },
-    { id: "COMPLETED", label: "Completed" },
-    { id: "ON_HOLD", label: "On Hold" },
-    { id: "OVER_DUE", label: "Over Due" },
+    { id: "all", label: "Tất cả" },
+    { id: "NOT_STARTED", label: "Chưa bắt đầu" },
+    { id: "IN_PROGRESS", label: "Đang tiến hành" },
+    { id: "COMPLETED", label: "Hoàn thành" },
+    { id: "ON_HOLD", label: "Tạm dừng" },
+    { id: "OVER_DUE", label: "Quá hạn" },
   ];
 
   return (
@@ -758,7 +758,7 @@ const Project = () => {
       // Giải phóng URL object
       window.URL.revokeObjectURL(url);
 
-      showToast("Project exported successfully", "success");
+      showToast("Dự án đã được  xuất thành công", "success");
     } catch (err) {
       console.error("Error exporting project:", err);
       showToast("Failed to export project", "error");
@@ -824,7 +824,7 @@ const Project = () => {
 
       setSuccessDialog({
         show: true,
-        message: "Project deleted successfully!",
+        message: "Dự án đã được xóa thành công!",
       });
       refreshData();
     } catch (err) {
@@ -948,13 +948,13 @@ const Project = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-900 text-left">
-                    <th className="p-4 border-b border-gray-800">Name</th>
-                    <th className="p-4 border-b border-gray-800">Manager</th>
-                    <th className="p-4 border-b border-gray-800">Tasks</th>
-                    <th className="p-4 border-b border-gray-800">Progress</th>
-                    <th className="p-4 border-b border-gray-800">Status</th>
-                    <th className="p-4 border-b border-gray-800">Due Date</th>
-                    <th className="p-4 border-b border-gray-800">Action</th>
+                    <th className="p-4 border-b border-gray-800">Tên</th>
+                    <th className="p-4 border-b border-gray-800">Quản lý</th>
+                    <th className="p-4 border-b border-gray-800">Nhiệm vụ</th>
+                    <th className="p-4 border-b border-gray-800">Tiến độ</th>
+                    <th className="p-4 border-b border-gray-800">Trạng thái</th>
+                    <th className="p-4 border-b border-gray-800">Kết thúc</th>
+                    <th className="p-4 border-b border-gray-800">Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
