@@ -587,8 +587,7 @@ const Subtask = () => {
               <span className="text-purple-400">NHIỆM VỤ</span> CỦA TÔI
             </h1>
             <div className="text-sm text-gray-400">
-              {apiData.totalElements} subtask
-              {apiData.totalElements !== 1 ? "s" : ""} found
+              {apiData.totalElements} nhiệm vụ được tìm thấy
             </div>
           </div>
 

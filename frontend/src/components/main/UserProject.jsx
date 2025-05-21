@@ -25,7 +25,7 @@ import {
 
 // Format date to show in card
 const formatDate = (dateString) => {
-  if (!dateString) return "Not set";
+  if (!dateString) return "Chưa thiết lập";
   
   const date = new Date(dateString);
   return date.toLocaleDateString("en-GB", {
@@ -121,12 +121,12 @@ const Toast = ({ message, type, onClose }) => {
 // Filter Tabs Component
 const FilterTabs = ({ activeFilter, onFilterChange }) => {
   const filters = [
-    { id: "all", label: "All" },
-    { id: "NOT_STARTED", label: "Not Started" },
-    { id: "IN_PROGRESS", label: "In Progress" },
-    { id: "COMPLETED", label: "Completed" },
-    { id: "ON_HOLD", label: "On Hold" },
-    { id: "OVER_DUE", label: "Over Due" },
+    { id: "all", label: "Tất cả" },
+    { id: "NOT_STARTED", label: "Chưa bắt đầu" },
+    { id: "IN_PROGRESS", label: "Đang tiến hành" },
+    { id: "COMPLETED", label: "hoàn thành" },
+    { id: "ON_HOLD", label: "Tạm dừng" },
+    { id: "OVER_DUE", label: "Quá hạn" },
   ];
 
   return (
@@ -202,7 +202,7 @@ const ProjectCard = ({ project, onViewDetails }) => {
           {/* Description */}
           {project.description && (
             <div className="mb-3">
-              <p className="text-xs text-gray-400 mb-1">Description</p>
+              <p className="text-xs text-gray-400 mb-1">Mô tả</p>
               <p className="text-sm text-gray-300 line-clamp-2">{project.description}</p>
             </div>
           )}
@@ -213,8 +213,8 @@ const ProjectCard = ({ project, onViewDetails }) => {
               <User size={18} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-gray-400 font-medium">Manager</p>
-              <p className="text-sm font-medium truncate">{project.managerName || "Not assigned"}</p>
+              <p className="text-xs text-gray-400 font-medium">Quản lý</p>
+              <p className="text-sm font-medium truncate">{project.managerName || "Chưa phân công"}</p>
             </div>
           </div>
           
@@ -226,7 +226,7 @@ const ProjectCard = ({ project, onViewDetails }) => {
                 <Calendar size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Start Date</p>
+                <p className="text-xs text-gray-400 font-medium">Ngày bắt đầu</p>
                 <p className="text-sm font-medium">{formatDate(project.startDate)}</p>
               </div>
             </div>
@@ -237,7 +237,7 @@ const ProjectCard = ({ project, onViewDetails }) => {
                 <Calendar size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Due Date</p>
+                <p className="text-xs text-gray-400 font-medium">Ngày đến hạn</p>
                 <p className={`text-sm font-medium ${isDueDatePassed() ? 'text-red-500 font-bold' : ''}`}>
                   {formatDate(project.dueDate)}
                 </p>
@@ -248,9 +248,9 @@ const ProjectCard = ({ project, onViewDetails }) => {
           {/* Progress & Tasks */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-400">Progress</p>
+              <p className="text-xs text-gray-400">Tiến độ</p>
               <p className="text-xs text-gray-400">
-                {project.totalCompletedTasks}/{project.totalTasks} tasks completed
+                {project.totalCompletedTasks}/{project.totalTasks} nhiệm vụ đã hoàn thành
               </p>
             </div>
             <ProgressBar progress={project.progress?.toFixed(1) || 0} />
@@ -265,7 +265,7 @@ const ProjectCard = ({ project, onViewDetails }) => {
           className="w-full py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white transition-colors"
         >
           <Eye size={16} />
-          <span>View Details</span>
+          <span>Xem chi tiết</span>
         </button>
       </div>
       
@@ -289,7 +289,7 @@ const Pagination = ({
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mt-8 text-gray-400 gap-4">
       <div className="flex items-center gap-2">
-        <span>Show</span>
+        <span>Hiển thị</span>
         <select
           className="bg-gray-800 border border-gray-700 rounded-md p-1"
           value={itemsPerPage}
@@ -304,7 +304,7 @@ const Pagination = ({
       </div>
 
       <div className="text-sm">
-        Đang hiển thị {currentPage} of {totalPages} ({totalItems} total items)
+        Đang hiển thị {currentPage} trên tổng số {totalPages} ({totalItems} mục)
       </div>
 
       <div className="flex items-center gap-2">
@@ -528,10 +528,10 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
         <>
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">
-              <span className="text-purple-400">MY</span> PROJECTS
+              <span className="text-purple-400">DỰ ÁN</span> CỦA TÔI
             </h1>
             <div className="text-sm text-gray-400">
-              {apiData.totalElements} project{apiData.totalElements !== 1 ? 's' : ''} found
+              {apiData.totalElements} dự án được tìm thấy
             </div>
           </div>
   
@@ -543,7 +543,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
                 onClick={handleReset}
               >
                 <RotateCcw size={18} />
-                <span>Reset</span>
+                <span>Làm mới</span>
               </button>
             </div>
   
@@ -551,7 +551,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="Tìm kiếm dự án..."
                   className="pl-10 pr-4 py-2 bg-gray-800 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-purple-600"
                   value={search}
                   onChange={(e) => {
@@ -584,7 +584,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
                   size={36}
                   className="text-purple-500 animate-spin mb-4"
                 />
-                <p className="text-gray-400">Loading your projects...</p>
+                <p className="text-gray-400">Đang tải dự án của bạn...</p>
               </div>
             ) : error ? (
               <div className="flex flex-col justify-center items-center h-64 text-center p-4">
@@ -595,11 +595,11 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
             ) : projects.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-64 text-center">
                 <FolderKanban size={48} className="text-gray-600 mb-4" />
-                <h3 className="text-lg font-medium mb-2">No projects found</h3>
+                <h3 className="text-lg font-medium mb-2">Không tìm thấy dự án nào</h3>
                 <p className="text-gray-400 max-w-md">
                   {search || activeFilter !== "all" 
-                    ? "Try adjusting your filters or search query" 
-                    : "You aren't assigned to any projects at the moment"}
+                    ? "Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn" 
+                    : "Hiện tại bạn chưa được giao bất kỳ dự án nào"}
                 </p>
               </div>
             ) : (
