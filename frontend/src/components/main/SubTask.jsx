@@ -26,7 +26,7 @@ import {
 
 // Format date to show in card
 const formatDate = (dateString) => {
-  if (!dateString) return "Not set";
+  if (!dateString) return "Chưa đặt";
 
   const date = new Date(dateString);
   return date.toLocaleDateString("en-GB", {
@@ -38,7 +38,7 @@ const formatDate = (dateString) => {
 
 // Format full date with time
 const formatDateTime = (dateString) => {
-  if (!dateString) return "Not available";
+  if (!dateString) return "Không khả dụng";
 
   const date = new Date(dateString);
   return date.toLocaleDateString("en-GB", {
@@ -86,9 +86,9 @@ const Toast = ({ message, type, onClose }) => {
 // Filter Tabs Component
 const FilterTabs = ({ activeFilter, onFilterChange }) => {
   const filters = [
-    { id: "all", label: "All" },
-    { id: "completed", label: "Completed" },
-    { id: "incomplete", label: "Incomplete" },
+    { id: "all", label: "Tất cả" },
+    { id: "completed", label: "Hoàn thành" },
+    { id: "incomplete", label: "Chưa hoàn thành" },
   ];
 
   return (
@@ -121,7 +121,7 @@ const Pagination = ({
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mt-8 text-gray-400 gap-4">
       <div className="flex items-center gap-2">
-        <span>Show</span>
+        <span>Hiển thị</span>
         <select
           className="bg-gray-800 border border-gray-700 rounded-md p-1"
           value={itemsPerPage}
@@ -136,7 +136,7 @@ const Pagination = ({
       </div>
 
       <div className="text-sm">
-        Đang hiển thị {currentPage} of {totalPages} ({totalItems} total items)
+        Đang hiển thị {currentPage} trong tổng số {totalPages} ({totalItems} mục)
       </div>
 
       <div className="flex items-center gap-2">
@@ -237,17 +237,17 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
             {subtask.completed ? (
               <>
                 <CheckCircle size={12} />
-                <span>Completed</span>
+                <span>Hoàn thành</span>
               </>
             ) : isDueDatePassed() ? (
               <>
                 <AlertTriangle size={12} />
-                <span>Overdue</span>
+                <span>Quá hạn</span>
               </>
             ) : (
               <>
                 <Clock size={12} />
-                <span>In Progress</span>
+                <span>Đang tiến hành</span>
               </>
             )}
           </div>
@@ -263,7 +263,7 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
               <ClipboardList size={18} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-gray-400 font-medium">Task</p>
+              <p className="text-xs text-gray-400 font-medium">Nhiệm vụ</p>
               <p className="text-sm font-medium truncate">
                 {subtask.taskName || "N/A"}
               </p>
@@ -276,7 +276,7 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
               <FolderKanban size={18} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-gray-400 font-medium">Project</p>
+              <p className="text-xs text-gray-400 font-medium">Dự án</p>
               <p className="text-sm font-medium truncate">
                 {subtask.projectName || "N/A"}
               </p>
@@ -285,13 +285,13 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
 
           {/* Dates Row - Combined Start & Due Date */}
           <div className="flex">
-            {/* Start Date */}
+            {/* Ngày bắt đầu */}
             <div className="flex items-center flex-1 mr-3">
               <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-yellow-900/20 text-yellow-400 rounded-full mr-3">
                 <Calendar size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Start Date</p>
+                <p className="text-xs text-gray-400 font-medium">Ngày bắt đầu</p>
                 <p className="text-sm font-medium">
                   {formatDate(subtask.startDate)}
                 </p>
@@ -304,8 +304,8 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
                 <Bell size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Due Date</p>
-                <p
+                <p className="text-xs text-gray-400 font-medium">Ngày kết thúc</p>
+                <p                                            
                   className={`text-sm font-medium ${
                     isDueDatePassed() ? "text-red-500 font-bold" : ""
                   }`}
@@ -321,7 +321,7 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
       {/* Additional Information (if needed) */}
       {subtask.description && (
         <div className="px-4 pb-3">
-          <p className="text-xs text-gray-400 mb-1">Description</p>
+          <p className="text-xs text-gray-400 mb-1">Mô tả</p>
           <p className="text-sm text-gray-300">{subtask.description}</p>
         </div>
       )}
@@ -334,7 +334,7 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
           className="flex-1 py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white transition-colors"
         >
           <Eye size={16} />
-          <span>View Details</span>
+          <span>Xem chi tiết</span>
         </button>
         <button
           onClick={() => onToggle(subtask.id)}
@@ -347,12 +347,12 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
           {subtask.completed ? (
             <>
               <X size={16} />
-              <span>Mark as Incomplete</span>
+              <span>Đánh dấu chưa hoàn thành</span>
             </>
           ) : (
             <>
               <Check size={16} />
-              <span>Mark as Complete</span>
+              <span>Đánh dấu hoàn thành</span>
             </>
           )}
         </button>
@@ -407,7 +407,7 @@ const Subtask = () => {
     filterStatus = activeFilter
   ) => {
     if (!user || !user.id) {
-      setError("User not authenticated");
+      setError("Người dùng chưa được xác thực");
       setLoading(false);
       return;
     }
@@ -549,7 +549,7 @@ const Subtask = () => {
       );
 
       setSubtasks(updatedSubtasks);
-      showToast("Subtask status updated successfully", "success");
+      showToast("Cập nhật trạng thái nhiệm vụ con thành công", "success");
     } catch (err) {
       console.error("Error toggling subtask status:", err);
       showToast("Failed to update subtask status", "error");
@@ -584,7 +584,7 @@ const Subtask = () => {
         <>
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">
-              <span className="text-purple-400">MY</span> SUBTASKS
+              <span className="text-purple-400">NHIỆM VỤ</span> CỦA TÔI
             </h1>
             <div className="text-sm text-gray-400">
               {apiData.totalElements} subtask
@@ -600,7 +600,7 @@ const Subtask = () => {
                 onClick={handleReset}
               >
                 <RotateCcw size={18} />
-                <span>Reset</span>
+                <span>Làm mới</span>
               </button>
             </div>
 
@@ -608,7 +608,7 @@ const Subtask = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search subtasks..."
+                  placeholder="Tìm kiếm nhiệm vụ con..."
                   className="pl-10 pr-4 py-2 bg-gray-800 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-purple-600"
                   value={search}
                   onChange={(e) => {
@@ -641,7 +641,7 @@ const Subtask = () => {
                   size={36}
                   className="text-purple-500 animate-spin mb-4"
                 />
-                <p className="text-gray-400">Loading your subtasks...</p>
+                <p className="text-gray-400">Đang tải nhiệm vụ con của bạn...</p>
               </div>
             ) : error ? (
               <div className="flex flex-col justify-center items-center h-64 text-center p-4">
@@ -652,11 +652,11 @@ const Subtask = () => {
             ) : filteredSubtasks.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-64 text-center">
                 <ClipboardList size={48} className="text-gray-600 mb-4" />
-                <h3 className="text-lg font-medium mb-2">No subtasks found</h3>
+                <h3 className="text-lg font-medium mb-2">Không tìm thấy nhiệm vụ</h3>
                 <p className="text-gray-400 max-w-md">
                   {search || activeFilter !== "all"
-                    ? "Try adjusting your filters or search query"
-                    : "You don't have any assigned subtasks at the moment"}
+                    ? "Hãy điều chỉnh bộ lọc hoặc từ khóa tìm kiếm"
+                    : "Bạn chưa được giao nhiệm vụ con nào vào lúc này"}
                 </p>
               </div>
             ) : (

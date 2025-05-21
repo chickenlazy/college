@@ -128,7 +128,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                 className="hover:text-purple-400"
                 onClick={() => setShowReplyForm(!showReplyForm)}
               >
-                Reply
+                Phản hồi
               </button>
 
               {comment.replyCount > 0 && (
@@ -137,8 +137,8 @@ const Comment = ({ comment, onReply, onDelete }) => {
                   onClick={fetchReplies}
                 >
                   {showReplies
-                    ? "Hide replies"
-                    : `View ${comment.replyCount} replies`}
+                    ? "Ẩn phản hồi"
+                    : `Xem ${comment.replyCount} phản hồi`}
                   {loadingReplies && (
                     <span className="ml-2 animate-spin">⏳</span>
                   )}
@@ -151,7 +151,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                   className="hover:text-red-400"
                   onClick={() => onDelete && onDelete(comment.id)}
                 >
-                  Delete
+                  Xóa
                 </button>
               )}
             </div>
@@ -160,7 +160,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
               <div className="mt-3">
                 <textarea
                   className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
-                  placeholder="Write a reply..."
+                  placeholder="Viết phản hồi..."
                   rows="2"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
@@ -170,7 +170,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                     className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md"
                     onClick={() => setShowReplyForm(false)}
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded-md"
@@ -311,19 +311,19 @@ const TaskItem = ({ task }) => {
       {expanded && (
         <div className="p-4 bg-gray-900 border-t border-gray-700">
           <div className="text-sm text-gray-300 mb-3">
-            {task.description || "No description provided."}
+            {task.description || "Không có mô tả."}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Start Date</p>
+              <p className="text-xs text-gray-400 mb-1">Ngày bắt đầu</p>
               <div className="flex items-center">
                 <Calendar size={14} className="mr-1 text-gray-400" />
                 <span>{formatDate(task.startDate)}</span>
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Due Date</p>
+              <p className="text-xs text-gray-400 mb-1">Ngày kết thúc</p>
               <div className="flex items-center">
                 <Calendar size={14} className="mr-1 text-gray-400" />
                 <span>{formatDate(task.dueDate)}</span>
@@ -335,7 +335,7 @@ const TaskItem = ({ task }) => {
           {task.subtasks && task.subtasks.length > 0 && (
             <div className="mt-3">
               <p className="text-xs text-gray-400 mb-2">
-                Subtasks ({task.subtasks.filter((s) => s.completed).length}/
+                Nhiệm vụ con ({task.subtasks.filter((s) => s.completed).length}/
                 {task.subtasks.length})
               </p>
               <div className="space-y-2 pl-2">
@@ -471,18 +471,18 @@ const UserProjectDetail = ({ projectId, onBack }) => {
       <div className="p-6 text-center">
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
         <h2 className="text-xl font-bold mb-2">Error Loading Project</h2>
-        <p className="text-gray-400">{error || "Project not found"}</p>
+        <p className="text-gray-400">{error || "Không tìm thấy dự án"}</p>
         <button
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
           onClick={onBack}
         >
-          Back
+          Quay lại
         </button>
       </div>
     );
   }
 
-  // Calculate days remaining
+  // Calculate Số ngày còn lại
   const getDaysRemaining = () => {
     const dueDate = new Date(project.dueDate);
     const today = new Date();
@@ -522,7 +522,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           onClick={onBack}
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back</span>
+          <span>Quay lại</span>
         </button>
       </div>
   
@@ -532,7 +532,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
           <StatusBadge status={project.status} />
         </div>
-        <p className="text-gray-300">{project.description || "No description provided."}</p>
+        <p className="text-gray-300">{project.description || "Không có mô tả."}</p>
   
         {/* Tags */}
         {project.tags && project.tags.length > 0 && (
@@ -549,7 +549,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-400 mb-1">Timeline</p>
+              <p className="text-sm text-gray-400 mb-1">Thời gian</p>
               <p className="font-medium">
                 {formatDate(project.startDate)} - {formatDate(project.dueDate)}
               </p>
@@ -561,15 +561,15 @@ const UserProjectDetail = ({ projectId, onBack }) => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
+              <p className="text-sm text-gray-400 mb-1">Số ngày còn lại</p>
               <p className="font-medium">
                 {daysRemaining > 0
                   ? `${daysRemaining} days left`
                   : daysRemaining === 0
-                  ? "Due today"
+                  ? "Hết hạn hôm nay"
                   : project.status === "COMPLETED"
-                  ? "Completed"
-                  : `${Math.abs(daysRemaining)} days overdue`}
+                  ? "Hoàn thành"
+                  : `${Math.abs(daysRemaining)} ngày quá hạn`}
               </p>
             </div>
             <Clock
@@ -586,8 +586,8 @@ const UserProjectDetail = ({ projectId, onBack }) => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-400 mb-1">Team Members</p>
-              <p className="font-medium">{project.users.length} members</p>
+              <p className="text-sm text-gray-400 mb-1">Thành viên nhóm</p>
+              <p className="font-medium">{project.users.length} thành viên</p>
             </div>
             <Users size={20} className="text-purple-500" />
           </div>
@@ -596,9 +596,9 @@ const UserProjectDetail = ({ projectId, onBack }) => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-400 mb-1">Tasks Progress</p>
+              <p className="text-sm text-gray-400 mb-1">Tiến độ nhiệm vụ</p>
               <p className="font-medium">
-                {project.totalCompletedTasks}/{project.totalTasks} completed
+                {project.totalCompletedTasks}/{project.totalTasks} hoàn thành
               </p>
             </div>
             <ListChecks size={20} className="text-purple-500" />
@@ -617,19 +617,19 @@ const UserProjectDetail = ({ projectId, onBack }) => {
         <div className="flex overflow-x-auto hide-scrollbar">
           <Tab
             icon={<ListChecks size={18} />}
-            label="Tasks"
+            label="Nhiệm vụ"
             active={activeTab === "tasks"}
             onClick={() => setActiveTab("tasks")}
           />
           <Tab
             icon={<Users size={18} />}
-            label="Team"
+            label="Nhóm"
             active={activeTab === "team"}
             onClick={() => setActiveTab("team")}
           />
           <Tab
             icon={<MessageSquare size={18} />}
-            label="Comments"
+            label="Bình luận"
             active={activeTab === "comments"}
             onClick={() => setActiveTab("comments")}
           />
@@ -644,7 +644,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
             {project.tasks.length === 0 ? (
               <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                 <FileText size={48} className="mx-auto mb-3 opacity-50" />
-                <p>No tasks found for this project.</p>
+                <p>Không tìm thấy nhiệm vụ nào cho dự án này.</p>
               </div>
             ) : (
               project.tasks.map((task) => (
@@ -656,9 +656,9 @@ const UserProjectDetail = ({ projectId, onBack }) => {
         
         {activeTab === "team" && (
           <div>
-            {/* Project Manager */}
+            {/* Quản lý dự án */}
             <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-3">Project Manager</h2>
+              <h2 className="text-lg font-semibold mb-3">Quản lý dự án</h2>
               <div className="bg-gray-800 rounded-lg p-4">
                 <div className="flex items-center">
                   <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
@@ -666,15 +666,15 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                   </div>
                   <div className="ml-3">
                     <p className="font-medium">{project.managerName}</p>
-                    <p className="text-sm text-gray-400">Manager</p>
+                    <p className="text-sm text-gray-400">Quản lý</p>
                   </div>
                 </div>
               </div>
             </div>
   
-            {/* Team Members */}
+            {/* Thành viên nhóm */}
             <div>
-              <h2 className="text-lg font-semibold mb-3">Team Members</h2>
+              <h2 className="text-lg font-semibold mb-3">Thành viên nhóm</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {project.users.map((user) => (
                   <div key={user.id} className="bg-gray-800 rounded-lg p-3">
@@ -702,7 +702,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                 <div className="bg-gray-800 rounded-lg p-4">
                   <textarea
                     className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
-                    placeholder="Write a comment..."
+                    placeholder="Viết bình luận..."
                     rows="3"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
@@ -741,7 +741,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                           // Reset form
                           setNewComment("");
                           showToast(
-                            "Comment added successfully",
+                            "Thêm bình luận thành công",
                             "success"
                           );
                         } catch (error) {
@@ -760,7 +760,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                   <div className="text-center py-8">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
                     <p className="mt-2 text-gray-400">
-                      Loading comments...
+                      Đang tải bình luận...
                     </p>
                   </div>
                 ) : comments.length === 0 ? (
@@ -770,7 +770,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                       className="mx-auto text-gray-500 mb-2"
                     />
                     <p className="text-gray-400">
-                      No comments yet. Be the first to comment!
+                      Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
                     </p>
                   </div>
                 ) : (
@@ -815,7 +815,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                             comments.filter((c) => c.id !== commentId)
                           );
                           showToast(
-                            "Comment deleted successfully",
+                            "Xóa bình luận thành công",
                             "success"
                           );
                         } catch (error) {

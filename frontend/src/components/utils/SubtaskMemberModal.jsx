@@ -27,7 +27,7 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
         <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
           {/* Header */}
           <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-750">
-            <h3 className="text-lg font-medium text-white">Select Assignee</h3>
+            <h3 className="text-lg font-medium text-white">Chọn người thực hiện</h3>
             <button
               className="p-2 hover:bg-gray-700 hover:text-white text-gray-400 rounded-full transition-colors"
               onClick={onClose}
@@ -41,7 +41,7 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
             <div className="relative">
               <input 
                 type="text" 
-                placeholder="Search members by name..." 
+                placeholder="Tìm kiếm thành viên theo tên..." 
                 className="w-full bg-gray-700 rounded-md px-4 py-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -89,7 +89,7 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
                   <path d="M7.7 7.8a7 7 0 0 0-1.2 3.8c0 .7.1 1.4.3 2"></path>
                   <path d="M12 12a7 7 0 0 0 1.3 4"></path>
                 </svg>
-                <p className="text-base mb-2">No matching members found</p>
+                <p className="text-base mb-2">'Không tìm thấy thành viên phù hợp</p>
                 {searchTerm && (
                   <button 
                     className="mt-2 text-sm text-purple-400 hover:text-purple-300 py-1 px-3 rounded-md hover:bg-gray-700"
@@ -98,7 +98,7 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
                       setSelectedRoleFilter("All");
                     }}
                   >
-                    Clear filters
+                    Xóa bộ lọc
                   </button>
                 )}
               </div>
@@ -152,13 +152,13 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
           {/* Footer */}
           <div className="p-4 border-t border-gray-700 bg-gray-750 flex justify-between items-center">
             <span className="text-sm text-gray-400">
-              Showing {filteredUsers.length} of {users.length} project members
+              Đang hiển thị {filteredUsers.length} trong tổng số {users.length} thành viên dự án
             </span>
             <button
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
               onClick={onClose}
             >
-              Cancel
+              Hủy
             </button>
           </div>
         </div>

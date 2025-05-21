@@ -113,19 +113,19 @@ const UserProfile = () => {
 
     // Validate current password
     if (!passwordData.currentPassword.trim()) {
-      errors.currentPassword = "Current password is required";
+      errors.currentPassword = "Mật khẩu hiện tại là bắt buộc";
       isValid = false;
     }
 
     // Validate new password
     if (!passwordData.newPassword.trim()) {
-      errors.newPassword = "New password is required";
+      errors.newPassword = "Mật khẩu mới là bắt buộc";
       isValid = false;
     } else if (passwordData.newPassword.length < 6) {
-      errors.newPassword = "Password must be at least 6 characters";
+      errors.newPassword = "Mật khẩu phải có ít nhất 6 ký tự";
       isValid = false;
     } else if (passwordData.newPassword.length > 50) {
-      errors.newPassword = "Password cannot exceed 50 characters";
+      errors.newPassword = "Mật khẩu không được vượt quá 50 ký tự";
       isValid = false;
     } else {
       // Kiểm tra các yêu cầu phức tạp của mật khẩu
@@ -138,17 +138,17 @@ const UserProfile = () => {
 
       if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
         errors.newPassword =
-          "Password must include uppercase, lowercase, number, and special character";
+          "Mật khẩu phải bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
         isValid = false;
       }
     }
 
     // Validate confirm password
     if (!passwordData.confirmPassword.trim()) {
-      errors.confirmPassword = "Please confirm your new password";
+      errors.confirmPassword = "Vui lòng xác nhận mật khẩu mới của bạn";
       isValid = false;
     } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match";
+      errors.confirmPassword = "Mật khẩu không khớp";
       isValid = false;
     }
 
@@ -199,7 +199,7 @@ const UserProfile = () => {
     // Validate form inputs
     if (!validatePasswordForm()) {
       // Hiển thị toast khi form không hợp lệ
-      showToast("Please correct the form errors", "error");
+      showToast("Vui lòng sửa các lỗi trong biểu mẫu", "error");
       return;
     }
 
@@ -225,12 +225,12 @@ const UserProfile = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update password");
+        throw new Error(errorData.message || "Failed to Cập nhật mật khẩu");
       }
 
       // Hiển thị toast khi cập nhật mật khẩu thành công
-      showToast("Password updated successfully", "success");
-      setPasswordSuccess("Password updated successfully");
+      showToast("Cập nhật mật khẩu thành công", "success");
+      setPasswordSuccess("Cập nhật mật khẩu thành công");
       setPasswordData({
         currentPassword: "",
         newPassword: "",
@@ -243,8 +243,8 @@ const UserProfile = () => {
       });
     } catch (err) {
       // Hiển thị toast khi có lỗi
-      showToast(err.message || "Failed to update password", "error");
-      setPasswordError(err.message || "Failed to update password");
+      showToast(err.message || "Failed to Cập nhật mật khẩu", "error");
+      setPasswordError(err.message || "Failed to Cập nhật mật khẩu");
     }
   };
 
@@ -291,58 +291,58 @@ const UserProfile = () => {
           </div>
         </div>
 
-        {/* Personal Information */}
+        {/* Thông tin cá nhân */}
         <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
           <h2 className="text-xl font-semibold mb-6 text-purple-300 border-b border-gray-800 pb-3">
-            Personal Information
+            Thông tin cá nhân
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             <ProfileInput
-              label="Full Name"
+              label="Họ và tên"
               icon={UserCircle}
               value={user.fullName}
             />
             <ProfileInput label="Email" icon={Mail} value={user.email} />
             <ProfileInput
-              label="Username"
+              label="Tên đăng nhập"
               icon={IdCard}
               value={user.username}
             />
             <ProfileInput
-              label="Phone Number"
+              label="Số điện thoại"
               icon={Phone}
               value={user.phoneNumber}
             />
             <ProfileInput
-              label="Department"
+              label="Phòng ban"
               icon={Building}
               value={user.department}
             />
             <ProfileInput
-              label="Position"
+              label="Chức vụ"
               icon={Briefcase}
               value={user.position}
             />
-            <ProfileInput label="Address" icon={MapPin} value={user.address} />
+            <ProfileInput label="Địa chỉ" icon={MapPin} value={user.address} />
           </div>
         </div>
 
-        {/* Change Password */}
+        {/* Đổi mật khẩu */}
         <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
           <h2 className="text-xl font-semibold mb-6 text-purple-300 border-b border-gray-800 pb-3 flex items-center">
-            <Lock className="mr-3" size={20} /> Change Password
+            <Lock className="mr-3" size={20} /> Đổi mật khẩu
           </h2>
           <form onSubmit={handlePasswordChange} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <PasswordInput
-                label="Current Password"
+                label="Mật khẩu hiện tại"
                 name="currentPassword"
                 value={passwordData.currentPassword}
                 onChange={handlePasswordInputChange}
                 error={formErrors.currentPassword}
               />
               <PasswordInput
-                label="New Password"
+                label="Mật khẩu mới"
                 name="newPassword"
                 value={passwordData.newPassword}
                 onChange={handlePasswordInputChange}
@@ -350,7 +350,7 @@ const UserProfile = () => {
               />
               <div className="md:col-span-2">
                 <PasswordInput
-                  label="Confirm New Password"
+                  label="CXác nhận mật khẩu mới"
                   name="confirmPassword"
                   value={passwordData.confirmPassword}
                   onChange={handlePasswordInputChange}
@@ -381,7 +381,7 @@ const UserProfile = () => {
                            flex items-center space-x-2"
               >
                 <Lock size={18} />
-                <span>Update Password</span>
+                <span>Cập nhật mật khẩu</span>
               </button>
             </div>
           </form>

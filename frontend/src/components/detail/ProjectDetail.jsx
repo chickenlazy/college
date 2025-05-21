@@ -124,7 +124,7 @@ const FileManager = ({ projectId }) => {
     // Lắng nghe sự kiện fileListUpdated từ FileList component
     const handleFileListUpdated = (e) => {
       setFiles(e.detail);
-      showToast("File updated successfully", "success");
+      showToast("Cập nhật tập tin thành công", "success");
     };
 
     window.addEventListener("fileListUpdated", handleFileListUpdated);
@@ -163,10 +163,10 @@ const FileManager = ({ projectId }) => {
 
       // Cập nhật state sau khi xóa
       setFiles(files.filter((file) => file.id !== confirmDelete.fileId));
-      showToast("File deleted successfully", "success");
+      showToast("Xóa tập tin thành công", "success");
     } catch (error) {
       console.error("Error deleting file:", error);
-      showToast("Failed to delete file", "error");
+      showToast("Failed to Xóa tập tin", "error");
     } finally {
       setConfirmDelete({
         show: false,
@@ -220,7 +220,7 @@ const FileManager = ({ projectId }) => {
 
   const handleFileUploaded = (newFiles) => {
     setFiles([...newFiles, ...files]);
-    showToast(`${newFiles.length} file(s) uploaded successfully`, "success");
+    showToast(`${newFiles.length} tập tin đã được tải lên thành công`, "success");
   };
 
   const showToast = (message, type = "success") => {
@@ -231,7 +231,7 @@ const FileManager = ({ projectId }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Project Files</h2>
+        <h2 className="text-xl font-semibold">Tập tin dự án</h2>
       </div>
 
       <FileUpload projectId={projectId} onFileUploaded={handleFileUploaded} />
@@ -253,17 +253,17 @@ const FileManager = ({ projectId }) => {
       {confirmDelete.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
-            <h2 className="text-xl font-bold mb-4">Delete File</h2>
+            <h2 className="text-xl font-bold mb-4">Xóa tập tin</h2>
             <p className="text-gray-300 mb-6">
-              Are you sure you want to delete this file? This action cannot be
-              undone.
+              Bạn có chắc chắn muốn xóa tập tin này không? Hành động này không
+              thể hoàn tác.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
                 onClick={() => setConfirmDelete({ show: false, fileId: null })}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
@@ -312,7 +312,6 @@ const FileManager = ({ projectId }) => {
   );
 };
 
-// Component upload file
 // Component upload file
 const FileUpload = ({ projectId, onFileUploaded }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -476,7 +475,7 @@ const FileUpload = ({ projectId, onFileUploaded }) => {
         console.error("Error uploading files:", error);
         setIsUploading(false);
         setUploadProgress(0);
-        alert("Failed to upload files");
+        alert("Failed to Tải lên tập tin");
       }
     }
   };
@@ -487,7 +486,7 @@ const FileUpload = ({ projectId, onFileUploaded }) => {
       {showDescriptionForm && selectedFiles.length > 0 ? (
         <div className="bg-gray-800 rounded-lg p-6 mb-4 border border-gray-700">
           <h3 className="text-lg font-medium mb-4">
-            Upload {selectedFiles.length}{" "}
+            Tải lên {selectedFiles.length}{" "}
             {selectedFiles.length === 1 ? "file" : "files"}
           </h3>
 
@@ -510,12 +509,12 @@ const FileUpload = ({ projectId, onFileUploaded }) => {
           {/* Form nhập mô tả */}
           <div className="mb-4">
             <label className="block text-sm text-gray-400 mb-2">
-              Description (optional)
+              Mô tả (tùy chọn)
             </label>
             <textarea
               className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white"
               rows="3"
-              placeholder="Enter a description for these files"
+              placeholder="Nhập mô tả cho các tập tin này"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             ></textarea>
@@ -534,7 +533,7 @@ const FileUpload = ({ projectId, onFileUploaded }) => {
                 }
               }}
             >
-              Cancel
+              Hủy
             </button>
             <button
               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center"
@@ -563,12 +562,12 @@ const FileUpload = ({ projectId, onFileUploaded }) => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Uploading...
+                  Đang tải lên...
                 </>
               ) : (
                 <>
                   <Upload size={16} className="mr-2" />
-                  Upload {selectedFiles.length > 1 ? "Files" : "File"}
+                  Tải lên {selectedFiles.length > 1 ? "Files" : "File"}
                 </>
               )}
             </button>
@@ -614,13 +613,13 @@ const FileUpload = ({ projectId, onFileUploaded }) => {
                   </span>
                 </div>
               </div>
-              <p>Uploading files...</p>
+              <p>Đang tải lên tập tin...</p>
             </div>
           ) : (
             <>
               <Upload size={40} className="mx-auto text-gray-400 mb-3" />
-              <p className="text-gray-300 mb-1">Drag & drop files here</p>
-              <p className="text-gray-400 text-sm">or click to browse</p>
+              <p className="text-gray-300 mb-1">Kéo & thả tập tin vào đây</p>
+              <p className="text-gray-400 text-sm">hoặc nhấp để duyệt</p>
             </>
           )}
           <input
@@ -805,7 +804,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
       {files.length === 0 ? (
         <div className="text-center py-8 bg-gray-800 rounded-lg">
           <FileText size={40} className="mx-auto text-gray-500 mb-2" />
-          <p className="text-gray-400">No files uploaded yet.</p>
+          <p className="text-gray-400">Chưa có tập tin nào được tải lên</p>
         </div>
       ) : (
         files.map((file) => (
@@ -840,7 +839,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
                     e.stopPropagation(); // Ngăn không cho sự kiện click lan đến parent
                     openEditForm(file);
                   }}
-                  title="Edit File Info"
+                  title="Sửa thông tin tập tin"
                 >
                   <Edit size={18} />
                 </button>
@@ -850,7 +849,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
                     e.stopPropagation(); // Ngăn không cho sự kiện click lan đến parent (không mở rộng file)
                     onDownload(file);
                   }}
-                  title="Download File"
+                  title="Tải xuống tập tin"
                 >
                   <Download size={18} />
                 </button>
@@ -860,7 +859,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
                     e.stopPropagation(); // Ngăn không cho sự kiện click lan đến parent
                     onDelete(file.id);
                   }}
-                  title="Delete File"
+                  title="Xóa tập tin"
                 >
                   <Trash2 size={18} />
                 </button>
@@ -882,13 +881,13 @@ const FileList = ({ files, onDelete, onDownload }) => {
                   {file.description ? (
                     file.description
                   ) : (
-                    <span className="text-gray-500 italic">
-                      No description provided
-                    </span>
+                    <span className="text-gray-500 italic">Không có mô tả</span>
                   )}
                 </div>
 
-                <div className="mt-3 text-xs text-gray-400">Last Modified:</div>
+                <div className="mt-3 text-xs text-gray-400">
+                  Lần sửa đổi cuối:
+                </div>
                 <div className="text-sm pl-2">
                   {formatDateWithTime(file.lastModifiedDate)}
                 </div>
@@ -902,7 +901,9 @@ const FileList = ({ files, onDelete, onDownload }) => {
       {editingFile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
-            <h2 className="text-xl font-bold mb-4">Edit File Information</h2>
+            <h2 className="text-xl font-bold mb-4">
+              Chỉnh sửa thông tin tập tin
+            </h2>
 
             {editError && (
               <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
@@ -912,7 +913,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
 
             <div className="mb-4">
               <label className="block text-sm text-gray-400 mb-2">
-                File Name (extension cannot be changed)
+                Tên tập tin (không thể thay đổi phần mở rộng)
               </label>
               <input
                 type="text"
@@ -922,7 +923,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
                 onChange={(e) => handleOriginalNameChange(e.target.value)}
               />
               <div className="text-xs text-gray-500 mt-1">
-                Original file: {editingFile?.originalName}
+                Tập tin gốc: {editingFile?.originalName}
               </div>
             </div>
 
@@ -933,7 +934,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
               <textarea
                 className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
                 rows="4"
-                placeholder="Enter file description"
+                placeholder="Nhập mô tả tập tin"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
               ></textarea>
@@ -945,7 +946,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
                 onClick={closeEditForm}
                 disabled={isUpdating}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 transition-colors rounded-md flex items-center"
@@ -974,12 +975,12 @@ const FileList = ({ files, onDelete, onDownload }) => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Updating...
+                    Đang cập nhật...
                   </>
                 ) : (
                   <>
                     <CheckCircle size={16} className="mr-2" />
-                    Save Changes
+                    Lưu thay đổi
                   </>
                 )}
               </button>
@@ -1161,8 +1162,8 @@ const Comment = ({ comment, onReply, onDelete }) => {
                   onClick={fetchReplies}
                 >
                   {showReplies
-                    ? "Hide replies"
-                    : `View ${comment.replyCount} replies`}
+                    ? "Ẩn phản hồi"
+                    : `View ${comment.replyCount} phản hồi`}
                   {loadingReplies && (
                     <span className="ml-2 animate-spin">⏳</span>
                   )}
@@ -1196,13 +1197,13 @@ const Comment = ({ comment, onReply, onDelete }) => {
                     className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md"
                     onClick={() => setShowReplyForm(false)}
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded-md"
                     onClick={handleSubmitReply}
                   >
-                    Reply
+                    Phản hồi
                   </button>
                 </div>
               </div>
@@ -1307,7 +1308,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
       <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-750">
-          <h3 className="text-lg font-medium text-white">Add Team Member</h3>
+          <h3 className="text-lg font-medium text-white">Thêm thành viên</h3>
           <button
             className="p-2 hover:bg-gray-700 hover:text-white text-gray-400 rounded-full transition-colors"
             onClick={onClose}
@@ -1321,7 +1322,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search members by name..."
+              placeholder="Tìm kiếm thành viên theo tên..."
               className="w-full bg-gray-700 rounded-md px-4 py-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1399,7 +1400,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
                     setSelectedRoleFilter("All");
                   }}
                 >
-                  Clear filters
+                  Xóa bộ lọc
                 </button>
               )}
             </div>
@@ -1466,14 +1467,13 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
         {/* Footer */}
         <div className="p-4 border-t border-gray-700 bg-gray-750 flex justify-between items-center">
           <span className="text-sm text-gray-400">
-            Showing {filteredUsers.length} of {availableUsers.length} available
-            members
+            Hiển thị {filteredUsers.length} trong tổng số {availableUsers.length} thành viên khả dụng
           </span>
           <button
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
         </div>
       </div>
@@ -1592,7 +1592,7 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
               className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
               onClick={() => onTaskDetail(task)}
             >
-              Detail
+              Chi tiết
             </button>
             <button
               className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
@@ -1609,7 +1609,7 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
                   // Dùng ConfirmationDialog thay vì window.confirm
                   if (
                     window.confirm(
-                      "Are you sure you want to delete this task? This action cannot be undone."
+                      "Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không thể hoàn tác."
                     )
                   ) {
                     await axios.delete(
@@ -1640,7 +1640,7 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
                 }
               }}
             >
-              Delete
+              Xóa
             </button>
           </div>
         </div>
@@ -1702,7 +1702,7 @@ const TagDropdownMenu = ({ isOpen, onClose, tags, onSelect, usedTagIds }) => {
   return (
     <div className="absolute right-0 top-full mt-2 w-64 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700">
       <div className="flex justify-between items-center p-3 border-b border-gray-700">
-        <h3 className="font-medium">Select Tag</h3>
+        <h3 className="font-medium">Chọn thẻ</h3>
         <button
           className="p-1 hover:bg-gray-700 rounded-full"
           onClick={onClose}
@@ -1713,7 +1713,7 @@ const TagDropdownMenu = ({ isOpen, onClose, tags, onSelect, usedTagIds }) => {
       <div className="p-3 max-h-96 overflow-y-auto">
         {availableTags.length === 0 ? (
           <div className="text-center py-4 text-gray-400">
-            <p>No more tags available</p>
+            <p>Không còn thẻ nào khả dụng</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -1782,7 +1782,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
     // Cập nhật state project với dữ liệu mới
     setProject(updatedProject);
     // Hiển thị thông báo
-    showToast("Task deleted successfully", "success");
+    showToast("Xóa nhiệm vụ thành công", "success");
   };
 
   const openTaskDetail = async (task) => {
@@ -1901,7 +1901,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
         },
       });
 
-      showToast("Project deleted successfully", "success");
+      showToast("Xóa dự án thành công", "success");
 
       // Thay đổi ở đây: chuyển trực tiếp về trang Project
       setTimeout(() => {
@@ -2123,7 +2123,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
     return (
       <div className="p-6 text-center">
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
-        <h2 className="text-xl font-bold mb-2">Project Not Found</h2>
+        <h2 className="text-xl font-bold mb-2">Không tìm thấy dự án</h2>
         <p className="text-gray-400">
           The requested project could not be found.
         </p>
@@ -2214,7 +2214,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
               onClick={() => onBack(false)}
             >
               <ChevronLeft size={20} className="mr-1" />
-              <span>Back</span>
+              <span>Quay lại</span>
             </button>
           </div>
 
@@ -2369,7 +2369,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Timeline</p>
+                  <p className="text-sm text-gray-400 mb-1">Thời gian</p>
                   <p className="font-medium">
                     {formatDate(project.startDate)} -{" "}
                     {formatDate(project.dueDate)}
@@ -2382,12 +2382,12 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Days Remaining</p>
+                  <p className="text-sm text-gray-400 mb-1">Số ngày còn lại</p>
                   <p className="font-medium">
                     {daysRemaining > 0
-                      ? `${daysRemaining} days left`
+                      ? `${daysRemaining} ngày còn lại`
                       : daysRemaining === 0
-                      ? "Due today"
+                      ? "Hết hạn hôm nay"
                       : project.status === "COMPLETED"
                       ? "Completed"
                       : `${Math.abs(daysRemaining)} days overdue`}
@@ -2407,7 +2407,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Team Members</p>
+                  <p className="text-sm text-gray-400 mb-1">Thành viên</p>
                   <p className="font-medium">{project.users.length} members</p>
                 </div>
                 <Users size={20} className="text-purple-500" />
@@ -2417,7 +2417,9 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Tasks Progress</p>
+                  <p className="text-sm text-gray-400 mb-1">
+                    Tiến trình nhiệm vụ
+                  </p>
                   <p className="font-medium">
                     {project.totalCompletedTasks}/{project.totalTasks} completed
                   </p>
@@ -2438,25 +2440,25 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             <div className="flex overflow-x-auto hide-scrollbar">
               <Tab
                 icon={<ListChecks size={18} />}
-                label="Tasks"
+                label="Nhiệm vụ"
                 active={activeTab === "tasks"}
                 onClick={() => setActiveTab("tasks")}
               />
               <Tab
                 icon={<Users size={18} />}
-                label="Team"
+                label="Thành viên"
                 active={activeTab === "team"}
                 onClick={() => setActiveTab("team")}
               />
               <Tab
                 icon={<Tag size={18} />}
-                label="Tags"
+                label="Nhãn"
                 active={activeTab === "tags"}
                 onClick={() => setActiveTab("tags")}
               />
               <Tab
                 icon={<MessageSquare size={18} />}
-                label="Comments"
+                label="Bình luận"
                 active={activeTab === "comments"}
                 onClick={() => setActiveTab("comments")}
               />
@@ -2474,7 +2476,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             {activeTab === "tasks" && (
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Project Tasks</h2>
+                  <h2 className="text-xl font-semibold">Nhiệm vụ dự án</h2>
                   <button
                     className={`px-3 py-2 ${
                       project.status === "IN_PROGRESS"
@@ -2487,26 +2489,26 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                     disabled={project.status !== "IN_PROGRESS"}
                     title={
                       project.status !== "IN_PROGRESS"
-                        ? "Project must be in progress to add tasks"
+                        ? "Dự án phải ở trạng thái đang tiến hành để thêm nhiệm vụ"
                         : ""
                     }
                   >
                     <Plus size={16} className="mr-2" />
-                    Add Task
+                    Thêm nhiệm vụ
                   </button>
                 </div>
 
                 <div className="mb-4">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
                     <div className="bg-gray-800 p-3 rounded-lg">
-                      <div className="text-sm text-gray-400 mb-1">Total</div>
+                      <div className="text-sm text-gray-400 mb-1">Tổng số</div>
                       <div className="text-2xl font-bold">
                         {project.totalTasks}
                       </div>
                     </div>
                     <div className="bg-gray-800 p-3 rounded-lg">
                       <div className="text-sm text-gray-400 mb-1">
-                        In Progress
+                        Đang tiến hành
                       </div>
                       <div className="text-2xl font-bold text-blue-500">
                         {
@@ -2518,7 +2520,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                     </div>
                     <div className="bg-gray-800 p-3 rounded-lg">
                       <div className="text-sm text-gray-400 mb-1">
-                        Completed
+                        Hoàn thành
                       </div>
                       <div className="text-2xl font-bold text-green-500">
                         {
@@ -2529,7 +2531,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                     </div>
                     <div className="bg-gray-800 p-3 rounded-lg">
                       <div className="text-sm text-gray-400 mb-1">
-                        Not Started
+                        Chưa bắt đầu
                       </div>
                       <div className="text-2xl font-bold text-gray-500">
                         {
@@ -2549,7 +2551,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                         size={48}
                         className="mx-auto mb-3 opacity-50"
                       />
-                      <p>No tasks found for this project.</p>
+                      <p>Không tìm thấy nhiệm vụ nào cho dự án này.</p>
                     </div>
                   ) : (
                     project.tasks.map((task, index) => (
@@ -2569,7 +2571,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
             {activeTab === "team" && (
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Team Members</h2>
+                  <h2 className="text-xl font-semibold">Thành viên</h2>
                   <div className="relative">
                     <button
                       className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
@@ -2577,7 +2579,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                       disabled={loadingMember}
                     >
                       <Plus size={16} className="mr-2" />
-                      Add Member
+                      Thêm thành viên
                       {loadingMember && (
                         <span className="ml-2 animate-spin">⟳</span>
                       )}
@@ -2604,7 +2606,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                   <div className="mb-4">
                     <h3 className="text-md font-medium mb-3 text-purple-400 flex items-center">
                       <Shield size={16} className="mr-2" />
-                      Project Manager
+                      Quản lý dự án
                     </h3>
                     <div className="bg-purple-900 bg-opacity-30 border border-purple-800 rounded-lg p-3">
                       <div className="flex justify-between items-center">
@@ -2629,13 +2631,13 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
 
                 <h3 className="text-md font-medium mb-3 flex items-center">
                   <Users size={16} className="mr-2" />
-                  Team Members
+                  Thành viên
                 </h3>
 
                 {project.users.length === 0 ? (
                   <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                     <Users size={48} className="mx-auto mb-3 opacity-50" />
-                    <p>No team members assigned to this project yet.</p>
+                    <p>No Thành viên assigned to this project yet.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2686,7 +2688,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                       disabled={loadingTag}
                     >
                       <Plus size={16} className="mr-2" />
-                      Add Tag
+                      Thêm nhãn
                       {loadingTag && (
                         <span className="ml-2 animate-spin">⟳</span>
                       )}
@@ -2714,7 +2716,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                 {!project.tags || project.tags.length === 0 ? (
                   <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                     <Tag size={48} className="mx-auto mb-3 opacity-50" />
-                    <p>No tags assigned to this project yet.</p>
+                    <p>Chưa có thẻ nào được gán cho dự án này.</p>
                   </div>
                 ) : (
                   <div className="bg-gray-800 p-4 rounded-lg">
@@ -2757,7 +2759,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                     <div className="bg-gray-800 rounded-lg p-4">
                       <textarea
                         className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
-                        placeholder="Write a comment..."
+                        placeholder="Viết comment..."
                         rows="3"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
@@ -2796,7 +2798,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                               // Reset form
                               setNewComment("");
                               showToast(
-                                "Comment added successfully",
+                                "Bình luận đã được thêm thành công",
                                 "success"
                               );
                             } catch (error) {
@@ -2805,7 +2807,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                             }
                           }}
                         >
-                          Comment
+                          Bình luận
                         </button>
                       </div>
                     </div>
@@ -2815,7 +2817,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                       <div className="text-center py-8">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
                         <p className="mt-2 text-gray-400">
-                          Loading comments...
+                          Đang tải bình luận...
                         </p>
                       </div>
                     ) : comments.length === 0 ? (
@@ -2825,7 +2827,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                           className="mx-auto text-gray-500 mb-2"
                         />
                         <p className="text-gray-400">
-                          No comments yet. Be the first to comment!
+                          Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
                         </p>
                       </div>
                     ) : (
@@ -2870,7 +2872,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                                 comments.filter((c) => c.id !== commentId)
                               );
                               showToast(
-                                "Comment deleted successfully",
+                                "Xóa bình luận thành công",
                                 "success"
                               );
                             } catch (error) {
@@ -2907,7 +2909,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                     className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
                     onClick={() => setDeleteConfirm(false)}
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"

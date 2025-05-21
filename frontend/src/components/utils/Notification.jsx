@@ -20,26 +20,26 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
     const diffInSeconds = Math.floor((now - date) / 1000);
 
     if (diffInSeconds < 60) {
-      return `${diffInSeconds} seconds ago`;
+      return `${diffInSeconds} giây trước`;
     }
 
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) {
-      return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
+      return `${diffInMinutes} phút${diffInMinutes > 1 ? "s" : ""} trước`;
     }
 
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+      return `${diffInHours} giờ${diffInHours > 1 ? "s" : ""} trước`;
     }
 
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 30) {
-      return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+      return `${diffInDays} ngày${diffInDays > 1 ? "s" : ""} trước`;
     }
 
     const diffInMonths = Math.floor(diffInDays / 30);
-    return `${diffInMonths} month${diffInMonths > 1 ? "s" : ""} ago`;
+    return `${diffInMonths} tháng${diffInMonths > 1 ? "s" : ""} trước`;
   };
 
   // Get icon based on notification type
@@ -108,7 +108,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
                 className="text-xs flex items-center text-purple-400 hover:text-purple-300 transition-colors"
               >
                 <Check size={14} className="mr-1" />
-                Mark as read
+                Đánh dấu đã đọc
               </button>
             )}
             <button
@@ -119,7 +119,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
               className="text-xs flex items-center text-red-400 hover:text-red-300 transition-colors"
             >
               <X size={14} className="mr-1" />
-              Delete
+              Xóa
             </button>
           </div>
         </div>
@@ -232,7 +232,7 @@ const NotificationCenter = () => {
       fetchUnreadCount(); // Update unread count
     } catch (err) {
       console.error("Error fetching notifications:", err);
-      setError("Failed to load notifications. Please try again.");
+      setError("Failed to load notifications. Please Thử lại.");
     } finally {
       setLoading(false);
     }
@@ -361,7 +361,7 @@ const NotificationCenter = () => {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 md:w-96 bg-gray-900 rounded-lg shadow-lg z-50 border border-gray-700 overflow-hidden">
           <div className="flex justify-between items-center p-4 border-b border-gray-700">
-            <h3 className="font-semibold text-lg">Notifications</h3>
+            <h3 className="font-semibold text-lg">Thông báo</h3>
             {unreadCount > 0 && (
               <button
                 className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
@@ -381,7 +381,7 @@ const NotificationCenter = () => {
               }`}
               onClick={() => setActiveTab("all")}
             >
-              All
+              Tất cả
             </button>
             <button
               className={`flex-1 py-2 text-center ${
@@ -391,7 +391,7 @@ const NotificationCenter = () => {
               }`}
               onClick={() => setActiveTab("unread")}
             >
-              Unread
+              Chưa đọc
             </button>
             <button
               className={`flex-1 py-2 text-center ${
@@ -401,7 +401,7 @@ const NotificationCenter = () => {
               }`}
               onClick={() => setActiveTab("read")}
             >
-              Read
+              Đã đọc
             </button>
           </div>
 
@@ -418,13 +418,13 @@ const NotificationCenter = () => {
                   className="mt-2 text-sm text-purple-400 hover:text-purple-300"
                   onClick={fetchNotifications}
                 >
-                  Try again
+                  Thử lại
                 </button>
               </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
                 <Bell size={32} className="mx-auto mb-3 opacity-50" />
-                <p>No notifications to display</p>
+                <p>Không có thông báo để hiển thị</p>
               </div>
             ) : (
               filteredNotifications.map((notification) => (

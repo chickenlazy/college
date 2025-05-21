@@ -126,7 +126,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                 className="hover:text-purple-400"
                 onClick={() => setShowReplyForm(!showReplyForm)}
               >
-                Reply
+                Phản hồi
               </button>
 
               {comment.replyCount > 0 && (
@@ -135,8 +135,8 @@ const Comment = ({ comment, onReply, onDelete }) => {
                   onClick={fetchReplies}
                 >
                   {showReplies
-                    ? "Hide replies"
-                    : `View ${comment.replyCount} replies`}
+                    ? "Ẩn phản hồi"
+                    : `Xem ${comment.replyCount} phản hồi`}
                   {loadingReplies && (
                     <span className="ml-2 animate-spin">⏳</span>
                   )}
@@ -149,7 +149,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                   className="hover:text-red-400"
                   onClick={() => onDelete && onDelete(comment.id)}
                 >
-                  Delete
+                  Xóa
                 </button>
               )}
             </div>
@@ -158,7 +158,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
               <div className="mt-3">
                 <textarea
                   className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
-                  placeholder="Write a reply..."
+                  placeholder="Viết phản hồi..."
                   rows="2"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
@@ -168,13 +168,13 @@ const Comment = ({ comment, onReply, onDelete }) => {
                     className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md"
                     onClick={() => setShowReplyForm(false)}
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded-md"
                     onClick={handleSubmitReply}
                   >
-                    Reply
+                    Phản hồi
                   </button>
                 </div>
               </div>
@@ -303,7 +303,7 @@ const getPriorityInfo = (priority) => {
         textColor: "text-red-500",
         bgColor: "bg-red-100",
         icon: <Flag size={16} />,
-        text: "High",
+        text: "Cao",
       };
     case "MEDIUM":
       return {
@@ -311,7 +311,7 @@ const getPriorityInfo = (priority) => {
         textColor: "text-yellow-500",
         bgColor: "bg-yellow-100",
         icon: <Flag size={16} />,
-        text: "Medium",
+        text: "Trung bình",
       };
     case "LOW":
       return {
@@ -319,7 +319,7 @@ const getPriorityInfo = (priority) => {
         textColor: "text-green-500",
         bgColor: "bg-green-100",
         icon: <Flag size={16} />,
-        text: "Low",
+        text: "thấp",
       };
     default:
       return {
@@ -431,13 +431,13 @@ const UserTaskDetail = ({ taskId, onBack }) => {
     return (
       <div className="p-6 text-center">
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
-        <h2 className="text-xl font-bold mb-2">Task Not Found</h2>
-        <p className="text-gray-400">The requested task could not be found.</p>
+        <h2 className="text-xl font-bold mb-2">Không tìm thấy nhiệm vụ</h2>
+        <p className="text-gray-400">Không thể tìm thấy nhiệm vụ được yêu cầu.</p>
         <button
           onClick={onBack}
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
         >
-          Back
+          Quay lại
         </button>
       </div>
     );
@@ -455,7 +455,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
           className="flex items-center text-gray-400 hover:text-white"
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back</span>
+          <span>Quay lại</span>
         </button>
       </div>
 
@@ -480,15 +480,15 @@ const UserTaskDetail = ({ taskId, onBack }) => {
       <div className="bg-gray-800 rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p className="text-sm text-gray-400 mb-1">Project</p>
+            <p className="text-sm text-gray-400 mb-1">Dự án</p>
             <p className="font-medium">{task.projectName}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-400 mb-1">Assigned to</p>
-            <p className="font-medium">{task.assigneeName || "Not assigned"}</p>
+            <p className="text-sm text-gray-400 mb-1">Được giao cho</p>
+            <p className="font-medium">{task.assigneeName || "Chưa được giao"}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-400 mb-1">Created by</p>
+            <p className="text-sm text-gray-400 mb-1">Tạo bởi</p>
             <p className="font-medium">{task.createdByName || "Unknown"}</p>
             <p className="text-xs text-gray-400">
               {formatDateTime(task.createdDate)}
@@ -502,7 +502,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-400 mb-1">Start Date</p>
+              <p className="text-sm text-gray-400 mb-1">Ngày bắt đầu</p>
               <p className="font-medium">{formatDate(task.startDate)}</p>
             </div>
             <Calendar size={20} className="text-purple-500" />
@@ -512,7 +512,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-400 mb-1">Due Date</p>
+              <p className="text-sm text-gray-400 mb-1">Ngày kết thúc</p>
               <div>
                 <p className="font-medium">{formatDate(task.dueDate)}</p>
                 <p
@@ -525,12 +525,12 @@ const UserTaskDetail = ({ taskId, onBack }) => {
                   }`}
                 >
                   {daysRemaining > 0
-                    ? `${daysRemaining} days left`
+                    ? `${daysRemaining} ngày còn lại`
                     : daysRemaining === 0
-                    ? "Due today"
+                    ? "Hết hạn hôm nay"
                     : task.status === "COMPLETED"
-                    ? "Completed"
-                    : `${Math.abs(daysRemaining)} days overdue`}
+                    ? "Hoàn thành"
+                    : `${Math.abs(daysRemaining)} ngày quá hạn`}
                 </p>
               </div>
             </div>
@@ -544,7 +544,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-sm text-gray-400 mb-1">Progress</p>
+              <p className="text-sm text-gray-400 mb-1">Tiến độ</p>
               <p className="font-medium">{task.progress.toFixed(1)}%</p>
             </div>
             <CheckCircle size={20} className="text-purple-500" />
@@ -563,13 +563,13 @@ const UserTaskDetail = ({ taskId, onBack }) => {
         <div className="flex overflow-x-auto hide-scrollbar">
           <Tab
             icon={<FileText size={18} />}
-            label="Details"
+            label="Chi tiết"
             active={activeTab === "details"}
             onClick={() => setActiveTab("details")}
           />
           <Tab
             icon={<MessageSquare size={18} />}
-            label="Comments"
+            label="Bình luận"
             active={activeTab === "comments"}
             onClick={() => setActiveTab("comments")}
           />
@@ -583,12 +583,12 @@ const UserTaskDetail = ({ taskId, onBack }) => {
             {/* Subtasks */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-semibold">Subtasks</h3>
+                <h3 className="text-lg font-semibold">Nhiệm vụ con</h3>
               </div>
 
               {!task.subTasks || task.subTasks.length === 0 ? (
                 <div className="text-center py-4 text-gray-400 bg-gray-800 rounded-lg">
-                  <p>No subtasks have been created for this task.</p>
+                  <p>Chưa có nhiệm vụ con nào được tạo cho nhiệm vụ này.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -645,7 +645,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
                 <div className="bg-gray-800 rounded-lg p-4">
                   <textarea
                     className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
-                    placeholder="Write a comment..."
+                    placeholder="Viết bình luận..."
                     rows="3"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
@@ -683,14 +683,14 @@ const UserTaskDetail = ({ taskId, onBack }) => {
                           setComments([response.data, ...comments]);
                           // Reset form
                           setNewComment("");
-                          showToast("Comment added successfully", "success");
+                          showToast("Thêm bình luận thành công", "success");
                         } catch (error) {
                           console.error("Error adding comment:", error);
                           showToast("Failed to add comment", "error");
                         }
                       }}
                     >
-                      Comment
+                      Bình luận
                     </button>
                   </div>
                 </div>
@@ -699,7 +699,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
                 {loadingComments ? (
                   <div className="text-center py-8">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-                    <p className="mt-2 text-gray-400">Loading comments...</p>
+                    <p className="mt-2 text-gray-400">Đang tải bình luận...</p>
                   </div>
                 ) : comments.length === 0 ? (
                   <div className="text-center py-8 bg-gray-800 rounded-lg">
@@ -708,7 +708,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
                       className="mx-auto text-gray-500 mb-2"
                     />
                     <p className="text-gray-400">
-                      No comments yet. Be the first to comment!
+                      Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
                     </p>
                   </div>
                 ) : (
@@ -752,7 +752,7 @@ const UserTaskDetail = ({ taskId, onBack }) => {
                           setComments(
                             comments.filter((c) => c.id !== commentId)
                           );
-                          showToast("Comment deleted successfully", "success");
+                          showToast("Xóa bình luận thành công", "success");
                         } catch (error) {
                           console.error("Error deleting comment:", error);
                           showToast("Failed to delete comment", "error");

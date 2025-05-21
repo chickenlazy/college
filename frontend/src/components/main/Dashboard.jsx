@@ -344,10 +344,10 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                           className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded"
                         >
                           <User size={16} className="mr-2" />
-                          Profile
+                          Cá nhân
                         </button>
                       </li>
-                      <li>
+                      {/* <li>
                         <button
                           onClick={() => {
                             setActiveComponent("settings");
@@ -358,7 +358,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                           <Settings size={16} className="mr-2" />
                           Settings
                         </button>
-                      </li>
+                      </li> */}
                       <li className="border-t border-gray-700 my-1"></li>
                       <li>
                         <button
@@ -366,7 +366,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                           className="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-700 rounded text-red-400 hover:text-red-300"
                         >
                           <LogOut size={16} className="mr-2" />
-                          Logout
+                          Đăng xuất
                         </button>
                       </li>
                     </ul>

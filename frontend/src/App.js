@@ -19,7 +19,7 @@ const ErrorDialog = ({ isOpen, message, onClose }) => {
           onClick={onClose}
           className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md"
         >
-          Close
+          Đóng
         </button>
       </div>
     </div>
@@ -52,11 +52,11 @@ function App() {
         
         if (currentTime - tokenTimestamp > fiveDays) {
           // Token đã hết hạn sau 5 ngày
-          console.log("Token expired after 5 days, logging out");
+          console.log("Token đã hết hạn sau 5 ngày, đang đăng xuất");
           handleLogout();
           setErrorDialog({
             show: true,
-            message: "Your session has expired. Please log in again."
+            message: "Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại"
           });
           return;
         }
@@ -70,11 +70,11 @@ function App() {
         
         if (response.data.status === 'INACTIVE') {
           // User đã bị vô hiệu hóa
-          console.log("User is inactive, logging out");
+          console.log("Người dùng không hoạt động, đang đăng xuất");
           handleLogout();
           setErrorDialog({
             show: true,
-            message: "Your account has been disabled. Please contact administrator."
+            message: "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên."
           });
         } else {
           // User vẫn active
@@ -83,12 +83,12 @@ function App() {
         }
       }
     } catch (error) {
-      console.error("Error checking user status:", error);
+      console.error("Lỗi khi kiểm tra trạng thái người dùng:", error);
       if (error.response?.status === 401) {
         handleLogout();
         setErrorDialog({
           show: true,
-          message: "Authentication failed. Please log in again."
+          message: "Xác thực thất bại. Vui lòng đăng nhập lại."
         });
       }
     } finally {
@@ -170,7 +170,7 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950">
         <div className="animate-spin h-8 w-8 border-4 border-t-purple-500 border-purple-500/30 rounded-full"></div>
-        <span className="ml-3 text-white">Loading...</span>
+        <span className="ml-3 text-white">Đang tải...</span>
       </div>
     );
   }

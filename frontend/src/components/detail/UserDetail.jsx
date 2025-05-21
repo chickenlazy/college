@@ -75,7 +75,7 @@ const UserDetail = ({ user, onBack }) => {
   useEffect(() => {
     const fetchUserDetail = async () => {
       if (!user) {
-        setError("No user information available");
+        setError("Không có thông tin người dùng");
         setLoading(false);
         return;
       }
@@ -131,7 +131,7 @@ const UserDetail = ({ user, onBack }) => {
           className="flex items-center text-gray-400 hover:text-white"
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back</span>
+          <span>Quay lại</span>
         </button>
       </div>
       {/* <div className="flex items-center mb-6">
@@ -183,7 +183,7 @@ const UserDetail = ({ user, onBack }) => {
                 <div className="flex items-start">
                   <IdCard  className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
-                    <p className="text-gray-400 text-sm">Username</p>
+                    <p className="text-gray-400 text-sm">Tên đăng nhập</p>
                     <p>{userData.username}</p>
                   </div>
                 </div>
@@ -191,7 +191,7 @@ const UserDetail = ({ user, onBack }) => {
                 <div className="flex items-start">
                   <Phone className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
-                    <p className="text-gray-400 text-sm">Phone</p>
+                    <p className="text-gray-400 text-sm">Điện thoại</p>
                     <p>{userData.phoneNumber || "N/A"}</p>
                   </div>
                 </div>
@@ -199,7 +199,7 @@ const UserDetail = ({ user, onBack }) => {
                 <div className="flex items-start">
                   <Shield className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
-                    <p className="text-gray-400 text-sm">Role</p>
+                    <p className="text-gray-400 text-sm">Vai trò</p>
                     <p>{userData.role?.replace("ROLE_", "") || "N/A"}</p>
                   </div>
                 </div>
@@ -207,7 +207,7 @@ const UserDetail = ({ user, onBack }) => {
                 <div className="flex items-start">
                   <Briefcase className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
-                    <p className="text-gray-400 text-sm">Department</p>
+                    <p className="text-gray-400 text-sm">Phòng ban</p>
                     <p>{userData.department || "N/A"}</p>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ const UserDetail = ({ user, onBack }) => {
                 <div className="flex items-start">
                   <MapPin className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
-                    <p className="text-gray-400 text-sm">Address</p>
+                    <p className="text-gray-400 text-sm">Địa chỉ</p>
                     <p>{userData.address || "N/A"}</p>
                   </div>
                 </div>
@@ -225,7 +225,7 @@ const UserDetail = ({ user, onBack }) => {
             {/* Status and Timestamps Card */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2">
-                Status Information
+                Thông tin trạng thái
               </h3>
    
               <div className="space-y-4">
@@ -235,13 +235,13 @@ const UserDetail = ({ user, onBack }) => {
                       userData.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"
                     }`}
                   ></div>
-                  <span>Status: {userData.status}</span>
+                  <span>Trạng thái: {userData.status}</span>
                 </div>
    
                 <div className="flex items-start mt-4">
                   <Calendar className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
-                    <p className="text-gray-400 text-sm">Created Date</p>
+                    <p className="text-gray-400 text-sm">Ngày tạo</p>
                     <p>{formatDate(userData.createdDate)}</p>
                   </div>
                 </div>
@@ -249,7 +249,7 @@ const UserDetail = ({ user, onBack }) => {
                 <div className="flex items-start mt-4">
                   <Clock className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
-                    <p className="text-gray-400 text-sm">Last Modified</p>
+                    <p className="text-gray-400 text-sm">Lần sửa đổi cuối</p>
                     <p>{formatDate(userData.lastModifiedDate)}</p>
                   </div>
                 </div>
@@ -259,12 +259,12 @@ const UserDetail = ({ user, onBack }) => {
             {/* Additional Information Card */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2">
-                Additional Information
+                Thông tin bổ sung
               </h3>
    
               <div className="space-y-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Position</p>
+                  <p className="text-gray-400 text-sm">Chức vụ</p>
                   <p className="font-medium">{userData.position || "N/A"}</p>
                 </div>
    
@@ -284,7 +284,7 @@ const UserDetail = ({ user, onBack }) => {
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2 flex items-center">
                 <Briefcase size={18} className="mr-2 text-purple-400" />
-                Projects ({projects.length})
+                Dự án ({projects.length})
               </h3>
               
               {projectsLoading ? (
@@ -318,7 +318,7 @@ const UserDetail = ({ user, onBack }) => {
               ) : (
                 <div className="text-center py-8 text-gray-400">
                   <Briefcase size={32} className="mx-auto mb-2 opacity-30" />
-                  <p>No projects found for this user</p>
+                  <p>Không tìm thấy dự án nào cho người dùng này</p>
                 </div>
               )}
             </div>
@@ -327,7 +327,7 @@ const UserDetail = ({ user, onBack }) => {
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg mt-6">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2 flex items-center">
                 <Check size={18} className="mr-2 text-purple-400" />
-                Assigned Subtasks ({subtasks.length})
+                Nhiệm vụ con được giao ({subtasks.length})
               </h3>
               
               {subtasksLoading ? (
@@ -346,7 +346,7 @@ const UserDetail = ({ user, onBack }) => {
                           <h4 className="font-medium">{subtask.name}</h4>
                         </div>
                         <div className={`px-2 py-1 rounded-md text-xs ${subtask.completed ? "bg-green-900 text-green-300" : "bg-yellow-900 text-red-300"}`}>
-                          {subtask.completed ? "Completed" : "In Progress"}
+                          {subtask.completed ? "Hoàn thành" : "Đang tiến hành"}
                         </div>
                       </div>
                       <div className="ml-7 mt-2 grid grid-cols-2 gap-2 text-sm text-gray-400">
@@ -360,11 +360,11 @@ const UserDetail = ({ user, onBack }) => {
                         </div>
                         <div className="flex items-center">
                           <Calendar size={12} className="mr-1" />
-                          <span>Due: {formatDate(subtask.dueDate)}</span>
+                          <span>Hạn cuối: {formatDate(subtask.dueDate)}</span>
                         </div>
                         <div className="flex items-center">
                           <Clock size={12} className="mr-1" />
-                          <span>Created: {formatDate(subtask.createdDate)}</span>
+                          <span>Tạo lúc: {formatDate(subtask.createdDate)}</span>
                         </div>
                       </div>
                     </div>
@@ -373,7 +373,7 @@ const UserDetail = ({ user, onBack }) => {
               ) : (
                 <div className="text-center py-8 text-gray-400">
                   <Check size={32} className="mx-auto mb-2 opacity-30" />
-                  <p>No subtasks assigned to this user</p>
+                  <p>Không có nhiệm vụ con nào được giao cho người dùng này</p>
                 </div>
               )}
             </div>

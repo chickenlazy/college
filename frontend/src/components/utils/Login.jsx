@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import { Mail, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
+import React, { useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import { Mail, Lock, AlertTriangle, CheckCircle } from "lucide-react";
 
 // Input Component
-const LoginInput = ({ 
-  label, 
-  name, 
-  type = "text", 
-  value, 
-  onChange, 
-  placeholder, 
+const LoginInput = ({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
   error,
-  icon: Icon
+  icon: Icon,
 }) => (
   <div className="space-y-1">
     <label htmlFor={name} className="block text-gray-400 mb-1">
@@ -43,54 +43,54 @@ const LoginInput = ({
 
 const Login = ({ onLoginSuccess }) => {
   const [formData, setFormData] = useState({
-    usernameOrEmail: '',
-    password: ''
+    usernameOrEmail: "",
+    password: "",
   });
-  
+
   const [formErrors, setFormErrors] = useState({
-    usernameOrEmail: '',
-    password: ''
+    usernameOrEmail: "",
+    password: "",
   });
-  
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear error when user types
     if (formErrors[name]) {
-      setFormErrors(prev => ({
+      setFormErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   const validateForm = () => {
     const errors = {
-      usernameOrEmail: '',
-      password: ''
+      usernameOrEmail: "",
+      password: "",
     };
     let isValid = true;
 
     // Validate username/email
     if (!formData.usernameOrEmail.trim()) {
-      errors.usernameOrEmail = 'Username or email is required';
+      errors.usernameOrEmail = "Tên đăng nhập hoặc email là bắt buộc";
       isValid = false;
     }
 
     // Validate password
     if (!formData.password.trim()) {
-      errors.password = 'Password is required';
+      errors.password = "Mật khẩu là bắt buộc";
       isValid = false;
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
       isValid = false;
     }
 
@@ -100,44 +100,52 @@ const Login = ({ onLoginSuccess }) => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccessMessage('');
-    
+    setError("");
+    setSuccessMessage("");
+
     // Validate form
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
-  
+
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
-        usernameOrEmail: formData.usernameOrEmail,
-        password: formData.password
-      });
-  
+      const response = await axios.post(
+        "http://localhost:8080/api/auth/login",
+        {
+          usernameOrEmail: formData.usernameOrEmail,
+          password: formData.password,
+        }
+      );
+
       // Kiểm tra nếu phản hồi chứa trường success là false
       if (response.data.success === false) {
-        setError(response.data.message || 'Unable to login. Please try again.');
+        setError(
+          response.data.message || "Không thể đăng nhập. Vui lòng thử lại."
+        );
         return;
       }
-  
+
       // Store the authentication token and user info
-      localStorage.setItem('user', JSON.stringify({
-        accessToken: response.data.accessToken,
-        tokenType: response.data.tokenType,  
-        id: response.data.id,
-        role: response.data.role,
-        fullName: response.data.fullName,
-        phoneNumber: response.data.phoneNumber,
-        username: response.data.username,
-        email: response.data.email,
-        createdDate: response.data.createdDate,
-        lastModifiedDate: response.data.lastModifiedDate
-      }));
-  
-      setSuccessMessage('Login successful! Redirecting...');
-      
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          accessToken: response.data.accessToken,
+          tokenType: response.data.tokenType,
+          id: response.data.id,
+          role: response.data.role,
+          fullName: response.data.fullName,
+          phoneNumber: response.data.phoneNumber,
+          username: response.data.username,
+          email: response.data.email,
+          createdDate: response.data.createdDate,
+          lastModifiedDate: response.data.lastModifiedDate,
+        })
+      );
+
+      setSuccessMessage("Đăng nhập thành công! Đang chuyển hướng...");
+
       // Call the onLoginSuccess callback to handle successful login
       setTimeout(() => {
         onLoginSuccess(response.data);
@@ -145,9 +153,15 @@ const Login = ({ onLoginSuccess }) => {
     } catch (err) {
       // Xử lý lỗi từ backend
       if (err.response?.status === 401) {
-        setError(err.response.data.message || 'The account has been disabled. Please contact administrator.');
+        setError(
+          err.response.data.message ||
+            "Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên."
+        );
       } else {
-        setError(err.response?.data?.message || 'Incorrect username or password. Please try again.');
+        setError(
+          err.response?.data?.message ||
+            "Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng thử lại."
+        );
       }
     } finally {
       setIsLoading(false);
@@ -159,19 +173,22 @@ const Login = ({ onLoginSuccess }) => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold text-white">
-            Sign in to your account
+            Đăng nhập vào tài khoản của bạn
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            If you don't have an account yet, please contact the admin.
+            Nếu bạn chưa có tài khoản, vui lòng liên hệ quản trị viên.
           </p>
           {/* Thêm link quên mật khẩu */}
-<div className="text-center mt-4">
-  <Link to="/forgot-password" className="text-purple-400 hover:text-purple-300 text-sm">
-    Quên mật khẩu?
-  </Link>
-</div>
+          <div className="text-center mt-4">
+            <Link
+              to="/forgot-password"
+              className="text-purple-400 hover:text-purple-300 text-sm"
+            >
+              Quên mật khẩu?
+            </Link>
+          </div>
         </div>
-        
+
         <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
           {error && (
             <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md flex items-center space-x-2">
@@ -179,33 +196,33 @@ const Login = ({ onLoginSuccess }) => {
               <span>{error}</span>
             </div>
           )}
-          
+
           {successMessage && (
             <div className="mb-4 bg-green-500 bg-opacity-20 border border-green-500 text-green-500 p-3 rounded-md flex items-center space-x-2">
               <CheckCircle size={18} />
               <span>{successMessage}</span>
             </div>
           )}
-          
+
           <form className="space-y-6" onSubmit={handleLogin}>
             <LoginInput
-              label="Username or Email"
+              label="Tên đăng nhập hoặc Email"
               name="usernameOrEmail"
               type="text"
               value={formData.usernameOrEmail}
               onChange={handleChange}
-              placeholder="Enter your username or email"
+              placeholder="Nhập tên đăng nhập hoặc email của bạn"
               error={formErrors.usernameOrEmail}
               icon={Mail}
             />
-            
+
             <LoginInput
-              label="Password"
+              label="Mật khẩu"
               name="password"
               type="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your password"
+              placeholder="Nhập mật khẩu của bạn"
               error={formErrors.password}
               icon={Lock}
             />
@@ -219,10 +236,10 @@ const Login = ({ onLoginSuccess }) => {
                 {isLoading ? (
                   <>
                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                    <span>Signing in...</span>
+                    <span>Đang đăng nhập...</span>
                   </>
                 ) : (
-                  <span>Sign in</span>
+                  <span>Đăng nhập</span>
                 )}
               </button>
             </div>
