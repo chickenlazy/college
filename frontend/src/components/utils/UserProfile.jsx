@@ -350,7 +350,7 @@ const UserProfile = () => {
               />
               <div className="md:col-span-2">
                 <PasswordInput
-                  label="CXác nhận mật khẩu mới"
+                  label="Xác nhận mật khẩu mới"
                   name="confirmPassword"
                   value={passwordData.confirmPassword}
                   onChange={handlePasswordInputChange}
