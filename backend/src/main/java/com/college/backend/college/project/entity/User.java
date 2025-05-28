@@ -94,4 +94,8 @@ public class User {
 
     @OneToMany(mappedBy = "uploadedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<ProjectFile> uploadedFiles;
+
+    // Thêm vào class User
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<DailyGoal> dailyGoals;
 }

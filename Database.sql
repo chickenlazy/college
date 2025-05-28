@@ -144,6 +144,31 @@ CREATE TABLE project_files (
 
 CREATE INDEX idx_project_files_project_id ON project_files(project_id);
 
+-- Tạo bảng daily_goals
+DROP TABLE IF EXISTS daily_goals;
+CREATE TABLE daily_goals (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  category ENUM('WORK', 'HEALTH', 'LEARNING', 'PERSONAL', 'FINANCE') NOT NULL DEFAULT 'WORK',
+  priority ENUM('HIGH', 'MEDIUM', 'LOW') NOT NULL DEFAULT 'MEDIUM',
+  estimated_time INT NOT NULL DEFAULT 30, -- Thời gian ước tính tính bằng phút
+  progress INT NOT NULL DEFAULT 0 CHECK (progress >= 0 AND progress <= 100), -- Tiến độ từ 0-100%
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  user_id INT NOT NULL,
+  created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  due_date DATETIME NOT NULL, -- Ngày hết hạn
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Tạo các chỉ mục để tối ưu hóa truy vấn
+CREATE INDEX idx_daily_goals_user_id ON daily_goals(user_id);
+CREATE INDEX idx_daily_goals_due_date ON daily_goals(due_date);
+CREATE INDEX idx_daily_goals_category ON daily_goals(category);
+CREATE INDEX idx_daily_goals_completed ON daily_goals(completed);
+CREATE INDEX idx_daily_goals_created_date ON daily_goals(created_date);
+
 -- Cập nhật câu lệnh INSERT vào bảng `users`
 INSERT INTO users (full_name, username, password, email, phone_number, role, department, address, position, status)
 VALUES
@@ -323,3 +348,20 @@ VALUES
   ('f345b678.docx', 'Meeting_Notes.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 345670, '/storage/projects/1/f345b678.docx', 'Meeting notes from kickoff', 1, 4),
   ('f901c234.xlsx', 'Budget_Plan.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 789456, '/storage/projects/1/f901c234.xlsx', 'Project budget planning', 1, 2),
   ('f567d890.png', 'Logo_Design.png', 'image/png', 456789, '/storage/projects/2/f567d890.png', 'Logo design for mobile app', 2, 3);
+  
+  -- Chèn dữ liệu mẫu cho bảng daily_goals
+INSERT INTO daily_goals (title, description, category, priority, estimated_time, progress, completed, user_id, due_date)
+VALUES
+  ('Hoàn thành báo cáo tháng', 'Viết báo cáo tổng kết công việc tháng này', 'WORK', 'HIGH', 120, 75, FALSE, 4, '2025-05-29 17:00:00'),
+  ('Tập thể dục buổi sáng', 'Chạy bộ 30 phút trong công viên', 'HEALTH', 'MEDIUM', 30, 100, TRUE, 4, '2025-05-28 08:00:00'),
+  ('Đọc sách chuyên ngành', 'Đọc 20 trang sách về quản lý dự án', 'LEARNING', 'MEDIUM', 45, 60, FALSE, 5, '2025-05-28 22:00:00'),
+  ('Gọi điện cho gia đình', 'Gọi điện hỏi thăm sức khỏe bố mẹ', 'PERSONAL', 'LOW', 15, 0, FALSE, 5, '2025-05-28 20:00:00'),
+  ('Xem lại ngân sách cá nhân', 'Kiểm tra chi tiêu và lập kế hoạch tài chính', 'FINANCE', 'HIGH', 60, 30, FALSE, 6, '2025-05-29 19:00:00'),
+  ('Học từ vựng tiếng Anh', 'Học 20 từ vựng mới', 'LEARNING', 'MEDIUM', 25, 100, TRUE, 6, '2025-05-28 21:00:00'),
+  ('Chuẩn bị presentation', 'Chuẩn bị slide cho cuộc họp ngày mai', 'WORK', 'HIGH', 90, 50, FALSE, 7, '2025-05-29 16:00:00'),
+  ('Uống đủ nước', 'Uống ít nhất 8 ly nước trong ngày', 'HEALTH', 'LOW', 5, 80, FALSE, 7, '2025-05-28 23:59:00'),
+  ('Dọn dẹp bàn làm việc', 'Sắp xếp lại không gian làm việc', 'PERSONAL', 'LOW', 20, 100, TRUE, 8, '2025-05-28 18:00:00'),
+  ('Review code của team', 'Kiểm tra và góp ý code của đồng nghiệp', 'WORK', 'MEDIUM', 75, 40, FALSE, 8, '2025-05-29 15:00:00'),
+  ('Thiền 10 phút', 'Thực hành thiền để giảm stress', 'HEALTH', 'MEDIUM', 10, 100, TRUE, 9, '2025-05-28 07:00:00'),
+  ('Lên kế hoạch tuần tới', 'Lập danh sách công việc cho tuần sau', 'PERSONAL', 'MEDIUM', 30, 0, FALSE, 9, '2025-05-29 20:00:00');
+

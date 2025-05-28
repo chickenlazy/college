@@ -12,13 +12,13 @@ import UserProfile from "../utils/UserProfile";
 import UserManagement from "./UserManagement";
 import Subtask from "./SubTask";
 import UserProject from "./UserProject";
-
+import DailyGoals from "./DailyGoals";
 import {
   Menu,
   ClipboardList,
   ChevronDown,
   LogOut,
-  Settings,
+  Target,
   ListChecks,
   Kanban,
   Bell,
@@ -80,6 +80,8 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
         return user.role === "ROLE_ADMIN" || user.role === "ROLE_MANAGER";
       case "userProfile":
         return true; // Mọi người dùng đều có thể truy cập profile
+      case "dailyGoals": // Thêm case này
+        return true; // Tất cả user đều có thể truy cập daily goals
       case "projectDetail":
       case "taskDetail":
       case "projectEdit":
@@ -143,6 +145,8 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
         return <UserManagement />;
       case "userProfile":
         return <UserProfile user={user} />;
+      case "dailyGoals": // Thêm case này
+        return <DailyGoals />;
       default:
         return (
           <div className="bg-gray-950 rounded-lg p-6">
@@ -300,6 +304,23 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                 </button>
               </li>
             )}
+            {/* Thêm menu item này sau các menu hiện tại */}
+            <li className="px-2 mt-2">
+              <button
+                onClick={() => {
+                  setActiveComponent("dailyGoals");
+                  setIsMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 p-3 w-full text-left rounded-md ${
+                  activeComponent === "dailyGoals"
+                    ? "bg-purple-600 text-white"
+                    : "hover:bg-gray-700"
+                }`}
+              >
+                <Target size={20} />
+                <span>MỤC TIÊU</span>
+              </button>
+            </li>
           </ul>
         </nav>
       </div>
