@@ -77,7 +77,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
           user.role === "ROLE_MANAGER"
         ); // Tất cả role đều có thể truy cập userProject
       case "userManagement":
-        return user.role === "ROLE_ADMIN";
+        return user.role === "ROLE_ADMIN" || user.role === "ROLE_MANAGER";
       case "userProfile":
         return true; // Mọi người dùng đều có thể truy cập profile
       case "projectDetail":
@@ -282,7 +282,7 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
                 </button>
               </li>
             )}
-            {user?.role === "ROLE_ADMIN" && (
+            {(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_MANAGER") && (
               <li className="px-2 mt-2">
                 <button
                   onClick={() => {

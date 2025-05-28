@@ -310,8 +310,6 @@ const Pagination = ({
   );
 };
 
-// Action Buttons Component
-// Action Buttons Component
 const ActionButtons = ({
   user,
   openUserDetail,
@@ -320,6 +318,10 @@ const ActionButtons = ({
 }) => {
   // Kiểm tra xem user có phải là admin không
   const isAdmin = user.role === "ROLE_ADMIN";
+
+  // Lấy thông tin user hiện tại từ localStorage
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const isCurrentUserManager = currentUser?.role === "ROLE_MANAGER";
 
   return (
     <div className="flex gap-2">
@@ -330,40 +332,34 @@ const ActionButtons = ({
       >
         <Eye size={16} />
       </button>
-      <button
-        className={`p-2 rounded-full ${
-          isAdmin ? "bg-gray-500 cursor-not-allowed" : "bg-yellow-600"
-        } text-white`}
-        onClick={() => !isAdmin && openUserEdit(user)}
-        disabled={isAdmin}
-        title={
-          isAdmin
-            ? "Không thể chỉnh sửa người dùng Admin"
-            : "Chỉnh sửa người dùng"
-        }
-      >
-        <Edit size={16} />
-      </button>
-      <button
-        className={`p-2 rounded-full ${
-          isAdmin
-            ? "bg-gray-500 cursor-not-allowed"
-            : user.status === "ACTIVE"
-            ? "bg-red-600"
-            : "bg-green-600"
-        } text-white`}
-        onClick={() => !isAdmin && onToggleStatus(user.id, user.status)}
-        disabled={isAdmin}
-        title={
-          isAdmin
-            ? "Không thể thay đổi trạng thái Admin"
-            : user.status === "ACTIVE"
-            ? "Vô hiệu hóa người dùng"
-            : "Kích hoạt người dùng"
-        }
-      >
-        <Power size={16} />
-      </button>
+
+      {/* Chỉ hiển thị nút Edit nếu không phải Manager và không phải Admin user */}
+      {!isCurrentUserManager && !isAdmin && (
+        <button
+          className="p-2 rounded-full bg-yellow-600 text-white"
+          onClick={() => openUserEdit(user)}
+          title="Chỉnh sửa người dùng"
+        >
+          <Edit size={16} />
+        </button>
+      )}
+
+      {/* Chỉ hiển thị nút Toggle Status nếu không phải Manager và không phải Admin user */}
+      {!isCurrentUserManager && !isAdmin && (
+        <button
+          className={`p-2 rounded-full ${
+            user.status === "ACTIVE" ? "bg-red-600" : "bg-green-600"
+          } text-white`}
+          onClick={() => onToggleStatus(user.id, user.status)}
+          title={
+            user.status === "ACTIVE"
+              ? "Vô hiệu hóa người dùng"
+              : "Kích hoạt người dùng"
+          }
+        >
+          <Power size={16} />
+        </button>
+      )}
     </div>
   );
 };
@@ -627,16 +623,19 @@ const UserManagement = () => {
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
             <div className="flex flex-wrap gap-2">
-              <button
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 rounded-md"
-                onClick={() => {
-                  setSelectedUser(null);
-                  setShowUserEdit(true);
-                }}
-              >
-                <Plus size={18} />
-                <span>Thêm</span>
-              </button>
+              {JSON.parse(localStorage.getItem("user"))?.role ===
+                "ROLE_ADMIN" && (
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 rounded-md"
+                  onClick={() => {
+                    setSelectedUser(null);
+                    setShowUserEdit(true);
+                  }}
+                >
+                  <Plus size={18} />
+                  <span>Thêm</span>
+                </button>
+              )}
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-purple-700 rounded-md"
                 onClick={handleReset}
