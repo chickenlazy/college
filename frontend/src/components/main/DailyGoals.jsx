@@ -867,12 +867,11 @@ const DailyGoals = () => {
 
   return (
     <div className="p-6 bg-gray-950 text-white min-h-screen">
-      <div className="max-w-7xl mx-auto">
+      <div >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Target size={32} className="text-purple-500" />
+            <h1 className="text-2xl font-bold mb-4">
               MỤC TIÊU HÀNG NGÀY
             </h1>
             <p className="text-gray-400 mt-2">

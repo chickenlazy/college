@@ -1394,58 +1394,164 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                 </div>
               )}
 
-              {subtasks.length === 0 ? (
-                <div className="text-center py-4 text-gray-400 bg-gray-800 rounded-lg">
-                  <p>Chưa có nhiệm vụ con nào được tạo cho nhiệm vụ này.</p>
+{subtasks.length === 0 ? (
+  <div className="text-center py-8 text-gray-400 bg-gray-800 rounded-lg border border-gray-700">
+    <div className="flex flex-col items-center">
+      <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
+        <CheckCircle size={24} className="text-gray-500" />
+      </div>
+      <p className="text-lg font-medium text-gray-300 mb-2">Chưa có nhiệm vụ con</p>
+      <p className="text-sm text-gray-500">Thêm nhiệm vụ con để chia nhỏ công việc</p>
+    </div>
+  </div>
+) : (
+  <div className="space-y-4">
+    {subtasks.map((subtask) => {
+      const subtaskStartDate = new Date(subtask.startDate);
+      const subtaskDueDate = new Date(subtask.dueDate);
+      const today = new Date();
+      const isOverdue = subtaskDueDate < today && !subtask.completed;
+      const daysRemaining = Math.ceil((subtaskDueDate - today) / (1000 * 60 * 60 * 24));
+      
+      return (
+        <div
+          key={subtask.id}
+          className={`border rounded-lg p-4 transition-all duration-200 ${
+            subtask.completed 
+              ? "bg-gray-800/50 border-green-500/30" 
+              : isOverdue
+              ? "bg-red-900/20 border-red-500/30"
+              : "bg-gray-800 border-gray-700 hover:border-purple-500/50"
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3 flex-1">
+              <div className="mt-1">
+                <input
+                  type="checkbox"
+                  checked={subtask.completed}
+                  onChange={() => handleToggleSubtask(subtask.id)}
+                  className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-purple-600 
+                           focus:ring-purple-500 focus:ring-2 focus:ring-offset-0 
+                           focus:ring-offset-gray-800"
+                />
+              </div>
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <h4 className={`font-medium text-lg ${
+                    subtask.completed
+                      ? "line-through text-gray-500"
+                      : "text-white"
+                  }`}>
+                    {subtask.name}
+                  </h4>
+                  
+                  {/* Status badges */}
+                  <div className="flex items-center gap-2">
+                    {subtask.completed && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs 
+                                     bg-green-100 text-green-800 font-medium">
+                        <CheckCircle size={12} className="mr-1" />
+                        Hoàn thành
+                      </span>
+                    )}
+                    
+                    {isOverdue && !subtask.completed && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs 
+                                     bg-red-100 text-red-800 font-medium">
+                        <AlertTriangle size={12} className="mr-1" />
+                        Quá hạn
+                      </span>
+                    )}
+                    
+                    {!subtask.completed && !isOverdue && daysRemaining <= 3 && daysRemaining > 0 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs 
+                                     bg-yellow-100 text-yellow-800 font-medium">
+                        <Clock size={12} className="mr-1" />
+                        Sắp hết hạn
+                      </span>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {subtasks.map((subtask) => (
-                    <div
-                      key={subtask.id}
-                      className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
-                    >
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={subtask.completed}
-                          onChange={() => handleToggleSubtask(subtask.id)}
-                          className="mr-3 h-4 w-4"
-                        />
-                        <div>
-                          <span
-                            className={
-                              subtask.completed
-                                ? "line-through text-gray-400"
-                                : ""
-                            }
-                          >
-                            {subtask.name}
-                          </span>
-                          {subtask.assigneeName && (
-                            <div className="text-xs text-gray-400 flex items-center mt-1">
-                              <User size={12} className="mr-1" />
-                              {subtask.assigneeName}
-                            </div>
-                          )}
-                          {/* Hiển thị thông tin ngày tháng */}
-                          <div className="text-xs text-gray-400 flex items-center mt-1">
-                            <Calendar size={12} className="mr-1" />
-                            {formatDate(subtask.startDate)} -{" "}
-                            {formatDate(subtask.dueDate)}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        className="text-gray-400 hover:text-red-500"
-                        onClick={() => handleDeleteSubtask(subtask.id)}
-                      >
-                        <X size={16} />
-                      </button>
+                
+                {/* Assignee Info */}
+                {subtask.assigneeName && (
+                  <div className="flex items-center mb-3">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 
+                                  flex items-center justify-center text-white text-sm mr-3">
+                      {subtask.assigneeName.split(' ').map(n => n[0]).join('').substring(0, 2)}
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-sm font-medium text-gray-200">{subtask.assigneeName}</p>
+                      <p className="text-xs text-gray-400">{subtask.assigneeEmail}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Date Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <div className="flex items-center text-sm text-gray-400">
+                    <Calendar size={14} className="mr-2 text-green-400" />
+                    <div>
+                      <span className="font-medium text-gray-300">Bắt đầu:</span>
+                      <span className="ml-1">{formatDate(subtask.startDate)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center text-sm text-gray-400">
+                    <Calendar size={14} className={`mr-2 ${isOverdue ? 'text-red-400' : 'text-blue-400'}`} />
+                    <div>
+                      <span className="font-medium text-gray-300">Kết thúc:</span>
+                      <span className={`ml-1 ${isOverdue ? 'text-red-400' : ''}`}>
+                        {formatDate(subtask.dueDate)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
+                
+                {/* Time remaining */}
+                {!subtask.completed && (
+                  <div className="text-sm">
+                    {isOverdue ? (
+                      <span className="text-red-400 font-medium">
+                        Quá hạn {Math.abs(daysRemaining)} ngày
+                      </span>
+                    ) : daysRemaining === 0 ? (
+                      <span className="text-yellow-400 font-medium">
+                        Hết hạn hôm nay
+                      </span>
+                    ) : (
+                      <span className={`font-medium ${daysRemaining <= 3 ? 'text-yellow-400' : 'text-gray-400'}`}>
+                        Còn {daysRemaining} ngày
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Completion info */}
+                {subtask.completed && (
+                  <div className="text-sm text-green-400">
+                    <span>Hoàn thành vào {formatDate(subtask.lastModifiedDate)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <button
+              className="text-gray-400 hover:text-red-400 hover:bg-red-900/20 
+                       p-2 rounded-full transition-colors ml-2"
+              onClick={() => handleDeleteSubtask(subtask.id)}
+              title="Xóa nhiệm vụ con"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+)}
             </div>
           </div>
         )}

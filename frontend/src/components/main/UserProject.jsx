@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import UserProjectDetail from "../detail/UserProjectDetail";
+import ProjectDetail from "../detail/ProjectDetail";
 import axios from "axios";
 import {
   Search,
@@ -20,13 +20,13 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
 } from "lucide-react";
 
 // Format date to show in card
 const formatDate = (dateString) => {
   if (!dateString) return "Chưa thiết lập";
-  
+
   const date = new Date(dateString);
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -168,30 +168,38 @@ const ProjectCard = ({ project, onViewDetails }) => {
   // Check if due date is passed
   const isDueDatePassed = () => {
     if (!project.dueDate) return false;
-    return new Date(project.dueDate) < new Date() && project.status !== "COMPLETED";
+    return (
+      new Date(project.dueDate) < new Date() && project.status !== "COMPLETED"
+    );
   };
 
   return (
-    <div 
-      className={`${project.status === "OVER_DUE" || isDueDatePassed() ? 'border-red-500 border-2' : 'border border-gray-700'} 
+    <div
+      className={`${
+        project.status === "OVER_DUE" || isDueDatePassed()
+          ? "border-red-500 border-2"
+          : "border border-gray-700"
+      } 
       bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300`}
     >
       {/* Card Header with Status */}
-      <div 
+      <div
         className={`p-4 ${
-          project.status === "COMPLETED" 
-            ? 'bg-green-900/30' 
-            : project.status === "OVER_DUE" || isDueDatePassed() 
-              ? 'bg-red-900/30' 
-              : project.status === "IN_PROGRESS" 
-                ? 'bg-blue-900/30'
-                : project.status === "ON_HOLD"
-                  ? 'bg-yellow-900/30'
-                  : 'bg-purple-900/30'
+          project.status === "COMPLETED"
+            ? "bg-green-900/30"
+            : project.status === "OVER_DUE" || isDueDatePassed()
+            ? "bg-red-900/30"
+            : project.status === "IN_PROGRESS"
+            ? "bg-blue-900/30"
+            : project.status === "ON_HOLD"
+            ? "bg-yellow-900/30"
+            : "bg-purple-900/30"
         }`}
       >
         <div className="flex justify-between items-center">
-          <h3 className="font-bold text-lg text-white max-w-[70%] truncate">{project.name}</h3>
+          <h3 className="font-bold text-lg text-white max-w-[70%] truncate">
+            {project.name}
+          </h3>
           <StatusBadge status={project.status} />
         </div>
       </div>
@@ -203,10 +211,12 @@ const ProjectCard = ({ project, onViewDetails }) => {
           {project.description && (
             <div className="mb-3">
               <p className="text-xs text-gray-400 mb-1">Mô tả</p>
-              <p className="text-sm text-gray-300 line-clamp-2">{project.description}</p>
+              <p className="text-sm text-gray-300 line-clamp-2">
+                {project.description}
+              </p>
             </div>
           )}
-          
+
           {/* Manager Info */}
           <div className="flex items-center">
             <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-purple-900/20 text-purple-400 rounded-full mr-3">
@@ -214,10 +224,12 @@ const ProjectCard = ({ project, onViewDetails }) => {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-gray-400 font-medium">Quản lý</p>
-              <p className="text-sm font-medium truncate">{project.managerName || "Chưa phân công"}</p>
+              <p className="text-sm font-medium truncate">
+                {project.managerName || "Chưa phân công"}
+              </p>
             </div>
           </div>
-          
+
           {/* Dates Row - Combined Start & Due Date */}
           <div className="flex">
             {/* Start Date */}
@@ -226,19 +238,29 @@ const ProjectCard = ({ project, onViewDetails }) => {
                 <Calendar size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Ngày bắt đầu</p>
-                <p className="text-sm font-medium">{formatDate(project.startDate)}</p>
+                <p className="text-xs text-gray-400 font-medium">
+                  Ngày bắt đầu
+                </p>
+                <p className="text-sm font-medium">
+                  {formatDate(project.startDate)}
+                </p>
               </div>
             </div>
-            
+
             {/* Due Date */}
             <div className="flex items-center flex-1">
               <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-red-900/20 text-red-400 rounded-full mr-3">
                 <Calendar size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Ngày đến hạn</p>
-                <p className={`text-sm font-medium ${isDueDatePassed() ? 'text-red-500 font-bold' : ''}`}>
+                <p className="text-xs text-gray-400 font-medium">
+                  Ngày đến hạn
+                </p>
+                <p
+                  className={`text-sm font-medium ${
+                    isDueDatePassed() ? "text-red-500 font-bold" : ""
+                  }`}
+                >
                   {formatDate(project.dueDate)}
                 </p>
               </div>
@@ -250,7 +272,8 @@ const ProjectCard = ({ project, onViewDetails }) => {
             <div className="flex justify-between items-center">
               <p className="text-xs text-gray-400">Tiến độ</p>
               <p className="text-xs text-gray-400">
-                {project.totalCompletedTasks}/{project.totalTasks} nhiệm vụ đã hoàn thành
+                {project.totalCompletedTasks}/{project.totalTasks} nhiệm vụ đã
+                hoàn thành
               </p>
             </div>
             <ProgressBar progress={project.progress?.toFixed(1) || 0} />
@@ -268,7 +291,7 @@ const ProjectCard = ({ project, onViewDetails }) => {
           <span>Xem chi tiết</span>
         </button>
       </div>
-      
+
       {/* Subtle ID indicator at bottom */}
       <div className="px-3 py-1 bg-gray-900 border-t border-gray-800">
         <p className="text-xs text-gray-600 text-center">ID: {project.id}</p>
@@ -367,7 +390,7 @@ const Pagination = ({
 
 const UserProject = () => {
   const [selectedProject, setSelectedProject] = useState(null);
-const [showProjectDetail, setShowProjectDetail] = useState(false);
+  const [showProjectDetail, setShowProjectDetail] = useState(false);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -441,7 +464,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
       }
 
       const token = user.accessToken;
-      
+
       const response = await axios.get(
         `http://localhost:8080/api/projects/user/${user.id}`,
         {
@@ -467,7 +490,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
           last: true,
         });
       }
-      
+
       setLoading(false);
     } catch (err) {
       console.error("Error fetching projects:", err);
@@ -498,10 +521,15 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
     setShowProjectDetail(true);
   };
 
-  const handleBackFromDetail = () => {
-    setShowProjectDetail(false);
-    setSelectedProject(null);
-  };
+const handleBackFromDetail = (needRefresh = false) => {
+  setShowProjectDetail(false);
+  setSelectedProject(null);
+  
+  // Nếu cần refresh data (ví dụ: sau khi chỉnh sửa project)
+  if (needRefresh) {
+    fetchProjects(currentPage, itemsPerPage, debouncedSearch, activeFilter);
+  }
+};
 
   // Handle Reset functionality
   const handleReset = () => {
@@ -520,9 +548,9 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
   return (
     <div className="p-6 bg-gray-950 text-white">
       {showProjectDetail && selectedProject ? (
-        <UserProjectDetail 
-          projectId={selectedProject.id} 
-          onBack={handleBackFromDetail} 
+        <ProjectDetail
+          project={selectedProject}
+          onBack={handleBackFromDetail}
         />
       ) : (
         <>
@@ -534,7 +562,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
               {apiData.totalElements} dự án được tìm thấy
             </div>
           </div>
-  
+
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
             <div className="flex flex-wrap gap-2">
@@ -546,7 +574,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
                 <span>Làm mới</span>
               </button>
             </div>
-  
+
             <div className="flex items-center gap-2">
               <div className="relative">
                 <input
@@ -566,7 +594,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
               </div>
             </div>
           </div>
-  
+
           {/* Filter Tabs */}
           <FilterTabs
             activeFilter={activeFilter}
@@ -575,7 +603,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
               setCurrentPage(1);
             }}
           />
-  
+
           {/* Project Cards */}
           <div className="mt-4 min-h-[400px]">
             {loading ? (
@@ -595,10 +623,12 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
             ) : projects.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-64 text-center">
                 <FolderKanban size={48} className="text-gray-600 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Không tìm thấy dự án nào</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  Không tìm thấy dự án nào
+                </h3>
                 <p className="text-gray-400 max-w-md">
-                  {search || activeFilter !== "all" 
-                    ? "Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn" 
+                  {search || activeFilter !== "all"
+                    ? "Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn"
                     : "Hiện tại bạn chưa được giao bất kỳ dự án nào"}
                 </p>
               </div>
@@ -614,7 +644,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
               </div>
             )}
           </div>
-  
+
           {/* Pagination */}
           {!loading && projects.length > 0 && (
             <Pagination
@@ -628,7 +658,7 @@ const [showProjectDetail, setShowProjectDetail] = useState(false);
           )}
         </>
       )}
-  
+
       {/* Toast Notification */}
       {toast && (
         <Toast

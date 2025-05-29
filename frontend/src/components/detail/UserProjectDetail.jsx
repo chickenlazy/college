@@ -623,7 +623,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           />
           <Tab
             icon={<Users size={18} />}
-            label="Nhóm"
+            label="Thành viên"
             active={activeTab === "team"}
             onClick={() => setActiveTab("team")}
           />

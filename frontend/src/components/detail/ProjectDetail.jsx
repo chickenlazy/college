@@ -84,6 +84,14 @@ const FileManager = ({ projectId }) => {
     fileId: null,
   });
   const [toast, setToast] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   useEffect(() => {
     fetchFiles();
@@ -220,7 +228,10 @@ const FileManager = ({ projectId }) => {
 
   const handleFileUploaded = (newFiles) => {
     setFiles([...newFiles, ...files]);
-    showToast(`${newFiles.length} tập tin đã được tải lên thành công`, "success");
+    showToast(
+      `${newFiles.length} tập tin đã được tải lên thành công`,
+      "success"
+    );
   };
 
   const showToast = (message, type = "success") => {
@@ -234,7 +245,9 @@ const FileManager = ({ projectId }) => {
         <h2 className="text-xl font-semibold">Tập tin dự án</h2>
       </div>
 
-      <FileUpload projectId={projectId} onFileUploaded={handleFileUploaded} />
+      {currentUser?.role !== "ROLE_USER" && (
+        <FileUpload projectId={projectId} onFileUploaded={handleFileUploaded} />
+      )}
 
       {loading ? (
         <div className="text-center py-8">
@@ -644,6 +657,16 @@ const FileList = ({ files, onDelete, onDownload }) => {
   const [editOriginalName, setEditOriginalName] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [editError, setEditError] = useState(null);
+  // Trong FileList component, thêm vào đầu component (sau các useState khác):
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Thêm useEffect để lấy thông tin user
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   // Hàm để xác định icon dựa trên loại file
   const getFileIcon = (fileName) => {
@@ -833,36 +856,45 @@ const FileList = ({ files, onDelete, onDownload }) => {
                 </div>
               </div>
               <div className="flex space-x-2">
-                <button
-                  className="p-2 hover:bg-gray-700 rounded-full text-yellow-400"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Ngăn không cho sự kiện click lan đến parent
-                    openEditForm(file);
-                  }}
-                  title="Sửa thông tin tập tin"
-                >
-                  <Edit size={18} />
-                </button>
+                {/* Chỉ hiển thị nút Edit nếu không phải ROLE_USER */}
+                {currentUser?.role !== "ROLE_USER" && (
+                  <button
+                    className="p-2 hover:bg-gray-700 rounded-full text-yellow-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditForm(file);
+                    }}
+                    title="Sửa thông tin tập tin"
+                  >
+                    <Edit size={18} />
+                  </button>
+                )}
+
                 <button
                   className="p-2 hover:bg-gray-700 rounded-full text-blue-400"
                   onClick={(e) => {
-                    e.stopPropagation(); // Ngăn không cho sự kiện click lan đến parent (không mở rộng file)
+                    e.stopPropagation();
                     onDownload(file);
                   }}
                   title="Tải xuống tập tin"
                 >
                   <Download size={18} />
                 </button>
-                <button
-                  className="p-2 hover:bg-gray-700 rounded-full text-red-400"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Ngăn không cho sự kiện click lan đến parent
-                    onDelete(file.id);
-                  }}
-                  title="Xóa tập tin"
-                >
-                  <Trash2 size={18} />
-                </button>
+
+                {/* Chỉ hiển thị nút Delete nếu không phải ROLE_USER */}
+                {currentUser?.role !== "ROLE_USER" && (
+                  <button
+                    className="p-2 hover:bg-gray-700 rounded-full text-red-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(file.id);
+                    }}
+                    title="Xóa tập tin"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+
                 <button className="p-2 hover:bg-gray-700 rounded-full">
                   {expandedFileId === file.id ? (
                     <ChevronUp size={18} />
@@ -1467,7 +1499,8 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
         {/* Footer */}
         <div className="p-4 border-t border-gray-700 bg-gray-750 flex justify-between items-center">
           <span className="text-sm text-gray-400">
-            Hiển thị {filteredUsers.length} trong tổng số {availableUsers.length} thành viên khả dụng
+            Hiển thị {filteredUsers.length} trong tổng số{" "}
+            {availableUsers.length} thành viên khả dụng
           </span>
           <button
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
@@ -1484,8 +1517,16 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
 // Task Item Component
 const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
   const [expanded, setExpanded] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const statusInfo = getStatusInfo(task.status);
   const priorityInfo = getPriorityInfo(task.priority);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   return (
     <div className="border border-gray-700 rounded-lg overflow-hidden mb-3">
@@ -1524,7 +1565,6 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
       {expanded && (
         <div className="p-4 bg-gray-900 border-t border-gray-700">
           <div className="text-sm text-gray-300 mb-3">{task.description}</div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-xs text-gray-400 mb-1">Status</p>
@@ -1541,7 +1581,6 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
               </div>
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-xs text-gray-400 mb-1">Start Date</p>
@@ -1558,7 +1597,6 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
               </div>
             </div>
           </div>
-
           {/* Hiển thị subtasks */}
           {task.subtasks && task.subtasks.length > 0 && (
             <div className="mt-3 mb-4">
@@ -1586,7 +1624,6 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
               </div>
             </div>
           )}
-
           <div className="flex justify-end space-x-2 mt-2">
             <button
               className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
@@ -1594,54 +1631,58 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
             >
               Chi tiết
             </button>
-            <button
-              className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  const storedUser = localStorage.getItem("user");
-                  let token = null;
-                  if (storedUser) {
-                    const user = JSON.parse(storedUser);
-                    token = user.accessToken;
+
+            {/* Chỉ hiển thị nút Xóa nếu không phải ROLE_USER */}
+            {currentUser?.role !== "ROLE_USER" && (
+              <button
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const storedUser = localStorage.getItem("user");
+                    let token = null;
+                    if (storedUser) {
+                      const user = JSON.parse(storedUser);
+                      token = user.accessToken;
+                    }
+
+                    // Dùng ConfirmationDialog thay vì window.confirm
+                    if (
+                      window.confirm(
+                        "Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không thể hoàn tác."
+                      )
+                    ) {
+                      await axios.delete(
+                        `http://localhost:8080/api/tasks/${task.id}`,
+                        {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      );
+
+                      // Thay vì reload toàn bộ trang, gọi API lấy dữ liệu project mới nhất
+                      const projectResponse = await axios.get(
+                        `http://localhost:8080/api/projects/${task.projectId}`,
+                        {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      );
+
+                      // Dùng callback để cập nhật dữ liệu
+                      onTaskDeleted(projectResponse.data);
+                    }
+                  } catch (error) {
+                    console.error("Error deleting task:", error);
+                    alert("Failed to delete task. Please try again.");
                   }
-
-                  // Dùng ConfirmationDialog thay vì window.confirm
-                  if (
-                    window.confirm(
-                      "Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không thể hoàn tác."
-                    )
-                  ) {
-                    await axios.delete(
-                      `http://localhost:8080/api/tasks/${task.id}`,
-                      {
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
-
-                    // Thay vì reload toàn bộ trang, gọi API lấy dữ liệu project mới nhất
-                    const projectResponse = await axios.get(
-                      `http://localhost:8080/api/projects/${task.projectId}`,
-                      {
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
-
-                    // Dùng callback để cập nhật dữ liệu
-                    onTaskDeleted(projectResponse.data);
-                  }
-                } catch (error) {
-                  console.error("Error deleting task:", error);
-                  alert("Failed to delete task. Please try again.");
-                }
-              }}
-            >
-              Xóa
-            </button>
+                }}
+              >
+                Xóa
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1739,6 +1780,7 @@ const TagDropdownMenu = ({ isOpen, onClose, tags, onSelect, usedTagIds }) => {
 };
 
 const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
+  const [currentUser, setCurrentUser] = useState(null);
   // Thêm state cho phần chỉnh sửa file
   const [editingFile, setEditingFile] = useState(null);
   const [editDescription, setEditDescription] = useState("");
@@ -1768,6 +1810,16 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
+
+  // Thêm useEffect để lấy thông tin user
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  // ... các useEffect khác đã có sẵn ...
 
   const onBack = (needRefresh) => {
     if (needRefresh) {
@@ -2222,6 +2274,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
           <div className="mb-6">
             <div className="flex items-center mb-2">
               <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
+              {currentUser?.role !== "ROLE_USER" ? (
               <div className="relative">
                 <div
                   className="cursor-pointer"
@@ -2351,6 +2404,41 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                   </div>
                 )}
               </div>
+               ) : (
+                 // Nếu là ROLE_USER, chỉ hiển thị status không thể click
+    <div
+      className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 
+${
+  project.status === "COMPLETED"
+    ? "bg-green-200 text-green-800"
+    : project.status === "IN_PROGRESS"
+    ? "bg-blue-200 text-blue-800"
+    : project.status === "NOT_STARTED"
+    ? "bg-gray-200 text-gray-800"
+    : project.status === "OVER_DUE"
+    ? "bg-red-200 text-red-800"
+    : project.status === "ON_HOLD"
+    ? "bg-yellow-200 text-yellow-800"
+    : "bg-gray-200 text-gray-800"
+}`}
+    >
+      {project.status === "COMPLETED" ? (
+        <CheckCircle size={16} />
+      ) : project.status === "IN_PROGRESS" ? (
+        <Clock size={16} />
+      ) : project.status === "NOT_STARTED" ? (
+        <Clock size={16} />
+      ) : project.status === "OVER_DUE" ? (
+        <AlertTriangle size={16} />
+      ) : project.status === "ON_HOLD" ? (
+        <AlertCircle size={16} />
+      ) : (
+        <Clock size={16} />
+      )}
+      <span>{project.status.replace(/_/g, " ")}</span>
+      {/* Không có ChevronDown để báo hiệu không thể click */}
+    </div>
+  )}
             </div>
             <p className="text-gray-300">{project.description}</p>
 
@@ -2477,25 +2565,24 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Nhiệm vụ dự án</h2>
-                  <button
-                    className={`px-3 py-2 ${
-                      project.status === "IN_PROGRESS"
-                        ? "bg-purple-600 hover:bg-purple-700"
-                        : "bg-gray-600 cursor-not-allowed opacity-60"
-                    } rounded flex items-center`}
-                    onClick={() =>
-                      project.status === "IN_PROGRESS" && setShowTaskEdit(true)
-                    }
-                    disabled={project.status !== "IN_PROGRESS"}
-                    title={
-                      project.status !== "IN_PROGRESS"
-                        ? "Dự án phải ở trạng thái đang tiến hành để thêm nhiệm vụ"
-                        : ""
-                    }
-                  >
-                    <Plus size={16} className="mr-2" />
-                    Thêm nhiệm vụ
-                  </button>
+                  {/* Chỉ hiển thị nút Thêm nhiệm vụ nếu không phải USER */}
+                  {currentUser?.role !== "ROLE_USER" && (
+                    <button
+                      className={`px-3 py-2 ${
+                        project.status === "IN_PROGRESS"
+                          ? "bg-purple-600 hover:bg-purple-700"
+                          : "bg-gray-600 cursor-not-allowed opacity-60"
+                      } rounded flex items-center`}
+                      onClick={() =>
+                        project.status === "IN_PROGRESS" &&
+                        setShowTaskEdit(true)
+                      }
+                      disabled={project.status !== "IN_PROGRESS"}
+                    >
+                      <Plus size={16} className="mr-2" />
+                      Thêm nhiệm vụ
+                    </button>
+                  )}
                 </div>
 
                 <div className="mb-4">
@@ -2572,28 +2659,30 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Thành viên</h2>
-                  <div className="relative">
-                    <button
-                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                      onClick={() => setMembersMenuOpen(!membersMenuOpen)}
-                      disabled={loadingMember}
-                    >
-                      <Plus size={16} className="mr-2" />
-                      Thêm thành viên
-                      {loadingMember && (
-                        <span className="ml-2 animate-spin">⟳</span>
-                      )}
-                    </button>
+                  {currentUser?.role !== "ROLE_USER" && (
+                    <div className="relative">
+                      <button
+                        className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                        onClick={() => setMembersMenuOpen(!membersMenuOpen)}
+                        disabled={loadingMember}
+                      >
+                        <Plus size={16} className="mr-2" />
+                        Thêm thành viên
+                        {loadingMember && (
+                          <span className="ml-2 animate-spin">⟳</span>
+                        )}
+                      </button>
 
-                    {/* Member Modal */}
-                    <MemberModal
-                      isOpen={membersMenuOpen}
-                      onClose={() => setMembersMenuOpen(false)}
-                      users={allUsers}
-                      onSelect={handleAddMember}
-                      usedUserIds={project.users.map((user) => user.id)}
-                    />
-                  </div>
+                      {/* Member Modal */}
+                      <MemberModal
+                        isOpen={membersMenuOpen}
+                        onClose={() => setMembersMenuOpen(false)}
+                        users={allUsers}
+                        onSelect={handleAddMember}
+                        usedUserIds={project.users.map((user) => user.id)}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {memberError && (
@@ -2663,13 +2752,16 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                               </p>
                             </div>
                           </div>
-                          <button
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-700 rounded-full"
-                            onClick={() => handleRemoveMember(user.id)}
-                            disabled={loadingMember}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          {/* Chỉ hiển thị nút xóa thành viên nếu không phải USER */}
+                          {currentUser?.role !== "ROLE_USER" && (
+                            <button
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-700 rounded-full"
+                              onClick={() => handleRemoveMember(user.id)}
+                              disabled={loadingMember}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       ))}
                   </div>
@@ -2681,30 +2773,32 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Project Tags</h2>
-                  <div className="relative">
-                    <button
-                      className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
-                      onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
-                      disabled={loadingTag}
-                    >
-                      <Plus size={16} className="mr-2" />
-                      Thêm nhãn
-                      {loadingTag && (
-                        <span className="ml-2 animate-spin">⟳</span>
-                      )}
-                    </button>
+                  {currentUser?.role !== "ROLE_USER" && (
+                    <div className="relative">
+                      <button
+                        className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center"
+                        onClick={() => setTagsMenuOpen(!tagsMenuOpen)}
+                        disabled={loadingTag}
+                      >
+                        <Plus size={16} className="mr-2" />
+                        Thêm nhãn
+                        {loadingTag && (
+                          <span className="ml-2 animate-spin">⟳</span>
+                        )}
+                      </button>
 
-                    {/* Tag Dropdown Menu */}
-                    <TagDropdownMenu
-                      isOpen={tagsMenuOpen}
-                      onClose={() => setTagsMenuOpen(false)}
-                      tags={allTags}
-                      onSelect={handleAddTag}
-                      usedTagIds={
-                        project.tags ? project.tags.map((tag) => tag.id) : []
-                      }
-                    />
-                  </div>
+                      {/* Tag Dropdown Menu */}
+                      <TagDropdownMenu
+                        isOpen={tagsMenuOpen}
+                        onClose={() => setTagsMenuOpen(false)}
+                        tags={allTags}
+                        onSelect={handleAddTag}
+                        usedTagIds={
+                          project.tags ? project.tags.map((tag) => tag.id) : []
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {tagError && (
@@ -2734,15 +2828,18 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                             ></div>
                             <span>{tag.name}</span>
                           </div>
-                          <div className="flex space-x-2 ml-4">
-                            <button
-                              className="p-1 hover:bg-gray-600 rounded"
-                              onClick={() => handleRemoveTag(tag.id)}
-                              disabled={loadingTag}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                          {/* Chỉ hiển thị nút xóa nhãn nếu không phải USER */}
+                          {currentUser?.role !== "ROLE_USER" && (
+                            <div className="flex space-x-2 ml-4">
+                              <button
+                                className="p-1 hover:bg-gray-600 rounded"
+                                onClick={() => handleRemoveTag(tag.id)}
+                                disabled={loadingTag}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2827,7 +2924,8 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                           className="mx-auto text-gray-500 mb-2"
                         />
                         <p className="text-gray-400">
-                          Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+                          Chưa có bình luận nào. Hãy là người đầu tiên bình
+                          luận!
                         </p>
                       </div>
                     ) : (
@@ -2871,10 +2969,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                               setComments(
                                 comments.filter((c) => c.id !== commentId)
                               );
-                              showToast(
-                                "Xóa bình luận thành công",
-                                "success"
-                              );
+                              showToast("Xóa bình luận thành công", "success");
                             } catch (error) {
                               console.error("Error deleting comment:", error);
                               showToast("Failed to delete comment", "error");
