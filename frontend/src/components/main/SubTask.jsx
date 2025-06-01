@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import UserTaskDetail from "../detail/UserTaskDetail";
+import TaskDetail from "../detail/TaskDetail";
 import axios from "axios";
 import {
   Search,
@@ -29,7 +29,7 @@ const formatDate = (dateString) => {
   if (!dateString) return "Chưa đặt";
 
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-GB", {
+  return date.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -41,7 +41,7 @@ const formatDateTime = (dateString) => {
   if (!dateString) return "Không khả dụng";
 
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-GB", {
+  return date.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -136,7 +136,8 @@ const Pagination = ({
       </div>
 
       <div className="text-sm">
-        Đang hiển thị {currentPage} trong tổng số {totalPages} ({totalItems} mục)
+        Đang hiển thị {currentPage} trong tổng số {totalPages} ({totalItems}{" "}
+        mục)
       </div>
 
       <div className="flex items-center gap-2">
@@ -291,7 +292,9 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
                 <Calendar size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Ngày bắt đầu</p>
+                <p className="text-xs text-gray-400 font-medium">
+                  Ngày bắt đầu
+                </p>
                 <p className="text-sm font-medium">
                   {formatDate(subtask.startDate)}
                 </p>
@@ -304,8 +307,10 @@ const EnhancedSubtaskCard = ({ subtask, onToggle, onViewDetails }) => {
                 <Bell size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400 font-medium">Ngày kết thúc</p>
-                <p                                            
+                <p className="text-xs text-gray-400 font-medium">
+                  Ngày kết thúc
+                </p>
+                <p
                   className={`text-sm font-medium ${
                     isDueDatePassed() ? "text-red-500 font-bold" : ""
                   }`}
@@ -375,7 +380,7 @@ const Subtask = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState(null);
-
+  const [selectedTask, setSelectedTask] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -395,6 +400,28 @@ const Subtask = () => {
       return JSON.parse(storedUser);
     }
     return null;
+  };
+
+  const fetchTaskDetails = async (taskId) => {
+    try {
+      const user = getUser();
+      const token = user.accessToken;
+
+      const response = await axios.get(
+        `http://localhost:8080/api/tasks/${taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setSelectedTask(response.data);
+      setShowTaskDetail(true);
+    } catch (error) {
+      console.error("Error fetching task details:", error);
+      showToast("Không thể tải chi tiết nhiệm vụ", "error");
+    }
   };
 
   const user = getUser();
@@ -494,7 +521,7 @@ const Subtask = () => {
 
   const handleViewDetails = (subtask) => {
     setSelectedSubtask(subtask);
-    setShowTaskDetail(true);
+    fetchTaskDetails(subtask.taskId);
   };
 
   // Thêm hàm xử lý quay lại
@@ -574,12 +601,9 @@ const Subtask = () => {
     <div className="p-6 bg-gray-950 text-white">
       {showTaskDetail && selectedSubtask ? (
         <>
-        {console.log("Selected Task ID:", selectedSubtask.taskId)}
-        <UserTaskDetail
-          taskId={selectedSubtask.taskId}
-          onBack={handleBackFromDetail}
-        />
-      </>
+          {console.log("Selected Task ID:", selectedSubtask.taskId)}
+          <TaskDetail task={selectedTask} onBack={handleBackFromDetail} />
+        </>
       ) : (
         <>
           <div className="flex items-center justify-between mb-6">
@@ -640,7 +664,9 @@ const Subtask = () => {
                   size={36}
                   className="text-purple-500 animate-spin mb-4"
                 />
-                <p className="text-gray-400">Đang tải nhiệm vụ con của bạn...</p>
+                <p className="text-gray-400">
+                  Đang tải nhiệm vụ con của bạn...
+                </p>
               </div>
             ) : error ? (
               <div className="flex flex-col justify-center items-center h-64 text-center p-4">
@@ -651,7 +677,9 @@ const Subtask = () => {
             ) : filteredSubtasks.length === 0 ? (
               <div className="flex flex-col justify-center items-center h-64 text-center">
                 <ClipboardList size={48} className="text-gray-600 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Không tìm thấy nhiệm vụ</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  Không tìm thấy nhiệm vụ
+                </h3>
                 <p className="text-gray-400 max-w-md">
                   {search || activeFilter !== "all"
                     ? "Hãy điều chỉnh bộ lọc hoặc từ khóa tìm kiếm"

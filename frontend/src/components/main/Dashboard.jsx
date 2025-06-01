@@ -112,9 +112,9 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
     if (user && activeComponent && !hasAccess(activeComponent)) {
       return (
         <div className="bg-gray-950 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-6">Access Denied</h2>
+          <h2 className="text-xl font-bold mb-6">Truy cập bị từ chối</h2>
           <div className="h-96 flex items-center justify-center text-gray-500">
-            <p>You don't have permission to access this resource</p>
+            <p>Bạn không có quyền truy cập tài nguyên này</p>
           </div>
         </div>
       );
@@ -150,9 +150,9 @@ const DashboardUI = ({ onLogout, initialComponent }) => {
       default:
         return (
           <div className="bg-gray-950 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-6">404 - NOT FOUND</h2>
+            <h2 className="text-xl font-bold mb-6">404 - KHÔNG TÌM THẤY</h2>
             <div className="h-96 flex items-center justify-center text-gray-500">
-              <p>The requested page does not exist</p>
+              <p>Trang được yêu cầu không tồn tại</p>
             </div>
           </div>
         );

@@ -35,10 +35,10 @@ import SubtaskMemberModal from "../utils/SubtaskMemberModal";
 
 const formatDateWithTime = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -194,18 +194,16 @@ const TaskFileManager = ({ taskId, showToast }) => {
         <h2 className="text-xl font-semibold">Tập tin nhiệm vụ</h2>
       </div>
 
-      {currentUser?.role !== "ROLE_USER" && (
-        <TaskFileUpload
-          taskId={taskId}
-          onFileUploaded={handleFileUploaded}
-          showToast={showToast}
-        />
-      )}
+      <TaskFileUpload
+        taskId={taskId}
+        onFileUploaded={handleFileUploaded}
+        showToast={showToast}
+      />
 
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-          <p className="mt-2 text-gray-400">Loading files...</p>
+          <p className="mt-2 text-gray-400">Đang tải tệp...</p>
         </div>
       ) : (
         <TaskFileList
@@ -255,6 +253,16 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [editError, setEditError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+
+  const canEditFile = (file) => {
+    if (!currentUser) return false;
+
+    // Admin/Manager có thể edit mọi file
+    if (currentUser.role !== "ROLE_USER") return true;
+
+    // ROLE_USER chỉ có thể edit file do mình upload
+    return file.uploadedById === currentUser.id;
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -341,7 +349,7 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
     if (!editingFile) return;
 
     if (!editOriginalName.trim()) {
-      setEditError("File name cannot be empty");
+      setEditError("Tên tệp không được để trống");
       return;
     }
 
@@ -349,7 +357,7 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
     const newExtension = editOriginalName.split(".").pop();
 
     if (originalExtension !== newExtension) {
-      setEditError("File extension cannot be changed");
+      setEditError("Không thể thay đổi phần mở rộng tệp");
       return;
     }
 
@@ -433,7 +441,7 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
                 </div>
               </div>
               <div className="flex space-x-2">
-                {currentUser?.role !== "ROLE_USER" && (
+                {canEditFile(file) && (
                   <button
                     className="p-2 hover:bg-gray-700 rounded-full text-yellow-400"
                     onClick={(e) => {
@@ -457,7 +465,7 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
                   <Download size={18} />
                 </button>
 
-                {currentUser?.role !== "ROLE_USER" && (
+                {canEditFile(file) && (
                   <button
                     className="p-2 hover:bg-gray-700 rounded-full text-red-400"
                     onClick={(e) => {
@@ -482,7 +490,7 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
 
             {expandedFileId === file.id && (
               <div className="p-3 border-t border-gray-700 bg-gray-750">
-                <div className="mb-2 text-xs text-gray-400">Description:</div>
+                <div className="mb-2 text-xs text-gray-400">Mô tả:</div>
                 <div className="text-sm pl-2">
                   {file.description ? (
                     file.description
@@ -524,7 +532,7 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
               <input
                 type="text"
                 className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
-                placeholder="File name"
+                placeholder="Tên tệp"
                 value={editOriginalName}
                 onChange={(e) => handleOriginalNameChange(e.target.value)}
               />
@@ -534,9 +542,7 @@ const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm text-gray-400 mb-2">
-                Description
-              </label>
+              <label className="block text-sm text-gray-400 mb-2">Mô tả</label>
               <textarea
                 className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
                 rows="4"
@@ -906,10 +912,10 @@ const TaskFileUpload = ({ taskId, onFileUploaded, showToast }) => {
 // Format date for display
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
 };
 
@@ -957,10 +963,10 @@ const StatusBadge = ({ status }) => {
 // Format datetime for display
 const formatDateTime = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -1126,7 +1132,7 @@ const ActivityItem = ({ activity }) => {
         <div className="text-sm text-gray-400 flex items-center gap-2">
           <span>{activity.user}</span>
           <span>•</span>
-          <span>{new Date(activity.timestamp).toLocaleString()}</span>
+          <span>{new Date(activity.timestamp).toLocaleString("vi-VN")}</span>
         </div>
       </div>
       {/* Connection line to the next activity item */}
@@ -1147,7 +1153,7 @@ const CommentItem = ({ comment }) => (
         <div className="flex justify-between items-center mb-1">
           <h4 className="font-medium">{comment.author}</h4>
           <span className="text-xs text-gray-400">
-            {new Date(comment.timestamp).toLocaleString()}
+            {new Date(comment.timestamp).toLocaleString("vi-VN")}
           </span>
         </div>
         <p className="text-sm">{comment.text}</p>
@@ -1226,7 +1232,7 @@ const MemberDropdownMenu = ({ isOpen, onClose, users, onSelect }) => {
       <div className="p-3 max-h-96 overflow-y-auto">
         {users.length === 0 ? (
           <div className="text-center py-4 text-gray-400">
-            <p>No users available</p>
+            <p>Không có người dùng khả dụng</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -1403,7 +1409,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
             <div className="flex justify-between items-center mb-1">
               <h4 className="font-medium">{comment.user.fullName}</h4>
               <span className="text-xs text-gray-400">
-                {new Date(comment.createdDate).toLocaleString()}
+                {new Date(comment.createdDate).toLocaleString("vi-VN")}
               </span>
             </div>
             <p className="text-sm">{comment.content}</p>
@@ -1463,7 +1469,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                     className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded-md"
                     onClick={handleSubmitReply}
                   >
-                    Reply
+                    Phản hồi
                   </button>
                 </div>
               </div>
@@ -1491,7 +1497,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                       {reply.user.fullName}
                     </h4>
                     <span className="text-xs text-gray-400">
-                      {new Date(reply.createdDate).toLocaleString()}
+                      {new Date(reply.createdDate).toLocaleString("vi-VN")}
                     </span>
                   </div>
                   <p className="text-sm">{reply.content}</p>
@@ -1518,6 +1524,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [membersMenuOpen, setMembersMenuOpen] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [subtaskStartDate, setSubtaskStartDate] = useState(
     null //new Date().toISOString().split("T")[0]
   ); // Thêm state cho startDate
@@ -1544,6 +1551,13 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
   const handleEdit = () => {
     setIsEditing(true);
   };
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchProjectUsers = async () => {
@@ -1612,7 +1626,9 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
       <div className="p-6 text-center">
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
         <h2 className="text-xl font-bold mb-2">Không tìm thấy nhiệm vụ</h2>
-        <p className="text-gray-400">The requested task could not be found.</p>
+        <p className="text-gray-400">
+          Không thể tìm thấy nhiệm vụ được yêu cầu.
+        </p>
         <button
           onClick={onBack}
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
@@ -1858,7 +1874,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
       // Cập nhật cả task và subtasks
       setTask(taskResponse.data);
       setSubtasks(taskResponse.data.subTasks || []);
-      showToast("SubXóa nhiệm vụ thành công", "success");
+      showToast("Xóa nhiệm vụ con thành công", "success");
     } catch (error) {
       console.error("Error deleting subtask:", error);
       showToast("Failed to delete subtask", "error");
@@ -1884,15 +1900,19 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
           <h1 className="text-2xl font-bold">{task.name}</h1>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <div
-                className="cursor-pointer"
-                onClick={() => setStatusMenuOpen(!statusMenuOpen)}
-              >
-                <div className="flex items-center gap-1">
-                  <StatusBadge status={task.status} />
-                  <ChevronDown size={12} />
-                </div>
-              </div>
+              {currentUser?.role !== "ROLE_USER" ? (
+  <div
+    className="cursor-pointer"
+    onClick={() => setStatusMenuOpen(!statusMenuOpen)}
+  >
+    <div className="flex items-center gap-1">
+      <StatusBadge status={task.status} />
+      <ChevronDown size={12} />
+    </div>
+  </div>
+) : (
+  <StatusBadge status={task.status} />
+)}
               {statusMenuOpen && (
                 <div className="absolute left-0 mt-1 bg-gray-800 rounded-lg shadow-lg z-10 border border-gray-700 min-w-[171px] w-auto">
                   {[
@@ -1939,7 +1959,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                           // Cập nhật dữ liệu task trong component hiện tại
                           setTask(response.data);
                           showToast(
-                            `Cập nhật trạng thái nhiệm vụ thành ${status.replace(
+                            `Trạng thái nhiệm vụ đã được cập nhật thành ${status.replace(
                               /_/g,
                               " "
                             )}`,
@@ -2016,7 +2036,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                   }`}
                 >
                   {daysRemaining > 0
-                    ? `${daysRemaining} days left`
+                    ? `${daysRemaining} ngày còn lại`
                     : daysRemaining === 0
                     ? "Hết hạn hôm nay"
                     : task.status === "COMPLETED"
@@ -2081,26 +2101,16 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-semibold">Subtasks</h3>
-                <button
-                  className={`text-sm ${
-                    task.status === "IN_PROGRESS"
-                      ? "text-purple-500 hover:text-purple-400"
-                      : "text-gray-500 cursor-not-allowed opacity-60"
-                  } flex items-center`}
-                  onClick={() =>
-                    task.status === "IN_PROGRESS" &&
-                    setShowAddSubtask(!showAddSubtask)
-                  }
-                  disabled={task.status !== "IN_PROGRESS"}
-                  title={
-                    task.status !== "IN_PROGRESS"
-                      ? "Nhiệm vụ phải ở trạng thái đang tiến hành để thêm nhiệm vụ con"
-                      : ""
-                  }
-                >
-                  <Plus size={16} className="mr-1" />
-                  Thêm nhiệm vụ con
-                </button>
+                {task.status === "IN_PROGRESS" &&
+                  currentUser?.role !== "ROLE_USER" && (
+                    <button
+                      className="text-sm text-purple-500 hover:text-purple-400 flex items-center"
+                      onClick={() => setShowAddSubtask(!showAddSubtask)}
+                    >
+                      <Plus size={16} className="mr-1" />
+                      Thêm nhiệm vụ con
+                    </button>
+                  )}
               </div>
               {showAddSubtask && (
                 <div className="bg-gray-800 rounded-lg p-5 mb-4 border border-gray-700">
@@ -2148,7 +2158,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         <label className="block text-sm text-gray-400 mb-1">
                           Ngày bắt đầu
                           <span className="text-xs text-gray-500">
-                            (Định dạng: MM/DD/YYYY - Phải trong khoảng từ{" "}
+                            (Định dạng: DD/MM/YYYY - Phải trong khoảng từ{" "}
                             {formatDate(task.startDate)} đến{" "}
                             {formatDate(task.dueDate)})
                           </span>
@@ -2187,7 +2197,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         <label className="block text-sm text-gray-400 mb-1">
                           Ngày kết thúc
                           <span className="text-xs text-gray-500">
-                            (Định dạng: MM/DD/YYYY - Phải trong khoảng từ{" "}
+                            (Định dạng: DD/MM/YYYY - Phải trong khoảng từ{" "}
                             {formatDate(subtaskStartDate || task.startDate)} and{" "}
                             {formatDate(task.dueDate)})
                           </span>
@@ -2354,14 +2364,16 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3 flex-1">
                             <div className="mt-1">
-                              <input
-                                type="checkbox"
-                                checked={subtask.completed}
-                                onChange={() => handleToggleSubtask(subtask.id)}
-                                className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-purple-600 
-                           focus:ring-purple-500 focus:ring-2 focus:ring-offset-0 
-                           focus:ring-offset-gray-800"
-                              />
+                              {currentUser?.role !== "ROLE_USER" && (
+  <input
+    type="checkbox"
+    checked={subtask.completed}
+    onChange={() => handleToggleSubtask(subtask.id)}
+    className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-purple-600 
+               focus:ring-purple-500 focus:ring-2 focus:ring-offset-0 
+               focus:ring-offset-gray-800"
+  />
+)}
                             </div>
 
                             <div className="flex-1">
@@ -2518,14 +2530,16 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                             </div>
                           </div>
 
-                          <button
-                            className="text-gray-400 hover:text-red-400 hover:bg-red-900/20 
-                       p-2 rounded-full transition-colors ml-2"
-                            onClick={() => handleDeleteSubtask(subtask.id)}
-                            title="Xóa nhiệm vụ con"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          {currentUser?.role !== "ROLE_USER" && (
+                            <button
+                              className="text-gray-400 hover:text-red-400 hover:bg-red-900/20 
+               p-2 rounded-full transition-colors ml-2"
+                              onClick={() => handleDeleteSubtask(subtask.id)}
+                              title="Xóa nhiệm vụ con"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -2588,7 +2602,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         }
                       }}
                     >
-                      Comment
+                      Bình luận
                     </button>
                   </div>
                 </div>

@@ -116,7 +116,13 @@ const Comment = ({ comment, onReply, onDelete }) => {
             <div className="flex justify-between items-center mb-1">
               <h4 className="font-medium">{comment.user.fullName}</h4>
               <span className="text-xs text-gray-400">
-                {new Date(comment.createdDate).toLocaleString()}
+                {new Date(comment.createdDate).toLocaleString("vi-VN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
             <p className="text-sm">{comment.content}</p>
@@ -144,14 +150,16 @@ const Comment = ({ comment, onReply, onDelete }) => {
               )}
 
               {/* Chỉ hiển thị nút Delete nếu người dùng hiện tại là người tạo comment */}
-              {currentUser && (currentUser.id === comment.user.id || currentUser.role === "ROLE_ADMIN") && (
-                <button
-                  className="hover:text-red-400"
-                  onClick={() => onDelete && onDelete(comment.id)}
-                >
-                  Xóa
-                </button>
-              )}
+              {currentUser &&
+                (currentUser.id === comment.user.id ||
+                  currentUser.role === "ROLE_ADMIN") && (
+                  <button
+                    className="hover:text-red-400"
+                    onClick={() => onDelete && onDelete(comment.id)}
+                  >
+                    Xóa
+                  </button>
+                )}
             </div>
 
             {showReplyForm && (
@@ -219,17 +227,36 @@ const Comment = ({ comment, onReply, onDelete }) => {
 // Format date for display
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
 };
 
 const StatusBadge = ({ status }) => {
   let color;
   let icon;
-  let displayText = status.replace(/_/g, " ");
+  let displayText;
+  switch (status) {
+    case "NOT_STARTED":
+      displayText = "Chưa bắt đầu";
+      break;
+    case "IN_PROGRESS":
+      displayText = "Đang thực hiện";
+      break;
+    case "COMPLETED":
+      displayText = "Hoàn thành";
+      break;
+    case "OVER_DUE":
+      displayText = "Quá hạn";
+      break;
+    case "ON_HOLD":
+      displayText = "Tạm dừng";
+      break;
+    default:
+      displayText = status.replace(/_/g, " ");
+  }
 
   switch (status) {
     case "NOT_STARTED":
@@ -270,10 +297,10 @@ const StatusBadge = ({ status }) => {
 // Format datetime for display
 const formatDateTime = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -319,7 +346,7 @@ const getPriorityInfo = (priority) => {
         textColor: "text-green-500",
         bgColor: "bg-green-100",
         icon: <Flag size={16} />,
-        text: "thấp",
+        text: "Thấp",
       };
     default:
       return {
@@ -432,7 +459,9 @@ const UserTaskDetail = ({ taskId, onBack }) => {
       <div className="p-6 text-center">
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
         <h2 className="text-xl font-bold mb-2">Không tìm thấy nhiệm vụ</h2>
-        <p className="text-gray-400">Không thể tìm thấy nhiệm vụ được yêu cầu.</p>
+        <p className="text-gray-400">
+          Không thể tìm thấy nhiệm vụ được yêu cầu.
+        </p>
         <button
           onClick={onBack}
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
@@ -485,11 +514,13 @@ const UserTaskDetail = ({ taskId, onBack }) => {
           </div>
           <div>
             <p className="text-sm text-gray-400 mb-1">Được giao cho</p>
-            <p className="font-medium">{task.assigneeName || "Chưa được giao"}</p>
+            <p className="font-medium">
+              {task.assigneeName || "Chưa được giao"}
+            </p>
           </div>
           <div>
             <p className="text-sm text-gray-400 mb-1">Tạo bởi</p>
-            <p className="font-medium">{task.createdByName || "Unknown"}</p>
+            <p className="font-medium">{task.createdByName || "Không rõ"}</p>
             <p className="text-xs text-gray-400">
               {formatDateTime(task.createdDate)}
             </p>

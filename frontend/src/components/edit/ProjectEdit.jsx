@@ -774,11 +774,11 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
           onClick={onBack}
         >
           <ChevronLeft size={20} className="mr-1" />
-          <span>Back</span>
+          <span>Quay lại</span>
         </button>
 
         <h1 className="text-xl font-bold">
-          {isNew ? "CREATE NEW PROJECT" : "EDIT PROJECT"}
+          {isNew ? "TẠO DỰ ÁN MỚI" : "CHỈNH SỬA DỰ ÁN"}
         </h1>
 
         <div className="flex space-x-2">
@@ -872,7 +872,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     <label className="block text-gray-400 mb-1">
                       Ngày bắt đầu{" "}
                       <span className="text-xs text-gray-500">
-                        (Format: MM/DD/YYYY)
+                        (Định dạng: DD/MM/YYYY)
                       </span>
                     </label>
                     <div className="relative">
@@ -901,7 +901,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     <label className="block text-gray-400 mb-1">
                       Ngày kết thúc{" "}
                       <span className="text-xs text-gray-500">
-                        (Format: MM/DD/YYYY)
+                        (Định dạng: DD/MM/YYYY)
                       </span>
                     </label>
                     <div className="relative">
@@ -975,7 +975,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     </div>
                   ) : (
                     <div className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white opacity-80">
-                      {currentUser ? currentUser.fullName : "Loading..."} (You)
+                      {currentUser ? currentUser.fullName : "Đang tải..."} (Bạn)
                     </div>
                   )}
                   {formErrors.managerId && (

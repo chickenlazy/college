@@ -110,17 +110,28 @@ const UserDetail = ({ user, onBack }) => {
   }, [user]);
 
   // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+const formatDate = (dateString) => {
+  if (!dateString) return "Không có";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getStatusText = (status) => {
+  switch (status) {
+    case "COMPLETED": return "Hoàn thành";
+    case "IN_PROGRESS": return "Đang tiến hành";
+    case "NOT_STARTED": return "Chưa bắt đầu";
+    case "ON_HOLD": return "Tạm dừng";
+    case "OVER_DUE": return "Quá hạn";
+    default: return status.replace(/_/g, " ");
+  }
+};
 
   return (
     <div className="bg-gray-950 text-white">
@@ -192,7 +203,7 @@ const UserDetail = ({ user, onBack }) => {
                   <Phone className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
                     <p className="text-gray-400 text-sm">Điện thoại</p>
-                    <p>{userData.phoneNumber || "N/A"}</p>
+                    <p>{userData.phoneNumber || "Không có"}</p>
                   </div>
                 </div>
    
@@ -200,7 +211,7 @@ const UserDetail = ({ user, onBack }) => {
                   <Shield className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
                     <p className="text-gray-400 text-sm">Vai trò</p>
-                    <p>{userData.role?.replace("ROLE_", "") || "N/A"}</p>
+                    <p>{userData.role?.replace("ROLE_", "") || "Không có"}</p>
                   </div>
                 </div>
    
@@ -208,7 +219,7 @@ const UserDetail = ({ user, onBack }) => {
                   <Briefcase className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
                     <p className="text-gray-400 text-sm">Phòng ban</p>
-                    <p>{userData.department || "N/A"}</p>
+                    <p>{userData.department || "Không có"}</p>
                   </div>
                 </div>
    
@@ -216,7 +227,7 @@ const UserDetail = ({ user, onBack }) => {
                   <MapPin className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
                     <p className="text-gray-400 text-sm">Địa chỉ</p>
-                    <p>{userData.address || "N/A"}</p>
+                    <p>{userData.address || "Không có"}</p>
                   </div>
                 </div>
               </div>
@@ -235,7 +246,7 @@ const UserDetail = ({ user, onBack }) => {
                       userData.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"
                     }`}
                   ></div>
-                  <span>Trạng thái: {userData.status}</span>
+                  <span>Trạng thái: {userData.status === "ACTIVE" ? "Hoạt động" : "Không hoạt động"}</span>
                 </div>
    
                 <div className="flex items-start mt-4">
@@ -265,7 +276,7 @@ const UserDetail = ({ user, onBack }) => {
               <div className="space-y-4">
                 <div>
                   <p className="text-gray-400 text-sm">Chức vụ</p>
-                  <p className="font-medium">{userData.position || "N/A"}</p>
+                  <p className="font-medium">{userData.position || "Không có"}</p>
                 </div>
    
                 <div>
@@ -303,7 +314,7 @@ const UserDetail = ({ user, onBack }) => {
                           project.status === "NOT_STARTED" ? "bg-gray-700 text-gray-300" :
                           "bg-yellow-900 text-yellow-300"
                         }`}>
-                          {project.status.replace(/_/g, " ")}
+                          {getStatusText(project.status)}
                         </span>
                         <div className="w-24 bg-gray-700 rounded-full h-2.5">
                           <div 
@@ -381,7 +392,7 @@ const UserDetail = ({ user, onBack }) => {
         </>
       ) : (
         <div className="bg-yellow-900 bg-opacity-20 text-yellow-500 p-4 rounded-md">
-          No user data available
+          Không có dữ liệu người dùng
         </div>
       )}
     </div>

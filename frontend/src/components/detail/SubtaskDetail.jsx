@@ -1,19 +1,29 @@
-import React from 'react';
-import { ChevronLeft, Clock, Calendar, CheckCircle, User, FolderKanban, ClipboardList, Check, X } from 'lucide-react';
-import axios from 'axios';
+import React from "react";
+import {
+  ChevronLeft,
+  Clock,
+  Calendar,
+  CheckCircle,
+  User,
+  FolderKanban,
+  ClipboardList,
+  Check,
+  X,
+} from "lucide-react";
+import axios from "axios";
 
 const SubtaskDetail = ({ subtask, onBack }) => {
   // Format date for display
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    
+    if (!dateString) return "Không có";
+
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
+    return date.toLocaleDateString("vi-VN", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
@@ -55,9 +65,11 @@ const SubtaskDetail = ({ subtask, onBack }) => {
           >
             <ChevronLeft size={20} />
           </button>
-          <h2 className="text-xl font-bold">Subtask Not Found</h2>
+          <h2 className="text-xl font-bold">Không tìm thấy nhiệm vụ con</h2>
         </div>
-        <p className="text-gray-400">The requested subtask could not be found.</p>
+        <p className="text-gray-400">
+          Không thể tìm thấy nhiệm vụ con được yêu cầu.
+        </p>
       </div>
     );
   }
@@ -72,7 +84,7 @@ const SubtaskDetail = ({ subtask, onBack }) => {
         >
           <ChevronLeft size={20} />
         </button>
-        <h2 className="text-xl font-bold">Subtask Details</h2>
+        <h2 className="text-xl font-bold">Chi tiết nhiệm vụ con</h2>
       </div>
 
       {/* Subtask Information Card */}
@@ -89,12 +101,12 @@ const SubtaskDetail = ({ subtask, onBack }) => {
             {subtask.completed ? (
               <>
                 <CheckCircle size={14} />
-                Completed
+                Hoàn thành
               </>
             ) : (
               <>
                 <Clock size={14} />
-                In Progress
+                Đang tiến hành
               </>
             )}
           </div>
@@ -104,26 +116,26 @@ const SubtaskDetail = ({ subtask, onBack }) => {
           {/* Left Column - Basic Info */}
           <div className="space-y-4">
             <div className="bg-gray-750 p-4 rounded-lg">
-              <h4 className="text-sm text-gray-400 mb-1">Project</h4>
+              <h4 className="text-sm text-gray-400 mb-1">Dự án</h4>
               <div className="flex items-center">
                 <FolderKanban size={18} className="mr-2 text-purple-500" />
-                <span>{subtask.projectName || "N/A"}</span>
+                <span>{subtask.projectName || "Không có"}</span>
               </div>
             </div>
 
             <div className="bg-gray-750 p-4 rounded-lg">
-              <h4 className="text-sm text-gray-400 mb-1">Task</h4>
+              <h4 className="text-sm text-gray-400 mb-1">Nhiệm vụ</h4>
               <div className="flex items-center">
                 <ClipboardList size={18} className="mr-2 text-purple-500" />
-                <span>{subtask.taskName || "N/A"}</span>
+                <span>{subtask.taskName || "Không có"}</span>
               </div>
             </div>
 
             <div className="bg-gray-750 p-4 rounded-lg">
-              <h4 className="text-sm text-gray-400 mb-1">Assignee</h4>
+              <h4 className="text-sm text-gray-400 mb-1">Người thực hiện</h4>
               <div className="flex items-center">
                 <User size={18} className="mr-2 text-purple-500" />
-                <span>{subtask.assigneeName || "Unassigned"}</span>
+                <span>{subtask.assigneeName || "Chưa phân công"}</span>
               </div>
             </div>
           </div>
@@ -131,7 +143,7 @@ const SubtaskDetail = ({ subtask, onBack }) => {
           {/* Right Column - Dates */}
           <div className="space-y-4">
             <div className="bg-gray-750 p-4 rounded-lg">
-              <h4 className="text-sm text-gray-400 mb-1">Start Date</h4>
+              <h4 className="text-sm text-gray-400 mb-1">Ngày bắt đầu</h4>
               <div className="flex items-center">
                 <Calendar size={18} className="mr-2 text-purple-500" />
                 <span>{formatDate(subtask.startDate)}</span>
@@ -139,7 +151,7 @@ const SubtaskDetail = ({ subtask, onBack }) => {
             </div>
 
             <div className="bg-gray-750 p-4 rounded-lg">
-              <h4 className="text-sm text-gray-400 mb-1">Due Date</h4>
+              <h4 className="text-sm text-gray-400 mb-1">Ngày kết thúc</h4>
               <div className="flex items-center">
                 <Calendar size={18} className="mr-2 text-purple-500" />
                 <span>{formatDate(subtask.dueDate)}</span>
@@ -147,7 +159,7 @@ const SubtaskDetail = ({ subtask, onBack }) => {
             </div>
 
             <div className="bg-gray-750 p-4 rounded-lg">
-              <h4 className="text-sm text-gray-400 mb-1">Last Updated</h4>
+              <h4 className="text-sm text-gray-400 mb-1">Cập nhật lần cuối</h4>
               <div className="flex items-center">
                 <Clock size={18} className="mr-2 text-purple-500" />
                 <span>{formatDate(subtask.lastModifiedDate)}</span>
@@ -169,12 +181,12 @@ const SubtaskDetail = ({ subtask, onBack }) => {
             {subtask.completed ? (
               <>
                 <X size={18} />
-                Mark as Incomplete
+                Đánh dấu chưa hoàn thành
               </>
             ) : (
               <>
                 <Check size={18} />
-                Mark as Complete
+                Đánh dấu hoàn thành
               </>
             )}
           </button>

@@ -490,7 +490,7 @@ const SummaryCards = ({ tasks }) => {
       <div className="bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-gray-400 mb-1">Total Tasks</p>
+            <p className="text-sm text-gray-400 mb-1">Tổng số nhiệm vụ</p>
             <p className="text-2xl font-bold">{totalTasks}</p>
           </div>
           <ListChecks size={20} className="text-purple-500" />
@@ -500,7 +500,7 @@ const SummaryCards = ({ tasks }) => {
       <div className="bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-gray-400 mb-1">Completed</p>
+            <p className="text-sm text-gray-400 mb-1">Hoàn thành</p>
             <p className="text-2xl font-bold text-green-500">{completedTasks}</p>
           </div>
           <CheckCircle size={20} className="text-green-500" />
@@ -510,7 +510,7 @@ const SummaryCards = ({ tasks }) => {
       <div className="bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-gray-400 mb-1">In Progress</p>
+            <p className="text-sm text-gray-400 mb-1">Đang tiến hành</p>
             <p className="text-2xl font-bold text-blue-500">{inProgressTasks}</p>
           </div>
           <Clock size={20} className="text-blue-500" />
@@ -520,7 +520,7 @@ const SummaryCards = ({ tasks }) => {
       <div className="bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-gray-400 mb-1">Not Started</p>
+            <p className="text-sm text-gray-400 mb-1">Chưa bắt đầu</p>
             <p className="text-2xl font-bold text-gray-500">{notStartedTasks}</p>
           </div>
           <Clock size={20} className="text-gray-500" />
@@ -530,7 +530,7 @@ const SummaryCards = ({ tasks }) => {
       <div className="bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-gray-400 mb-1">On Hold</p>
+            <p className="text-sm text-gray-400 mb-1">Tạm dừng</p>
             <p className="text-2xl font-bold text-yellow-500">{onHoldTasks}</p>
           </div>
           <AlertTriangle size={20} className="text-yellow-500" />
@@ -540,7 +540,7 @@ const SummaryCards = ({ tasks }) => {
       <div className="bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-gray-400 mb-1">Overdue</p>
+            <p className="text-sm text-gray-400 mb-1">Quá hạn</p>
             <p className="text-2xl font-bold text-red-500">{overdueTasks}</p>
           </div>
           <AlertTriangle size={20} className="text-red-500" />
@@ -616,11 +616,11 @@ const TaskOverview = () => {
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">TASK OVERVIEW</h1>
+        <h1 className="text-2xl font-bold">TỔNG QUAN NHIỆM VỤ</h1>
         
         <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center gap-2">
           <Plus size={18} />
-          <span>New Task</span>
+          <span>Tạo nhiệm vụ mới</span>
         </button>
       </div>
       
@@ -632,7 +632,7 @@ const TaskOverview = () => {
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Search tasks..."
+            placeholder="Tìm kiếm nhiệm vụ..."
             className="pl-10 pr-4 py-2 bg-gray-800 rounded-md w-full text-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -644,12 +644,12 @@ const TaskOverview = () => {
           <FilterDropdown 
             title="Status"
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'NOT_STARTED', label: 'Not Started' },
-              { value: 'IN_PROGRESS', label: 'In Progress' },
-              { value: 'COMPLETED', label: 'Completed' },
-              { value: 'ON_HOLD', label: 'On Hold' },
-              { value: 'overdue', label: 'Overdue' }
+              { value: 'all', label: 'Tất cả' },
+              { value: 'NOT_STARTED', label: 'Chưa bắt đầu' },
+              { value: 'IN_PROGRESS', label: 'Đang tiến hành' },
+              { value: 'COMPLETED', label: 'Hoàn thành' },
+              { value: 'ON_HOLD', label: 'Tạm dừng' },
+              { value: 'overdue', label: 'Quá hạn' }
             ]}
             selectedOption={statusFilter}
             onChange={setStatusFilter}
@@ -658,10 +658,10 @@ const TaskOverview = () => {
           <FilterDropdown 
             title="Priority"
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'HIGH', label: 'High' },
-              { value: 'MEDIUM', label: 'Medium' },
-              { value: 'LOW', label: 'Low' }
+              { value: 'all', label: 'Tất cả' },
+              { value: 'HIGH', label: 'Cao' },
+              { value: 'MEDIUM', label: 'Trung bình' },
+              { value: 'LOW', label: 'Thấp' }
             ]}
             selectedOption={priorityFilter}
             onChange={setPriorityFilter}
@@ -699,8 +699,8 @@ const TaskOverview = () => {
         </div>
       ) : filteredTasks.length === 0 ? (
         <div className="bg-gray-800 rounded-lg p-8 text-center">
-          <h3 className="text-xl font-medium text-gray-300 mb-2">No tasks found</h3>
-          <p className="text-gray-400">Try adjusting your search or filters to find what you're looking for.</p>
+          <h3 className="text-xl font-medium text-gray-300 mb-2">Không tìm thấy nhiệm vụ nào</h3>
+          <p className="text-gray-400">Thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm thấy những gì bạn đang tìm.</p>
         </div>
       ) : view === 'list' ? (
         <div className="overflow-x-auto">
@@ -709,31 +709,31 @@ const TaskOverview = () => {
               <tr className="text-left bg-gray-800">
                 <th className="p-3 border-b border-gray-700">
                   <div className="flex items-center gap-2">
-                    Task
+                    Nhiệm vụ
                     <button><ArrowUpDown size={14} /></button>
                   </div>
                 </th>
                 <th className="p-3 border-b border-gray-700">
                   <div className="flex items-center gap-2">
-                    Project
+                    Dự án
                     <button><ArrowUpDown size={14} /></button>
                   </div>
                 </th>
                 <th className="p-3 border-b border-gray-700">
                   <div className="flex items-center gap-2">
-                    Assignee
+                    Người thực hiện
                     <button><ArrowUpDown size={14} /></button>
                   </div>
                 </th>
                 <th className="p-3 border-b border-gray-700">
                   <div className="flex items-center gap-2">
-                    Due Date
+                    Ngày kết thúc
                     <button><ArrowUpDown size={14} /></button>
                   </div>
                 </th>
-                <th className="p-3 border-b border-gray-700">Status</th>
-                <th className="p-3 border-b border-gray-700">Priority</th>
-                <th className="p-3 border-b border-gray-700">Progress</th>
+                <th className="p-3 border-b border-gray-700">Trạng thái</th>
+                <th className="p-3 border-b border-gray-700">Độ ưu tiên</th>
+                <th className="p-3 border-b border-gray-700">Tiến trình</th>
                 <th className="p-3 border-b border-gray-700"></th>
               </tr>
             </thead>
@@ -764,25 +764,25 @@ const TaskOverview = () => {
       {filteredTasks.length > 0 && (
         <div className="flex justify-between items-center mt-6">
           <div className="text-sm text-gray-400">
-            Showing {filteredTasks.length} of {tasks.length} tasks
+            Hiển thị {filteredTasks.length} trong tổng số {tasks.length} nhiệm vụ
           </div>
           
           <div className="flex gap-2">
-            <button className="px-3 py-1 bg-gray-800 rounded">Previous</button>
+            <button className="px-3 py-1 bg-gray-800 rounded">Trước</button>
             <button className="px-3 py-1 bg-purple-600 rounded">1</button>
             <button className="px-3 py-1 bg-gray-800 rounded">2</button>
             <button className="px-3 py-1 bg-gray-800 rounded">3</button>
-            <button className="px-3 py-1 bg-gray-800 rounded">Next</button>
+            <button className="px-3 py-1 bg-gray-800 rounded">Tiếp theo</button>
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Show</span>
+            <span className="text-sm text-gray-400">Hiển thị</span>
             <select className="bg-gray-800 border border-gray-700 rounded p-1">
               <option>10</option>
               <option>20</option>
               <option>50</option>
             </select>
-            <span className="text-sm text-gray-400">per page</span>
+            <span className="text-sm text-gray-400">mỗi trang</span>
           </div>
         </div>
       )}

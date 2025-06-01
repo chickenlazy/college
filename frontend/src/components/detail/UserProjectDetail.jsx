@@ -118,7 +118,13 @@ const Comment = ({ comment, onReply, onDelete }) => {
             <div className="flex justify-between items-center mb-1">
               <h4 className="font-medium">{comment.user.fullName}</h4>
               <span className="text-xs text-gray-400">
-                {new Date(comment.createdDate).toLocaleString()}
+                {new Date(comment.createdDate).toLocaleString("vi-VN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
             <p className="text-sm">{comment.content}</p>
@@ -146,14 +152,16 @@ const Comment = ({ comment, onReply, onDelete }) => {
               )}
 
               {/* Chỉ hiển thị nút Delete nếu người dùng hiện tại là người tạo comment */}
-              {currentUser && (currentUser.id === comment.user.id || currentUser.role === "ROLE_ADMIN") && (
-                <button
-                  className="hover:text-red-400"
-                  onClick={() => onDelete && onDelete(comment.id)}
-                >
-                  Xóa
-                </button>
-              )}
+              {currentUser &&
+                (currentUser.id === comment.user.id ||
+                  currentUser.role === "ROLE_ADMIN") && (
+                  <button
+                    className="hover:text-red-400"
+                    onClick={() => onDelete && onDelete(comment.id)}
+                  >
+                    Xóa
+                  </button>
+                )}
             </div>
 
             {showReplyForm && (
@@ -176,7 +184,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                     className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded-md"
                     onClick={handleSubmitReply}
                   >
-                    Reply
+                    Phản hồi
                   </button>
                 </div>
               </div>
@@ -221,10 +229,10 @@ const Comment = ({ comment, onReply, onDelete }) => {
 // Format date for display
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
 };
 
@@ -525,15 +533,17 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           <span>Quay lại</span>
         </button>
       </div>
-  
+
       {/* Project Title and Status */}
       <div className="mb-6">
         <div className="flex items-center mb-2">
           <h1 className="text-2xl font-bold mr-3">{project.name}</h1>
           <StatusBadge status={project.status} />
         </div>
-        <p className="text-gray-300">{project.description || "Không có mô tả."}</p>
-  
+        <p className="text-gray-300">
+          {project.description || "Không có mô tả."}
+        </p>
+
         {/* Tags */}
         {project.tags && project.tags.length > 0 && (
           <div className="mt-3 flex flex-wrap">
@@ -543,7 +553,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           </div>
         )}
       </div>
-  
+
       {/* Project Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-800 p-4 rounded-lg">
@@ -557,14 +567,14 @@ const UserProjectDetail = ({ projectId, onBack }) => {
             <Calendar size={20} className="text-purple-500" />
           </div>
         </div>
-  
+
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm text-gray-400 mb-1">Số ngày còn lại</p>
               <p className="font-medium">
                 {daysRemaining > 0
-                  ? `${daysRemaining} days left`
+                  ? `${daysRemaining} ngày còn lại`
                   : daysRemaining === 0
                   ? "Hết hạn hôm nay"
                   : project.status === "COMPLETED"
@@ -582,7 +592,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
             />
           </div>
         </div>
-  
+
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
@@ -592,7 +602,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
             <Users size={20} className="text-purple-500" />
           </div>
         </div>
-  
+
         <div className="bg-gray-800 p-4 rounded-lg">
           <div className="flex justify-between items-start">
             <div>
@@ -611,7 +621,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           </div>
         </div>
       </div>
-  
+
       {/* Tabs */}
       <div className="border-b border-gray-700 mb-6">
         <div className="flex overflow-x-auto hide-scrollbar">
@@ -635,12 +645,12 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           />
         </div>
       </div>
-  
+
       {/* Tab Content */}
       <div className="mb-6">
         {activeTab === "tasks" && (
           <div>
-            <h2 className="text-lg font-semibold mb-3">Tasks</h2>
+            <h2 className="text-lg font-semibold mb-3">Nhiệm vụ</h2>
             {project.tasks.length === 0 ? (
               <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                 <FileText size={48} className="mx-auto mb-3 opacity-50" />
@@ -653,7 +663,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
             )}
           </div>
         )}
-        
+
         {activeTab === "team" && (
           <div>
             {/* Quản lý dự án */}
@@ -671,7 +681,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                 </div>
               </div>
             </div>
-  
+
             {/* Thành viên nhóm */}
             <div>
               <h2 className="text-lg font-semibold mb-3">Thành viên nhóm</h2>
@@ -684,7 +694,9 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                       </div>
                       <div className="ml-3">
                         <p className="font-medium">{user.fullName}</p>
-                        <p className="text-sm text-gray-400">{user.position || user.role.replace("ROLE_", "")}</p>
+                        <p className="text-sm text-gray-400">
+                          {user.position || user.role.replace("ROLE_", "")}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -693,7 +705,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
             </div>
           </div>
         )}
-        
+
         {activeTab === "comments" && (
           <div>
             <div className="mb-6">
@@ -712,7 +724,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                       className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md"
                       onClick={async () => {
                         if (!newComment.trim()) return;
-  
+
                         try {
                           const storedUser = localStorage.getItem("user");
                           let token = null;
@@ -720,7 +732,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                             const user = JSON.parse(storedUser);
                             token = user.accessToken;
                           }
-  
+
                           const response = await axios.post(
                             "http://localhost:8080/api/comments",
                             {
@@ -735,33 +747,28 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                               },
                             }
                           );
-  
+
                           // Thêm comment mới vào đầu danh sách
                           setComments([response.data, ...comments]);
                           // Reset form
                           setNewComment("");
-                          showToast(
-                            "Thêm bình luận thành công",
-                            "success"
-                          );
+                          showToast("Thêm bình luận thành công", "success");
                         } catch (error) {
                           console.error("Error adding comment:", error);
                           showToast("Failed to add comment", "error");
                         }
                       }}
                     >
-                      Comment
+                      Bình luận
                     </button>
                   </div>
                 </div>
-  
+
                 {/* Danh sách comments */}
                 {loadingComments ? (
                   <div className="text-center py-8">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-                    <p className="mt-2 text-gray-400">
-                      Đang tải bình luận...
-                    </p>
+                    <p className="mt-2 text-gray-400">Đang tải bình luận...</p>
                   </div>
                 ) : comments.length === 0 ? (
                   <div className="text-center py-8 bg-gray-800 rounded-lg">
@@ -800,7 +807,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                             const user = JSON.parse(storedUser);
                             token = user.accessToken;
                           }
-  
+
                           await axios.delete(
                             `http://localhost:8080/api/comments/${commentId}`,
                             {
@@ -809,15 +816,12 @@ const UserProjectDetail = ({ projectId, onBack }) => {
                               },
                             }
                           );
-  
+
                           // Xóa comment khỏi danh sách
                           setComments(
                             comments.filter((c) => c.id !== commentId)
                           );
-                          showToast(
-                            "Xóa bình luận thành công",
-                            "success"
-                          );
+                          showToast("Xóa bình luận thành công", "success");
                         } catch (error) {
                           console.error("Error deleting comment:", error);
                           showToast("Failed to delete comment", "error");
@@ -831,7 +835,7 @@ const UserProjectDetail = ({ projectId, onBack }) => {
           </div>
         )}
       </div>
-      
+
       {/* Toast Notification */}
       {toast && (
         <div

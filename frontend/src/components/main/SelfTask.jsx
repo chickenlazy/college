@@ -38,7 +38,7 @@ const Pagination = ({
   return (
     <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-gray-400 gap-4">
       <div className="flex items-center gap-2">
-        <span>Show</span>
+        <span>Hiển thị</span>
         <select
           className="bg-gray-800 border border-gray-700 rounded-md p-1"
           value={itemsPerPage}
@@ -53,7 +53,7 @@ const Pagination = ({
       </div>
 
       <div className="text-sm">
-        Đang hiển thị {currentPage} of {totalPages}
+        Trang {currentPage} / {totalPages}
       </div>
 
       <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ const formatDate = (dateString) => {
 
   // Check if date is today
   if (date.toDateString() === today.toDateString()) {
-    return `Today, ${date.toLocaleTimeString("en-US", {
+    return `Hôm nay, ${date.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
     })}`;
@@ -131,15 +131,16 @@ const formatDate = (dateString) => {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   if (date.toDateString() === tomorrow.toDateString()) {
-    return `Tomorrow, ${date.toLocaleTimeString("en-US", {
+    return `Ngày mai, ${date.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
     })}`;
   }
 
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -199,7 +200,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
             onClick={onClose}
           >
-            Cancel
+            Hủy
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
@@ -209,7 +210,7 @@ const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message }) => {
             }}
           >
             <Trash2 size={16} />
-            Delete
+            Xóa
           </button>
         </div>
       </div>
@@ -225,20 +226,20 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
   // Determine status color and icon
   let statusColor = "bg-gray-600";
   let statusIcon = <Clock size={16} />;
-  let statusText = "Not Started";
+  let statusText = "Chưa bắt đầu";
 
   if (isOverdue(task)) {
     statusColor = "bg-red-600";
     statusIcon = <AlertTriangle size={16} />;
-    statusText = "Overdue";
+    statusText = "Quá hạn";
   } else if (task.status === "COMPLETED") {
     statusColor = "bg-green-600";
     statusIcon = <CheckCircle size={16} />;
-    statusText = "Completed";
+    statusText = "Hoàn thành";
   } else if (task.status === "IN_PROGRESS") {
     statusColor = "bg-blue-600";
     statusIcon = <Clock size={16} />;
-    statusText = "In Progress";
+    statusText = "Đang tiến hành";
   }
 
   // Determine priority color and text
@@ -294,7 +295,15 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
                 className={`flex items-center gap-1 text-xs ${priorityBg} ${priorityColor} px-2 py-1 rounded-full`}
               >
                 <Flag size={12} />
-                <span>{task.priority}</span>
+                <span>
+                  {task.priority === "HIGH"
+                    ? "Cao"
+                    : task.priority === "MEDIUM"
+                    ? "Trung bình"
+                    : task.priority === "LOW"
+                    ? "Thấp"
+                    : task.priority}
+                </span>
               </div>
             </div>
           </div>
@@ -309,10 +318,10 @@ const TaskCard = ({ task, onEdit, onMarkAsCompleted, onDelete, onClick }) => {
               <span className="text-gray-400 text-xs">
                 {isOverdue(task) ? (
                   <span className="text-red-400">
-                    Overdue: {formatDate(task.dueDate)}
+                    Quá hạn: {formatDate(task.dueDate)}
                   </span>
                 ) : (
-                  <span>Due: {formatDate(task.dueDate)}</span>
+                  <span>Hạn: {formatDate(task.dueDate)}</span>
                 )}
               </span>
             </div>
@@ -344,7 +353,9 @@ const EmptyState = ({ message, icon }) => (
     <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
       {icon}
     </div>
-    <h3 className="text-xl font-medium text-gray-300 mb-2">No tasks found</h3>
+    <h3 className="text-xl font-medium text-gray-300 mb-2">
+      Không tìm thấy nhiệm vụ
+    </h3>
     <p className="text-gray-400">{message}</p>
   </div>
 );
@@ -354,24 +365,24 @@ const TaskStats = ({ tasks }) => (
   <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm text-gray-400 bg-gray-800 p-4 rounded-lg shadow-inner">
     <div className="flex items-center">
       <div className="w-3 h-3 rounded-full bg-red-600 mr-2"></div>
-      <span>{tasks.filter((t) => isOverdue(t)).length} Overdue</span>
+      <span>{tasks.filter((t) => isOverdue(t)).length} Quá hạn</span>
     </div>
     <div className="flex items-center">
       <div className="w-3 h-3 rounded-full bg-blue-600 mr-2"></div>
       <span>
-        {tasks.filter((t) => t.status === "IN_PROGRESS").length} In Progress
+        {tasks.filter((t) => t.status === "IN_PROGRESS").length} Đang tiến hành
       </span>
     </div>
     <div className="flex items-center">
       <div className="w-3 h-3 rounded-full bg-gray-600 mr-2"></div>
       <span>
-        {tasks.filter((t) => t.status === "NOT_STARTED").length} Not Started
+        {tasks.filter((t) => t.status === "NOT_STARTED").length} Chưa bắt đầu
       </span>
     </div>
     <div className="flex items-center">
       <div className="w-3 h-3 rounded-full bg-green-600 mr-2"></div>
       <span>
-        {tasks.filter((t) => t.status === "COMPLETED").length} Completed
+        {tasks.filter((t) => t.status === "COMPLETED").length} hoàn thành
       </span>
     </div>
   </div>
@@ -417,35 +428,38 @@ const SelfTask = () => {
       const storedUser = localStorage.getItem("user");
       let userId = 1; // Fallback
       let token = null;
-      
+
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         userId = parsedUser.id;
         token = parsedUser.accessToken;
       }
-  
+
       const params = {
         pageNo: page,
         pageSize: size,
       };
-  
+
       // Thêm tham số tìm kiếm nếu có
       if (searchTerm) {
         params.search = searchTerm;
       }
-  
+
       // Thêm tham số lọc status nếu không phải "all"
       if (filterStatus !== "all") {
         params.status = filterStatus;
       }
-  
-      const response = await axios.get(`http://localhost:8080/api/tasks/user/${userId}`, {
-        params,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
+
+      const response = await axios.get(
+        `http://localhost:8080/api/tasks/user/${userId}`,
+        {
+          params,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setApiData(response.data);
       setTasks(response.data.content);
       setLoading(false);
@@ -467,16 +481,15 @@ const SelfTask = () => {
       clearTimeout(timeoutId);
     };
   }, [search]);
-  
+
   useEffect(() => {
     fetchTasks(currentPage, itemsPerPage, debouncedSearch, activeFilter);
   }, [currentPage, itemsPerPage, debouncedSearch, activeFilter]);
 
-  
   // Trong render, thêm xử lý error
-  {error && (
-    <div className="text-center p-4 text-red-500">{error}</div>
-  )}
+  {
+    error && <div className="text-center p-4 text-red-500">{error}</div>;
+  }
 
   // Update useEffect để gọi fetchTasks
   useEffect(() => {
@@ -500,7 +513,7 @@ const SelfTask = () => {
     );
 
     setTasks(updatedTasks);
-    showToast("Task marked as completed", "success");
+    showToast("Nhiệm vụ đã được đánh dấu hoàn thành", "success");
   };
 
   const handleDeleteTask = (taskId) => {
@@ -515,7 +528,7 @@ const SelfTask = () => {
         const user = JSON.parse(storedUser);
         token = user.accessToken;
       }
-  
+
       await axios.delete(
         `http://localhost:8080/api/tasks/${deleteConfirm.taskId}`,
         {
@@ -524,12 +537,12 @@ const SelfTask = () => {
           },
         }
       );
-  
-      showToast("Task deleted successfully", "success");
+
+      showToast("Nhiệm vụ đã được xóa thành công", "success");
       fetchTasks(currentPage, itemsPerPage); // Refresh data
     } catch (err) {
       console.error("Error deleting task:", err);
-      showToast("Failed to delete task", "error");
+      showToast("Không thể xóa nhiệm vụ", "error");
     }
   };
 
@@ -553,28 +566,28 @@ const SelfTask = () => {
       if (isNewTask) {
         // Add new task
         setTasks([...tasks, { ...taskData, id: Date.now() }]);
-        showToast("New task created successfully", "success");
+        showToast("Nhiệm vụ mới đã được tạo thành công", "success");
       } else {
         // Update existing task
         setTasks(
           tasks.map((task) => (task.id === taskData.id ? taskData : task))
         );
-        showToast("Task updated successfully", "success");
+        showToast("Nhiệm vụ đã được cập nhật thành công", "success");
       }
     }
   };
 
-<Pagination
-  currentPage={apiData.pageNo}
-  totalPages={apiData.totalPages}
-  onPageChange={handlePageChange}
-  itemsPerPage={apiData.pageSize}
-  totalItems={apiData.totalElements}
-  onItemsPerPageChange={(newSize) => {
-    setItemsPerPage(newSize);
-    fetchTasks(1, newSize);
-  }}
-/>
+  <Pagination
+    currentPage={apiData.pageNo}
+    totalPages={apiData.totalPages}
+    onPageChange={handlePageChange}
+    itemsPerPage={apiData.pageSize}
+    totalItems={apiData.totalElements}
+    onItemsPerPageChange={(newSize) => {
+      setItemsPerPage(newSize);
+      fetchTasks(1, newSize);
+    }}
+  />;
 
   // Filter tasks based on active filter and search
   const filteredTasks = tasks.filter((task) => {
@@ -625,9 +638,9 @@ const SelfTask = () => {
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">SELF TASKS</h1>
+          <h1 className="text-2xl font-bold">NHIỆM VỤ CÁ NHÂN</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Manage and track your personal tasks
+            Quản lý và theo dõi nhiệm vụ cá nhân của bạn
           </p>
         </div>
       </div>
@@ -638,7 +651,7 @@ const SelfTask = () => {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="Search tasks..."
+              placeholder="Tìm kiếm nhiệm vụ..."
               className="pl-10 pr-4 py-2 bg-gray-800 rounded-md w-full text-white border border-gray-700 focus:border-purple-500 focus:outline-none transition-colors"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -654,7 +667,7 @@ const SelfTask = () => {
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={18} />
-            <span>Filters</span>
+            <span>Bộ lọc</span>
             <ChevronUp
               size={18}
               className={`transform transition-transform duration-300 ${
@@ -667,37 +680,37 @@ const SelfTask = () => {
         {showFilters && (
           <div className="flex flex-wrap gap-2 bg-gray-800 p-3 rounded-lg border border-gray-700 animate-fade-in">
             <FilterChip
-              label="All Tasks"
+              label="Tất cả "
               icon={<ListChecks size={14} />}
               active={activeFilter === "all"}
               onClick={() => setActiveFilter("all")}
             />
             <FilterChip
-              label="Not Started"
+              label="Chưa bắt đầu"
               icon={<Clock size={14} />}
               active={activeFilter === "not-started"}
               onClick={() => setActiveFilter("not-started")}
             />
             <FilterChip
-              label="In Progress"
+              label="Đang tiến hành"
               icon={<Clock size={14} className="text-blue-500" />}
               active={activeFilter === "in-progress"}
               onClick={() => setActiveFilter("in-progress")}
             />
             <FilterChip
-              label="Completed"
+              label="Hoàn thành"
               icon={<CheckCircle size={14} />}
               active={activeFilter === "completed"}
               onClick={() => setActiveFilter("completed")}
             />
             <FilterChip
-              label="Overdue"
+              label="Quá hạn"
               icon={<AlertTriangle size={14} />}
               active={activeFilter === "overdue"}
               onClick={() => setActiveFilter("overdue")}
             />
             <FilterChip
-              label="High Priority"
+              label="Ưu tiên cao"
               icon={<Flag size={14} className="text-red-500" />}
               active={activeFilter === "high-priority"}
               onClick={() => setActiveFilter("high-priority")}
@@ -710,11 +723,11 @@ const SelfTask = () => {
       {loading ? (
         <div className="flex flex-col justify-center items-center h-64">
           <Loader size={36} className="text-purple-500 animate-spin mb-4" />
-          <p className="text-gray-400">Loading your tasks...</p>
+          <p className="text-gray-400">Đang tải nhiệm vụ của bạn...</p>
         </div>
       ) : filteredTasks.length === 0 ? (
         <EmptyState
-          message="Try adjusting your search or filter to find what you're looking for."
+          message="Thử điều chỉnh tìm kiếm hoặc bộ lọc để tìm những gì bạn đang tìm kiếm."
           icon={<Search size={32} className="text-gray-500" />}
         />
       ) : (
@@ -751,8 +764,8 @@ const SelfTask = () => {
         isOpen={deleteConfirm.show}
         onClose={() => setDeleteConfirm({ show: false, taskId: null })}
         onConfirm={confirmDeleteTask}
-        title="Delete Task"
-        message="Are you sure you want to delete this task? This action cannot be undone."
+        title="Xóa nhiệm vụ"
+        message="Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không thể hoàn tác."
       />
 
       {/* Add CSS animations for better UX */}

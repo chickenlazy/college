@@ -181,6 +181,21 @@ const ProjectModal = ({ isOpen, onClose, projects, onSelect }) => {
   );
 };
 
+const getStatusText = (status) => {
+  switch (status) {
+    case "NOT_STARTED":
+      return "Chưa bắt đầu";
+    case "IN_PROGRESS":
+      return "Đang tiến hành";
+    case "COMPLETED":
+      return "Hoàn thành";
+    case "ON_HOLD":
+      return "Tạm dừng";
+    default:
+      return status.replace(/_/g, " ");
+  }
+};
+
 // Status Badge Component
 const StatusBadge = ({ status }) => {
   let color;
@@ -212,7 +227,7 @@ const StatusBadge = ({ status }) => {
     <span
       className={`px-2 py-1 rounded-full text-xs font-medium ${color} ${bgColor}`}
     >
-      {status.replace(/_/g, " ")}
+      {getStatusText(status)}
     </span>
   );
 };
@@ -1090,11 +1105,11 @@ const TaskEdit = ({
                     <label className="block text-gray-400 mb-1">
                       Ngày bắt đầu{" "}
                       <span className="text-xs text-gray-500">
-                        (Format: MM/DD/YYYY)
+                        (Định dạng: DD/MM/YYYY)
                         {task.projectStartDate &&
                           ` - Dự án bắt đầu vào ${new Date(
                             task.projectStartDate
-                          ).toLocaleDateString()}`}
+                          ).toLocaleDateString("vi-VN")}`}
                       </span>
                     </label>
                     <div className="relative">
@@ -1129,11 +1144,11 @@ const TaskEdit = ({
                     <label className="block text-gray-400 mb-1">
                       Ngày kết thúc{" "}
                       <span className="text-xs text-gray-500">
-                        (Format: MM/DD/YYYY)
+                        (Định dạng: DD/MM/YYYY)
                         {task.projectDueDate &&
                           ` - Dự án kết thúc vào ${new Date(
                             task.projectDueDate
-                          ).toLocaleDateString()}`}
+                          ).toLocaleDateString("vi-VN")}`}
                       </span>
                     </label>
                     <div className="relative">
@@ -1241,13 +1256,15 @@ const TaskEdit = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Tạo lúc:</span>
-                    <span>{new Date(task.createdDate).toLocaleString()}</span>
+                    <span>
+                      {new Date(task.createdDate).toLocaleString("vi-VN")}
+                    </span>
                   </div>
                   {task.completedDate && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">Hoàn thành lúc:</span>
                       <span>
-                        {new Date(task.completedDate).toLocaleString()}
+                        {new Date(task.completedDate).toLocaleString("vi-VN")}
                       </span>
                     </div>
                   )}

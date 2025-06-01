@@ -41,20 +41,20 @@ import TaskDetail from "./TaskDetail";
 // Format date for display
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit", 
+    day: "2-digit",
   });
 };
 
 // Format date with time for file info
 const formatDateWithTime = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -252,7 +252,7 @@ const FileManager = ({ projectId }) => {
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-          <p className="mt-2 text-gray-400">Loading files...</p>
+          <p className="mt-2 text-gray-400">Đang tải tệp...</p>
         </div>
       ) : (
         <FileList
@@ -760,7 +760,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
 
     // Kiểm tra dữ liệu
     if (!editOriginalName.trim()) {
-      setEditError("File name cannot be empty");
+      setEditError("Tên tệp không được để trống");
       return;
     }
 
@@ -769,7 +769,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
     const newExtension = editOriginalName.split(".").pop();
 
     if (originalExtension !== newExtension) {
-      setEditError("File extension cannot be changed");
+      setEditError("Không thể thay đổi phần mở rộng tệp");
       return;
     }
 
@@ -908,7 +908,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
             {/* Phần mở rộng để hiển thị mô tả */}
             {expandedFileId === file.id && (
               <div className="p-3 border-t border-gray-700 bg-gray-750">
-                <div className="mb-2 text-xs text-gray-400">Description:</div>
+                <div className="mb-2 text-xs text-gray-400">Mô tả:</div>
                 <div className="text-sm pl-2">
                   {file.description ? (
                     file.description
@@ -950,7 +950,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
               <input
                 type="text"
                 className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
-                placeholder="File name"
+                placeholder="Tên tệp"
                 value={editOriginalName}
                 onChange={(e) => handleOriginalNameChange(e.target.value)}
               />
@@ -961,7 +961,7 @@ const FileList = ({ files, onDelete, onDownload }) => {
 
             <div className="mb-6">
               <label className="block text-sm text-gray-400 mb-2">
-                Description
+                Mô tả
               </label>
               <textarea
                 className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
@@ -1175,7 +1175,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
             <div className="flex justify-between items-center mb-1">
               <h4 className="font-medium">{comment.user.fullName}</h4>
               <span className="text-xs text-gray-400">
-                {new Date(comment.createdDate).toLocaleString()}
+                {new Date(comment.createdDate).toLocaleString('vi-VN')}
               </span>
             </div>
             <p className="text-sm">{comment.content}</p>
@@ -1185,7 +1185,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                 className="hover:text-purple-400"
                 onClick={() => setShowReplyForm(!showReplyForm)}
               >
-                Reply
+                Phản hồi
               </button>
 
               {comment.replyCount > 0 && (
@@ -1195,7 +1195,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                 >
                   {showReplies
                     ? "Ẩn phản hồi"
-                    : `View ${comment.replyCount} phản hồi`}
+                    : `Xem ${comment.replyCount} phản hồi`}
                   {loadingReplies && (
                     <span className="ml-2 animate-spin">⏳</span>
                   )}
@@ -1219,7 +1219,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
               <div className="mt-3">
                 <textarea
                   className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
-                  placeholder="Write a reply..."
+                  placeholder="Viết phản hồi..."
                   rows="2"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
@@ -1423,7 +1423,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
                 <path d="M7.7 7.8a7 7 0 0 0-1.2 3.8c0 .7.1 1.4.3 2"></path>
                 <path d="M12 12a7 7 0 0 0 1.3 4"></path>
               </svg>
-              <p className="text-base mb-2">No matching members found</p>
+              <p className="text-base mb-2">Không tìm thấy thành viên phù hợp</p>
               {searchTerm && (
                 <button
                   className="mt-2 text-sm text-purple-400 hover:text-purple-300 py-1 px-3 rounded-md hover:bg-gray-700"
@@ -2177,13 +2177,13 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
         <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4" />
         <h2 className="text-xl font-bold mb-2">Không tìm thấy dự án</h2>
         <p className="text-gray-400">
-          The requested project could not be found.
+          Không thể tìm thấy dự án được yêu cầu.
         </p>
         <button
           className="mt-4 px-4 py-2 bg-purple-600 rounded-md hover:bg-purple-700"
           onClick={() => onBack(false)}
         >
-          Back
+          Quay lại
         </button>
       </div>
     );
@@ -2349,7 +2349,7 @@ const ProjectDetail = ({ project: initialProject, onBack: navigateBack }) => {
                             // Fetch lại dữ liệu project
                             fetchProjectData();
                             showToast(
-                              `Project status updated to ${status.replace(
+                              `Trạng thái dự án đã được cập nhật thành ${status.replace(
                                 /_/g,
                                 " "
                               )}`,
@@ -2478,7 +2478,7 @@ ${
                       ? "Hết hạn hôm nay"
                       : project.status === "COMPLETED"
                       ? "Completed"
-                      : `${Math.abs(daysRemaining)} days overdue`}
+                      : `${Math.abs(daysRemaining)} ngày quá hạn`}
                   </p>
                 </div>
                 <Clock
@@ -2496,7 +2496,7 @@ ${
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm text-gray-400 mb-1">Thành viên</p>
-                  <p className="font-medium">{project.users.length} members</p>
+                  <p className="font-medium">{project.users.length} thành viên</p>
                 </div>
                 <Users size={20} className="text-purple-500" />
               </div>
@@ -2509,7 +2509,7 @@ ${
                     Tiến trình nhiệm vụ
                   </p>
                   <p className="font-medium">
-                    {project.totalCompletedTasks}/{project.totalTasks} completed
+                    {project.totalCompletedTasks}/{project.totalTasks} hoàn thành
                   </p>
                 </div>
                 <ListChecks size={20} className="text-purple-500" />
@@ -2726,7 +2726,7 @@ ${
                 {project.users.length === 0 ? (
                   <div className="text-center py-6 text-gray-400 bg-gray-800 rounded-lg">
                     <Users size={48} className="mx-auto mb-3 opacity-50" />
-                    <p>No Thành viên assigned to this project yet.</p>
+                    <p>Chưa có thành viên nào được phân công cho dự án này.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2856,7 +2856,7 @@ ${
                     <div className="bg-gray-800 rounded-lg p-4">
                       <textarea
                         className="w-full bg-gray-700 border border-gray-600 rounded-md py-3 px-4 text-white"
-                        placeholder="Viết comment..."
+                        placeholder="Viết bình luận..."
                         rows="3"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
@@ -2994,7 +2994,7 @@ ${
           {deleteConfirm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
               <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
-                <h2 className="text-xl font-bold mb-4">Delete Project</h2>
+                <h2 className="text-xl font-bold mb-4">Xóa dự án</h2>
                 <p className="text-gray-300 mb-6">
                   Are you sure you want to delete this project? This action
                   cannot be undone.
