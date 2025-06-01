@@ -843,7 +843,6 @@ public class ProjectServiceImpl implements ProjectService {
                     "<p><strong>Ngày kết thúc dự kiến:</strong> " + (project.getDueDate() != null ? formatDate(project.getDueDate()) : "Chưa xác định") + "</p>" +
                     "<h3>Danh sách thành viên:</h3>" +
                     usersList.toString() +
-                    "<p>Vui lòng <a href='https://yourapp.com/projects/" + project.getId() + "'>nhấp vào đây</a> để xem chi tiết dự án.</p>" +
                     "<p>Trân trọng,<br>Hệ thống quản lý dự án</p>" +
                     "</body></html>";
 

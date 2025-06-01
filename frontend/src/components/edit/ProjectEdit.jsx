@@ -44,7 +44,7 @@ const MemberModal = ({ isOpen, onClose, users, onSelect, usedUserIds }) => {
       <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-750">
-          <h3 className="text-lg font-medium text-white">Thêm thành viên</h3>
+          <h3 className="text-lg font-medium text-white">Thêm quản lý</h3>
           <button
             className="p-2 hover:bg-gray-700 hover:text-white text-gray-400 rounded-full transition-colors"
             onClick={onClose}
@@ -356,10 +356,8 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
       ? {
           name: "",
           description: "",
-          startDate: new Date().toISOString().split("T")[0],
-          dueDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
-            .toISOString()
-            .split("T")[0],
+          startDate: "",
+          dueDate: "",
           status: "NOT_STARTED",
           managerId: null,
           userIds: [],
@@ -872,7 +870,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     <label className="block text-gray-400 mb-1">
                       Ngày bắt đầu{" "}
                       <span className="text-xs text-gray-500">
-                        (Định dạng: DD/MM/YYYY)
+                        (Định dạng: MM/DD/YYYY)
                       </span>
                     </label>
                     <div className="relative">
@@ -901,7 +899,7 @@ const ProjectEdit = ({ project: initialProject, onBack, isNew = false }) => {
                     <label className="block text-gray-400 mb-1">
                       Ngày kết thúc{" "}
                       <span className="text-xs text-gray-500">
-                        (Định dạng: DD/MM/YYYY)
+                        (Định dạng: MM/DD/YYYY)
                       </span>
                     </label>
                     <div className="relative">

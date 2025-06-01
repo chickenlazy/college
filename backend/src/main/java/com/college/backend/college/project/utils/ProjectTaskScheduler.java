@@ -43,9 +43,8 @@ public class ProjectTaskScheduler {
 
     /**
      * Chạy mỗi giờ để cập nhật trạng thái OVER_DUE cho các project và task đã quá hạn
-     * Cron expression: "0 0 * * * *" = chạy vào phút thứ 0 của mỗi giờ
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "*/15 * * * * *")
     @Transactional
     public void updateOverdueStatus() {
         Date now = new Date();
@@ -106,9 +105,8 @@ public class ProjectTaskScheduler {
 
     /**
      * Chạy mỗi giờ để kiểm tra và cập nhật trạng thái COMPLETED cho các project và task
-     * Cron expression: "0 0 * * * *" = chạy vào phút thứ 0 của mỗi giờ
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "*/15 * * * * *")
     @Transactional
     public void updateCompletedStatus() {
         Date now = new Date();
@@ -195,7 +193,7 @@ public class ProjectTaskScheduler {
         return count;
     }
 
-    @Scheduled(cron = "0 0 * * * *") // Chạy vào phút thứ 0 của mỗi giờ
+    @Scheduled(cron = "*/15 * * * * *") // Chạy vào phút thứ 0 của mỗi giờ
     @Transactional
     public void sendDeadlineNotifications() {
         Date now = new Date();
@@ -220,14 +218,20 @@ public class ProjectTaskScheduler {
 
         for (Project project : projectsNearDeadline) {
             if (project.getManager() != null) {
-                NotificationRequest notification = new NotificationRequest();
-                notification.setTitle("Dự án sắp đến hạn");
-                notification.setContent("Dự án \"" + project.getName() + "\" sắp đến hạn vào " + formatDate(project.getDueDate()));
-                notification.setType(NotificationType.PROJECT);
-                notification.setReferenceId(project.getId());
-                notification.setUserId(project.getManager().getId());
+                // Kiểm tra đã gửi thông báo "sắp đến hạn" chưa
+                if (!hasRecentNotification(NotificationType.PROJECT, project.getId().longValue(),
+                        project.getManager().getId(), "sắp đến hạn")) {
 
-                notificationService.createNotification(notification);
+                    NotificationRequest notification = new NotificationRequest();
+                    notification.setTitle("Dự án sắp đến hạn");
+                    notification.setContent("Dự án \"" + project.getName() + "\" sắp đến hạn vào " + formatDate(project.getDueDate()));
+                    notification.setType(NotificationType.PROJECT);
+                    notification.setReferenceId(project.getId());
+                    notification.setUserId(project.getManager().getId());
+
+                    notificationService.createNotification(notification);
+                    logger.debug("Sent deadline notification for project: {}", project.getName());
+                }
             }
         }
 
@@ -237,14 +241,20 @@ public class ProjectTaskScheduler {
 
         for (Project project : overdueProjects) {
             if (project.getManager() != null) {
-                NotificationRequest notification = new NotificationRequest();
-                notification.setTitle("Dự án đã quá hạn");
-                notification.setContent("Dự án \"" + project.getName() + "\" đã quá hạn kể từ " + formatDate(project.getDueDate()));
-                notification.setType(NotificationType.PROJECT);
-                notification.setReferenceId(project.getId());
-                notification.setUserId(project.getManager().getId());
+                // Kiểm tra đã gửi thông báo "quá hạn" chưa
+                if (!hasRecentNotification(NotificationType.PROJECT, project.getId().longValue(),
+                        project.getManager().getId(), "quá hạn")) {
 
-                notificationService.createNotification(notification);
+                    NotificationRequest notification = new NotificationRequest();
+                    notification.setTitle("Dự án đã quá hạn");
+                    notification.setContent("Dự án \"" + project.getName() + "\" đã quá hạn kể từ " + formatDate(project.getDueDate()));
+                    notification.setType(NotificationType.PROJECT);
+                    notification.setReferenceId(project.getId());
+                    notification.setUserId(project.getManager().getId());
+
+                    notificationService.createNotification(notification);
+                    logger.debug("Sent overdue notification for project: {}", project.getName());
+                }
             }
         }
     }
@@ -260,14 +270,20 @@ public class ProjectTaskScheduler {
 
         for (Subtask subtask : subtasksNearDeadline) {
             if (subtask.getAssignee() != null) {
-                NotificationRequest notification = new NotificationRequest();
-                notification.setTitle("Công việc con sắp đến hạn");
-                notification.setContent("Công việc con \"" + subtask.getName() + "\" sắp đến hạn vào " + formatDate(subtask.getDueDate()));
-                notification.setType(NotificationType.SUBTASK);
-                notification.setReferenceId(subtask.getId());
-                notification.setUserId(subtask.getAssignee().getId());
+                // Kiểm tra đã gửi thông báo "sắp đến hạn" chưa
+                if (!hasRecentNotification(NotificationType.SUBTASK, subtask.getId().longValue(),
+                        subtask.getAssignee().getId(), "sắp đến hạn")) {
 
-                notificationService.createNotification(notification);
+                    NotificationRequest notification = new NotificationRequest();
+                    notification.setTitle("Công việc con sắp đến hạn");
+                    notification.setContent("Công việc con \"" + subtask.getName() + "\" sắp đến hạn vào " + formatDate(subtask.getDueDate()));
+                    notification.setType(NotificationType.SUBTASK);
+                    notification.setReferenceId(subtask.getId());
+                    notification.setUserId(subtask.getAssignee().getId());
+
+                    notificationService.createNotification(notification);
+                    logger.debug("Sent deadline notification for subtask: {}", subtask.getName());
+                }
             }
         }
 
@@ -276,14 +292,20 @@ public class ProjectTaskScheduler {
 
         for (Subtask subtask : overdueSubtasks) {
             if (subtask.getAssignee() != null) {
-                NotificationRequest notification = new NotificationRequest();
-                notification.setTitle("Công việc con đã quá hạn");
-                notification.setContent("Công việc con \"" + subtask.getName() + "\" đã quá hạn kể từ " + formatDate(subtask.getDueDate()));
-                notification.setType(NotificationType.SUBTASK);
-                notification.setReferenceId(subtask.getId());
-                notification.setUserId(subtask.getAssignee().getId());
+                // Kiểm tra đã gửi thông báo "quá hạn" chưa
+                if (!hasRecentNotification(NotificationType.SUBTASK, subtask.getId().longValue(),
+                        subtask.getAssignee().getId(), "quá hạn")) {
 
-                notificationService.createNotification(notification);
+                    NotificationRequest notification = new NotificationRequest();
+                    notification.setTitle("Công việc con đã quá hạn");
+                    notification.setContent("Công việc con \"" + subtask.getName() + "\" đã quá hạn kể từ " + formatDate(subtask.getDueDate()));
+                    notification.setType(NotificationType.SUBTASK);
+                    notification.setReferenceId(subtask.getId());
+                    notification.setUserId(subtask.getAssignee().getId());
+
+                    notificationService.createNotification(notification);
+                    logger.debug("Sent overdue notification for subtask: {}", subtask.getName());
+                }
             }
         }
 
@@ -302,14 +324,20 @@ public class ProjectTaskScheduler {
         for (Task task : tasksNearDeadline) {
             Project project = task.getProject();
             if (project != null && project.getManager() != null) {
-                NotificationRequest notification = new NotificationRequest();
-                notification.setTitle("Công việc sắp đến hạn");
-                notification.setContent("Công việc \"" + task.getName() + "\" trong dự án \"" + project.getName() + "\" sắp đến hạn vào " + formatDate(task.getDueDate()));
-                notification.setType(NotificationType.TASK);
-                notification.setReferenceId(task.getId());
-                notification.setUserId(project.getManager().getId());
+                // Kiểm tra đã gửi thông báo "sắp đến hạn" chưa
+                if (!hasRecentNotification(NotificationType.TASK, task.getId().longValue(),
+                        project.getManager().getId(), "sắp đến hạn")) {
 
-                notificationService.createNotification(notification);
+                    NotificationRequest notification = new NotificationRequest();
+                    notification.setTitle("Công việc sắp đến hạn");
+                    notification.setContent("Công việc \"" + task.getName() + "\" trong dự án \"" + project.getName() + "\" sắp đến hạn vào " + formatDate(task.getDueDate()));
+                    notification.setType(NotificationType.TASK);
+                    notification.setReferenceId(task.getId());
+                    notification.setUserId(project.getManager().getId());
+
+                    notificationService.createNotification(notification);
+                    logger.debug("Sent deadline notification for task: {}", task.getName());
+                }
             }
         }
 
@@ -320,23 +348,28 @@ public class ProjectTaskScheduler {
         for (Task task : overdueTasks) {
             Project project = task.getProject();
             if (project != null && project.getManager() != null) {
-                NotificationRequest notification = new NotificationRequest();
-                notification.setTitle("Công việc đã quá hạn");
-                notification.setContent("Công việc \"" + task.getName() + "\" trong dự án \"" + project.getName() + "\" đã quá hạn kể từ " + formatDate(task.getDueDate()));
-                notification.setType(NotificationType.TASK);
-                notification.setReferenceId(task.getId());
-                notification.setUserId(project.getManager().getId());
+                // Kiểm tra đã gửi thông báo "quá hạn" chưa
+                if (!hasRecentNotification(NotificationType.TASK, task.getId().longValue(),
+                        project.getManager().getId(), "quá hạn")) {
 
-                notificationService.createNotification(notification);
+                    NotificationRequest notification = new NotificationRequest();
+                    notification.setTitle("Công việc đã quá hạn");
+                    notification.setContent("Công việc \"" + task.getName() + "\" trong dự án \"" + project.getName() + "\" đã quá hạn kể từ " + formatDate(task.getDueDate()));
+                    notification.setType(NotificationType.TASK);
+                    notification.setReferenceId(task.getId());
+                    notification.setUserId(project.getManager().getId());
+
+                    notificationService.createNotification(notification);
+                    logger.debug("Sent overdue notification for task: {}", task.getName());
+                }
             }
         }
     }
 
     /**
      * Chạy mỗi giờ để cập nhật trạng thái IN_PROGRESS cho các project và task
-     * Cron expression: "0 0 * * * *" = chạy vào phút thứ 0 của mỗi giờ
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "*/15 * * * * *")
     @Transactional
     public void updateInProgressStatus() {
         Date now = new Date();
@@ -449,5 +482,21 @@ public class ProjectTaskScheduler {
         return sdf.format(date);
     }
 
+    /**
+     * Kiểm tra xem đã gửi thông báo cho entity này trong 24h qua chưa
+     */
+    private boolean hasRecentNotification(NotificationType type, Long referenceId, Integer userId, String titleKeyword) {
+        try {
+            // Tính thời gian 24h trước
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DAY_OF_YEAR, -1);
+            Date oneDayAgo = calendar.getTime();
+
+            return notificationService.hasRecentNotification(type, referenceId, userId, titleKeyword, oneDayAgo);
+        } catch (Exception e) {
+            logger.warn("Error checking recent notifications: {}", e.getMessage());
+            return false; // Nếu có lỗi, cho phép gửi thông báo
+        }
+    }
 
 }

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -32,4 +33,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
 
     // Tìm kiếm thông báo theo loại và reference ID
     List<Notification> findByTypeAndReferenceId(NotificationType type, Integer referenceId);
+
+    // Thêm method này vào NotificationRepository
+    long countByTypeAndReferenceIdAndUserIdAndTitleContainingAndCreatedDateAfter(
+            NotificationType type, Long referenceId, Integer userId, String titleKeyword, Date after);
 }

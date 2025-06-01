@@ -12,8 +12,8 @@ import {
   Check,
   Clock,
   ChevronLeft,
-  Shield, 
-  IdCard  
+  Shield,
+  IdCard,
 } from "lucide-react";
 
 const UserDetail = ({ user, onBack }) => {
@@ -110,28 +110,61 @@ const UserDetail = ({ user, onBack }) => {
   }, [user]);
 
   // Format date for display
-const formatDate = (dateString) => {
-  if (!dateString) return "Không có";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+  const formatDate = (dateString) => {
+    if (!dateString) return "Không có";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-const getStatusText = (status) => {
-  switch (status) {
-    case "COMPLETED": return "Hoàn thành";
-    case "IN_PROGRESS": return "Đang tiến hành";
-    case "NOT_STARTED": return "Chưa bắt đầu";
-    case "ON_HOLD": return "Tạm dừng";
-    case "OVER_DUE": return "Quá hạn";
-    default: return status.replace(/_/g, " ");
-  }
-};
+  // Thêm function này vào trong component UserDetail
+  const getSubtaskStatus = (subtask) => {
+    if (subtask.completed) {
+      return {
+        text: "Hoàn thành",
+        className: "bg-green-900 text-green-300",
+      };
+    }
+
+    // Kiểm tra nếu đã quá hạn
+    const now = new Date();
+    const dueDate = new Date(subtask.dueDate);
+
+    if (dueDate < now) {
+      return {
+        text: "Quá hạn",
+        className: "bg-red-900 text-red-300",
+      };
+    }
+
+    // Chưa hoàn thành và chưa quá hạn
+    return {
+      text: "Đang tiến hành",
+      className: "bg-blue-900 text-blue-300",
+    };
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case "COMPLETED":
+        return "Hoàn thành";
+      case "IN_PROGRESS":
+        return "Đang tiến hành";
+      case "NOT_STARTED":
+        return "Chưa bắt đầu";
+      case "ON_HOLD":
+        return "Tạm dừng";
+      case "OVER_DUE":
+        return "Quá hạn";
+      default:
+        return status.replace(/_/g, " ");
+    }
+  };
 
   return (
     <div className="bg-gray-950 text-white">
@@ -154,7 +187,7 @@ const getStatusText = (status) => {
         </button>
         <h1 className="text-2xl font-bold">User Details</h1>
       </div> */}
-   
+
       {/* Content */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -181,7 +214,7 @@ const getStatusText = (status) => {
                   </div>
                 </div>
               </div>
-   
+
               <div className="space-y-4 mt-6">
                 <div className="flex items-start">
                   <Mail className="mr-3 text-gray-400 mt-1" size={18} />
@@ -192,13 +225,13 @@ const getStatusText = (status) => {
                 </div>
 
                 <div className="flex items-start">
-                  <IdCard  className="mr-3 text-gray-400 mt-1" size={18} />
+                  <IdCard className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
                     <p className="text-gray-400 text-sm">Tên đăng nhập</p>
                     <p>{userData.username}</p>
                   </div>
                 </div>
-   
+
                 <div className="flex items-start">
                   <Phone className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
@@ -206,7 +239,7 @@ const getStatusText = (status) => {
                     <p>{userData.phoneNumber || "Không có"}</p>
                   </div>
                 </div>
-   
+
                 <div className="flex items-start">
                   <Shield className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
@@ -214,7 +247,7 @@ const getStatusText = (status) => {
                     <p>{userData.role?.replace("ROLE_", "") || "Không có"}</p>
                   </div>
                 </div>
-   
+
                 <div className="flex items-start">
                   <Briefcase className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
@@ -222,7 +255,7 @@ const getStatusText = (status) => {
                     <p>{userData.department || "Không có"}</p>
                   </div>
                 </div>
-   
+
                 <div className="flex items-start">
                   <MapPin className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
@@ -232,23 +265,30 @@ const getStatusText = (status) => {
                 </div>
               </div>
             </div>
-   
+
             {/* Status and Timestamps Card */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2">
                 Thông tin trạng thái
               </h3>
-   
+
               <div className="space-y-4">
                 <div className="flex items-center">
                   <div
                     className={`w-3 h-3 rounded-full mr-2 ${
-                      userData.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"
+                      userData.status === "ACTIVE"
+                        ? "bg-green-500"
+                        : "bg-red-500"
                     }`}
                   ></div>
-                  <span>Trạng thái: {userData.status === "ACTIVE" ? "Hoạt động" : "Không hoạt động"}</span>
+                  <span>
+                    Trạng thái:{" "}
+                    {userData.status === "ACTIVE"
+                      ? "Hoạt động"
+                      : "Không hoạt động"}
+                  </span>
                 </div>
-   
+
                 <div className="flex items-start mt-4">
                   <Calendar className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
@@ -256,7 +296,7 @@ const getStatusText = (status) => {
                     <p>{formatDate(userData.createdDate)}</p>
                   </div>
                 </div>
-   
+
                 <div className="flex items-start mt-4">
                   <Clock className="mr-3 text-gray-400 mt-1" size={18} />
                   <div>
@@ -266,29 +306,31 @@ const getStatusText = (status) => {
                 </div>
               </div>
             </div>
-   
+
             {/* Additional Information Card */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2">
                 Thông tin bổ sung
               </h3>
-   
+
               <div className="space-y-4">
                 <div>
                   <p className="text-gray-400 text-sm">Chức vụ</p>
-                  <p className="font-medium">{userData.position || "Không có"}</p>
+                  <p className="font-medium">
+                    {userData.position || "Không có"}
+                  </p>
                 </div>
-   
+
                 <div>
                   <p className="text-gray-400 text-sm">ID</p>
                   <p className="font-medium">#{userData.id}</p>
                 </div>
-   
+
                 {/* Additional fields can be added here */}
               </div>
             </div>
           </div>
-   
+
           {/* Projects and Subtasks Section */}
           <div className="mt-8 col-span-full">
             {/* Projects Card */}
@@ -297,28 +339,36 @@ const getStatusText = (status) => {
                 <Briefcase size={18} className="mr-2 text-purple-400" />
                 Dự án ({projects.length})
               </h3>
-              
+
               {projectsLoading ? (
                 <div className="flex justify-center items-center h-20">
                   <Loader size={24} className="text-purple-500 animate-spin" />
                 </div>
               ) : projects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {projects.map(project => (
-                    <div key={project.id} className="bg-gray-800 hover:bg-gray-750 transition-colors rounded-md p-4 border-l-4 border-purple-500">
+                  {projects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="bg-gray-800 hover:bg-gray-750 transition-colors rounded-md p-4 border-l-4 border-purple-500"
+                    >
                       <h4 className="font-medium text-lg">{project.name}</h4>
                       <div className="mt-2 flex justify-between items-center">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          project.status === "COMPLETED" ? "bg-green-900 text-green-300" : 
-                          project.status === "IN_PROGRESS" ? "bg-blue-900 text-blue-300" :
-                          project.status === "NOT_STARTED" ? "bg-gray-700 text-gray-300" :
-                          "bg-yellow-900 text-yellow-300"
-                        }`}>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            project.status === "COMPLETED"
+                              ? "bg-green-900 text-green-300"
+                              : project.status === "IN_PROGRESS"
+                              ? "bg-blue-900 text-blue-300"
+                              : project.status === "NOT_STARTED"
+                              ? "bg-gray-700 text-gray-300"
+                              : "bg-yellow-900 text-yellow-300"
+                          }`}
+                        >
                           {getStatusText(project.status)}
                         </span>
                         <div className="w-24 bg-gray-700 rounded-full h-2.5">
-                          <div 
-                            className="bg-purple-600 h-2.5 rounded-full" 
+                          <div
+                            className="bg-purple-600 h-2.5 rounded-full"
                             style={{ width: `${project.progress}%` }}
                           ></div>
                         </div>
@@ -333,31 +383,46 @@ const getStatusText = (status) => {
                 </div>
               )}
             </div>
-            
+
             {/* Subtasks Card */}
             <div className="bg-gray-900 p-6 rounded-lg shadow-lg mt-6">
               <h3 className="font-semibold text-lg mb-4 border-b border-gray-800 pb-2 flex items-center">
                 <Check size={18} className="mr-2 text-purple-400" />
                 Nhiệm vụ con được giao ({subtasks.length})
               </h3>
-              
+
               {subtasksLoading ? (
                 <div className="flex justify-center items-center h-20">
                   <Loader size={24} className="text-purple-500 animate-spin" />
                 </div>
               ) : subtasks.length > 0 ? (
                 <div className="space-y-3">
-                  {subtasks.map(subtask => (
-                    <div key={subtask.id} className="bg-gray-800 rounded-md p-4 hover:bg-gray-750 transition-colors">
+                  {subtasks.map((subtask) => (
+                    <div
+                      key={subtask.id}
+                      className="bg-gray-800 rounded-md p-4 hover:bg-gray-750 transition-colors"
+                    >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center">
-                          <div className={`w-4 h-4 rounded-full mr-3 flex items-center justify-center ${subtask.completed ? "bg-green-500" : "border-2 border-gray-600"}`}>
-                            {subtask.completed && <Check size={12} className="text-green-900" />}
+                          <div
+                            className={`w-4 h-4 rounded-full mr-3 flex items-center justify-center ${
+                              subtask.completed
+                                ? "bg-green-500"
+                                : "border-2 border-gray-600"
+                            }`}
+                          >
+                            {subtask.completed && (
+                              <Check size={12} className="text-green-900" />
+                            )}
                           </div>
                           <h4 className="font-medium">{subtask.name}</h4>
                         </div>
-                        <div className={`px-2 py-1 rounded-md text-xs ${subtask.completed ? "bg-green-900 text-green-300" : "bg-yellow-900 text-red-300"}`}>
-                          {subtask.completed ? "Hoàn thành" : "Đang tiến hành"}
+                        <div
+                          className={`px-2 py-1 rounded-md text-xs ${
+                            getSubtaskStatus(subtask).className
+                          }`}
+                        >
+                          {getSubtaskStatus(subtask).text}
                         </div>
                       </div>
                       <div className="ml-7 mt-2 grid grid-cols-2 gap-2 text-sm text-gray-400">
@@ -375,7 +440,9 @@ const getStatusText = (status) => {
                         </div>
                         <div className="flex items-center">
                           <Clock size={12} className="mr-1" />
-                          <span>Tạo lúc: {formatDate(subtask.createdDate)}</span>
+                          <span>
+                            Tạo lúc: {formatDate(subtask.createdDate)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -396,7 +463,7 @@ const getStatusText = (status) => {
         </div>
       )}
     </div>
-   );
+  );
 };
 
 export default UserDetail;

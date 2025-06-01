@@ -52,7 +52,6 @@ function App() {
         
         if (currentTime - tokenTimestamp > fiveDays) {
           // Token đã hết hạn sau 5 ngày
-          console.log("Token đã hết hạn sau 5 ngày, đang đăng xuất");
           handleLogout();
           setErrorDialog({
             show: true,
@@ -70,7 +69,6 @@ function App() {
         
         if (response.data.status === 'INACTIVE') {
           // User đã bị vô hiệu hóa
-          console.log("Người dùng không hoạt động, đang đăng xuất");
           handleLogout();
           setErrorDialog({
             show: true,
@@ -83,7 +81,6 @@ function App() {
         }
       }
     } catch (error) {
-      console.error("Lỗi khi kiểm tra trạng thái người dùng:", error);
       if (error.response?.status === 401) {
         handleLogout();
         setErrorDialog({

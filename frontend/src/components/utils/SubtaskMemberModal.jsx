@@ -89,7 +89,7 @@ const SubtaskMemberModal = ({ isOpen, onClose, users, onSelect }) => {
                   <path d="M7.7 7.8a7 7 0 0 0-1.2 3.8c0 .7.1 1.4.3 2"></path>
                   <path d="M12 12a7 7 0 0 0 1.3 4"></path>
                 </svg>
-                <p className="text-base mb-2">'Không tìm thấy thành viên phù hợp</p>
+                <p className="text-base mb-2">Không tìm thấy thành viên phù hợp</p>
                 {searchTerm && (
                   <button 
                     className="mt-2 text-sm text-purple-400 hover:text-purple-300 py-1 px-3 rounded-md hover:bg-gray-700"

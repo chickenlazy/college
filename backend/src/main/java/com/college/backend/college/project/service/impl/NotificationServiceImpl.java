@@ -3,6 +3,7 @@ package com.college.backend.college.project.service.impl;
 import com.college.backend.college.project.entity.Notification;
 import com.college.backend.college.project.entity.User;
 import com.college.backend.college.project.enums.NotificationStatus;
+import com.college.backend.college.project.enums.NotificationType;
 import com.college.backend.college.project.exception.ResourceNotFoundException;
 import com.college.backend.college.project.repository.NotificationRepository;
 import com.college.backend.college.project.repository.UserRepository;
@@ -200,6 +201,19 @@ public class NotificationServiceImpl implements NotificationService {
 
         // Đếm số thông báo chưa đọc
         return notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.UNREAD);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasRecentNotification(NotificationType type, Long referenceId, Integer userId, String titleKeyword, Date after) {
+        try {
+            // Kiểm tra xem có notification nào với các tiêu chí tương tự trong khoảng thời gian after
+            long count = notificationRepository.countByTypeAndReferenceIdAndUserIdAndTitleContainingAndCreatedDateAfter(
+                    type, referenceId, userId, titleKeyword, after);
+            return count > 0;
+        } catch (Exception e) {
+            return false; // Nếu có lỗi, cho phép gửi thông báo
+        }
     }
 
     // Helper method to map Notification to NotificationResponse

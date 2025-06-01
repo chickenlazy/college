@@ -25,21 +25,21 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
 
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) {
-      return `${diffInMinutes} phút${diffInMinutes > 1 ? "s" : ""} trước`;
+      return `${diffInMinutes} phút trước`;
     }
 
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) {
-      return `${diffInHours} giờ${diffInHours > 1 ? "s" : ""} trước`;
+      return `${diffInHours} giờ trước`;
     }
 
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 30) {
-      return `${diffInDays} ngày${diffInDays > 1 ? "s" : ""} trước`;
+      return `${diffInDays} ngày trước`;
     }
 
     const diffInMonths = Math.floor(diffInDays / 30);
-    return `${diffInMonths} tháng${diffInMonths > 1 ? "s" : ""} trước`;
+    return `${diffInMonths} tháng trước`;
   };
 
   // Get icon based on notification type
@@ -367,7 +367,7 @@ const NotificationCenter = () => {
                 className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
                 onClick={markAllAsRead}
               >
-                Mark all as read
+                Đánh dấu tất cả đã đọc
               </button>
             )}
           </div>

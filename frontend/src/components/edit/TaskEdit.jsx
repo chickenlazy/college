@@ -1105,7 +1105,7 @@ const TaskEdit = ({
                     <label className="block text-gray-400 mb-1">
                       Ngày bắt đầu{" "}
                       <span className="text-xs text-gray-500">
-                        (Định dạng: DD/MM/YYYY)
+                        (Định dạng: MM/DD/YYYY)
                         {task.projectStartDate &&
                           ` - Dự án bắt đầu vào ${new Date(
                             task.projectStartDate
@@ -1144,7 +1144,7 @@ const TaskEdit = ({
                     <label className="block text-gray-400 mb-1">
                       Ngày kết thúc{" "}
                       <span className="text-xs text-gray-500">
-                        (Định dạng: DD/MM/YYYY)
+                        (Định dạng: MM/DD/YYYY)
                         {task.projectDueDate &&
                           ` - Dự án kết thúc vào ${new Date(
                             task.projectDueDate

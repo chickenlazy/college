@@ -8,6 +8,8 @@ import com.college.backend.college.project.response.ApiResponse;
 import com.college.backend.college.project.response.NotificationResponse;
 import com.college.backend.college.project.response.PagedResponse;
 
+import java.util.Date;
+
 public interface NotificationService {
 
     // Lấy tất cả thông báo của một người dùng với phân trang
@@ -36,4 +38,7 @@ public interface NotificationService {
 
     // Đếm số thông báo chưa đọc của một người dùng
     long countUnreadNotifications(Integer userId);
+
+    // Thêm method này vào NotificationService interface
+    boolean hasRecentNotification(NotificationType type, Long referenceId, Integer userId, String titleKeyword, Date after);
 }

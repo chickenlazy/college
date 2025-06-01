@@ -2158,7 +2158,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         <label className="block text-sm text-gray-400 mb-1">
                           Ngày bắt đầu
                           <span className="text-xs text-gray-500">
-                            (Định dạng: DD/MM/YYYY - Phải trong khoảng từ{" "}
+                            (Định dạng: MM/DD/YYYY - Phải trong khoảng từ{" "}
                             {formatDate(task.startDate)} đến{" "}
                             {formatDate(task.dueDate)})
                           </span>
@@ -2197,7 +2197,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                         <label className="block text-sm text-gray-400 mb-1">
                           Ngày kết thúc
                           <span className="text-xs text-gray-500">
-                            (Định dạng: DD/MM/YYYY - Phải trong khoảng từ{" "}
+                            (Định dạng: MM/DD/YYYY - Phải trong khoảng từ{" "}
                             {formatDate(subtaskStartDate || task.startDate)} and{" "}
                             {formatDate(task.dueDate)})
                           </span>

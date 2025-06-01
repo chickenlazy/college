@@ -773,35 +773,33 @@ const DailyGoals = () => {
   };
 
   // Handle goal delete
-  const handleDeleteGoal = async (goalId) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa mục tiêu này?")) {
-      try {
-        const storedUser = localStorage.getItem("user");
-        let token = null;
-        let currentUserId = null;
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          token = user.accessToken;
-          currentUserId = user.id;
-        }
-
-        await axios.delete(
-          `${API_BASE_URL}/${goalId}?userId=${currentUserId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        showToast("Mục tiêu đã được xóa", "success");
-        await fetchGoals();
-        await fetchStats();
-      } catch (error) {
-        console.error("Error deleting goal:", error);
-        showToast("Không thể xóa mục tiêu", "error");
-      }
+const handleDeleteGoal = async (goalId) => {
+  try {
+    const storedUser = localStorage.getItem("user");
+    let token = null;
+    let currentUserId = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      token = user.accessToken;
+      currentUserId = user.id;
     }
-  };
+
+    await axios.delete(
+      `${API_BASE_URL}/${goalId}?userId=${currentUserId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    showToast("Mục tiêu đã được xóa", "success");
+    await fetchGoals();
+    await fetchStats();
+  } catch (error) {
+    console.error("Error deleting goal:", error);
+    showToast("Không thể xóa mục tiêu", "error");
+  }
+};
 
   // Handle progress update
   const handleUpdateProgress = async (goalId, newProgress) => {
