@@ -213,10 +213,10 @@ const GoalForm = ({ isOpen, onClose, onSave, editingGoal }) => {
                 disabled={isSubmitting}
               >
                 <option value="WORK">Công việc</option>
-                <option value="HEALTH">Sức khỏe</option>
-                <option value="LEARNING">Học tập</option>
+                {/* <option value="HEALTH">Sức khỏe</option> */}
+                {/* <option value="LEARNING">Học tập</option> */}
                 <option value="PERSONAL">Cá nhân</option>
-                <option value="FINANCE">Tài chính</option>
+                {/* <option value="FINANCE">Tài chính</option> */}
               </select>
             </div>
 
@@ -344,10 +344,10 @@ const PriorityBadge = ({ priority }) => {
 const CategoryBadge = ({ category }) => {
   const configs = {
     WORK: { color: "bg-blue-200 text-blue-800", label: "Công việc" },
-    HEALTH: { color: "bg-green-200 text-green-800", label: "Sức khỏe" },
-    LEARNING: { color: "bg-purple-200 text-purple-800", label: "Học tập" },
+    // HEALTH: { color: "bg-green-200 text-green-800", label: "Sức khỏe" },
+    // LEARNING: { color: "bg-purple-200 text-purple-800", label: "Học tập" },
     PERSONAL: { color: "bg-pink-200 text-pink-800", label: "Cá nhân" },
-    FINANCE: { color: "bg-orange-200 text-orange-800", label: "Tài chính" },
+    // FINANCE: { color: "bg-orange-200 text-orange-800", label: "Tài chính" },
   };
 
   const config = configs[category] || {
@@ -553,8 +553,8 @@ const FilterTabs = ({ activeFilter, onFilterChange }) => {
     { id: "completed", label: "Hoàn thành" },
     { id: "pending", label: "Đang thực hiện" },
     { id: "HIGH", label: "Ưu tiên cao" },
-    { id: "WORK", label: "Công việc" },
-    { id: "HEALTH", label: "Sức khỏe" },
+    // { id: "WORK", label: "Công việc" },
+    // { id: "HEALTH", label: "Sức khỏe" },
   ];
 
   return (
