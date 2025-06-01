@@ -13,8 +13,15 @@ import java.util.List;
 @NoArgsConstructor
 public class FileListResponse {
     private List<FileResponse> files;
+
+    // Project related fields
     private Integer projectId;
     private String projectName;
+
+    // Task related fields
+    private Integer taskId;
+    private String taskName;
+
     private Integer totalFiles;
     private Long totalSize; // Tổng dung lượng của tất cả file (byte)
 }

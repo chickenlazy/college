@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   ChevronLeft,
@@ -6,8 +6,16 @@ import {
   XCircle,
   Trash2,
   Clock,
+  Info,
   Calendar,
+  FileSpreadsheet,
+  Archive,
+  ChevronUp,
+  Download,
+  Image,
+  Monitor,
   User,
+  Edit,
   CheckCircle,
   AlertTriangle,
   MessageSquare,
@@ -19,9 +27,881 @@ import {
   ChevronDown,
   X,
   Plus,
+  File,
+  Upload,
 } from "lucide-react";
 import TaskEdit from "../edit/TaskEdit";
 import SubtaskMemberModal from "../utils/SubtaskMemberModal";
+
+const formatDateWithTime = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const TaskFileManager = ({ taskId, showToast }) => {
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    fileId: null,
+  });
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [taskId]);
+
+  const fetchFiles = async () => {
+    setLoading(true);
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      const response = await axios.get(
+        `http://localhost:8080/api/task-files/task/${taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setFiles(response.data.files);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching task files:", error);
+      setLoading(false);
+      showToast("Failed to load files", "error");
+    }
+  };
+
+  useEffect(() => {
+    const handleFileListUpdated = (e) => {
+      setFiles(e.detail);
+      showToast("Cập nhật tập tin thành công", "success");
+    };
+
+    window.addEventListener("taskFileListUpdated", handleFileListUpdated);
+    return () => {
+      window.removeEventListener("taskFileListUpdated", handleFileListUpdated);
+    };
+  }, [showToast]);
+
+  const handleDeleteFile = (fileId) => {
+    setConfirmDelete({
+      show: true,
+      fileId,
+    });
+  };
+
+  const confirmDeleteFile = async () => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      await axios.delete(
+        `http://localhost:8080/api/task-files/${confirmDelete.fileId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setFiles(files.filter((file) => file.id !== confirmDelete.fileId));
+      showToast("Xóa tập tin thành công", "success");
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      showToast("Failed to Xóa tập tin", "error");
+    } finally {
+      setConfirmDelete({
+        show: false,
+        fileId: null,
+      });
+    }
+  };
+
+  const handleDownloadFile = async (file) => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      showToast(`Đang tải xuống ${file.originalName}...`, "info");
+
+      const response = await axios.get(
+        `http://localhost:8080/api/task-files/${file.id}/download`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", file.originalName);
+      document.body.appendChild(link);
+      link.click();
+
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+
+      showToast(`Đã tải xuống ${file.originalName}`, "success");
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      showToast("Không thể tải xuống tệp", "error");
+    }
+  };
+
+  const handleFileUploaded = (newFiles) => {
+    setFiles([...newFiles, ...files]);
+    showToast(
+      `${newFiles.length} tập tin đã được tải lên thành công`,
+      "success"
+    );
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Tập tin nhiệm vụ</h2>
+      </div>
+
+      {currentUser?.role !== "ROLE_USER" && (
+        <TaskFileUpload
+          taskId={taskId}
+          onFileUploaded={handleFileUploaded}
+          showToast={showToast}
+        />
+      )}
+
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          <p className="mt-2 text-gray-400">Loading files...</p>
+        </div>
+      ) : (
+        <TaskFileList
+          files={files}
+          onDelete={handleDeleteFile}
+          onDownload={handleDownloadFile}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Confirmation Dialog for Deleting File */}
+      {confirmDelete.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
+            <h2 className="text-xl font-bold mb-4">Xóa tập tin</h2>
+            <p className="text-gray-300 mb-6">
+              Bạn có chắc chắn muốn xóa tập tin này không? Hành động này không
+              thể hoàn tác.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
+                onClick={() => setConfirmDelete({ show: false, fileId: null })}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 transition-colors rounded-md flex items-center gap-2"
+                onClick={confirmDeleteFile}
+              >
+                <Trash2 size={16} />
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TaskFileList = ({ files, onDelete, onDownload, showToast }) => {
+  const [expandedFileId, setExpandedFileId] = useState(null);
+  const [editingFile, setEditingFile] = useState(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editOriginalName, setEditOriginalName] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editError, setEditError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const getFileIcon = (fileName) => {
+    const extension = fileName.split(".").pop().toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "svg"].includes(extension)) {
+      return <Image size={16} />;
+    } else if (["doc", "docx", "pdf", "txt"].includes(extension)) {
+      return <FileText size={16} />;
+    } else if (["xls", "xlsx", "csv"].includes(extension)) {
+      return <FileSpreadsheet size={16} />;
+    } else if (["ppt", "pptx"].includes(extension)) {
+      return <Monitor size={16} />;
+    } else if (["zip", "rar", "7z"].includes(extension)) {
+      return <Archive size={16} />;
+    } else {
+      return <File size={16} />;
+    }
+  };
+
+  const formatFileSize = (sizeInBytes) => {
+    if (sizeInBytes < 1024) {
+      return `${sizeInBytes} B`;
+    } else if (sizeInBytes < 1024 * 1024) {
+      return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+    } else if (sizeInBytes < 1024 * 1024 * 1024) {
+      return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+    } else {
+      return `${(sizeInBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    }
+  };
+
+  const toggleFileExpand = (fileId) => {
+    if (expandedFileId === fileId) {
+      setExpandedFileId(null);
+    } else {
+      setExpandedFileId(fileId);
+    }
+  };
+
+  const openEditForm = (file) => {
+    setEditingFile(file);
+    setEditDescription(file.description || "");
+    setEditOriginalName(file.originalName || "");
+    setEditError(null);
+  };
+
+  const closeEditForm = () => {
+    setEditingFile(null);
+    setEditDescription("");
+    setEditOriginalName("");
+    setEditError(null);
+  };
+
+  const handleOriginalNameChange = (newName) => {
+    if (!editingFile) return;
+
+    const originalName = editingFile.originalName;
+    const lastDotIndex = originalName.lastIndexOf(".");
+
+    if (lastDotIndex === -1) {
+      setEditOriginalName(newName);
+    } else {
+      const extension = originalName.substring(lastDotIndex);
+
+      if (newName.endsWith(extension)) {
+        setEditOriginalName(newName);
+      } else {
+        const newNameWithoutExt =
+          newName.lastIndexOf(".") > -1
+            ? newName.substring(0, newName.lastIndexOf("."))
+            : newName;
+        setEditOriginalName(newNameWithoutExt + extension);
+      }
+    }
+  };
+
+  const handleUpdateFile = async () => {
+    if (!editingFile) return;
+
+    if (!editOriginalName.trim()) {
+      setEditError("File name cannot be empty");
+      return;
+    }
+
+    const originalExtension = editingFile.originalName.split(".").pop();
+    const newExtension = editOriginalName.split(".").pop();
+
+    if (originalExtension !== newExtension) {
+      setEditError("File extension cannot be changed");
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const storedUser = localStorage.getItem("user");
+      let token = null;
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        token = user.accessToken;
+      }
+
+      const updateData = {
+        description: editDescription.trim(),
+        originalName: editOriginalName.trim(),
+      };
+
+      const response = await axios.put(
+        `http://localhost:8080/api/task-files/${editingFile.id}`,
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const updatedFiles = files.map((file) =>
+        file.id === editingFile.id ? response.data : file
+      );
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("taskFileListUpdated", { detail: updatedFiles })
+        );
+      }
+
+      closeEditForm();
+      showToast("Cập nhật file thành công", "success");
+    } catch (error) {
+      console.error("Error updating task file:", error);
+      setEditError("Failed to update file. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {files.length === 0 ? (
+        <div className="text-center py-8 bg-gray-800 rounded-lg">
+          <FileText size={40} className="mx-auto text-gray-500 mb-2" />
+          <p className="text-gray-400">Chưa có tập tin nào được tải lên</p>
+        </div>
+      ) : (
+        files.map((file) => (
+          <div key={file.id} className="bg-gray-800 rounded-lg overflow-hidden">
+            <div
+              className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-750"
+              onClick={() => toggleFileExpand(file.id)}
+            >
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gray-700 rounded">
+                  {getFileIcon(file.originalName)}
+                </div>
+                <div>
+                  <h4 className="font-medium">{file.originalName}</h4>
+                  <div className="flex text-xs text-gray-400 mt-1 space-x-3">
+                    <span className="flex items-center">
+                      <Clock size={12} className="mr-1" />
+                      {formatDateWithTime(file.uploadDate)}
+                    </span>
+                    <span>{formatFileSize(file.size)}</span>
+                    <span className="flex items-center">
+                      <User size={12} className="mr-1" />
+                      {file.uploadedBy}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                {currentUser?.role !== "ROLE_USER" && (
+                  <button
+                    className="p-2 hover:bg-gray-700 rounded-full text-yellow-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditForm(file);
+                    }}
+                    title="Sửa thông tin tập tin"
+                  >
+                    <Edit size={18} />
+                  </button>
+                )}
+
+                <button
+                  className="p-2 hover:bg-gray-700 rounded-full text-blue-400"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDownload(file);
+                  }}
+                  title="Tải xuống tập tin"
+                >
+                  <Download size={18} />
+                </button>
+
+                {currentUser?.role !== "ROLE_USER" && (
+                  <button
+                    className="p-2 hover:bg-gray-700 rounded-full text-red-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(file.id);
+                    }}
+                    title="Xóa tập tin"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+
+                <button className="p-2 hover:bg-gray-700 rounded-full">
+                  {expandedFileId === file.id ? (
+                    <ChevronUp size={18} />
+                  ) : (
+                    <ChevronDown size={18} />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {expandedFileId === file.id && (
+              <div className="p-3 border-t border-gray-700 bg-gray-750">
+                <div className="mb-2 text-xs text-gray-400">Description:</div>
+                <div className="text-sm pl-2">
+                  {file.description ? (
+                    file.description
+                  ) : (
+                    <span className="text-gray-500 italic">Không có mô tả</span>
+                  )}
+                </div>
+
+                <div className="mt-3 text-xs text-gray-400">
+                  Lần sửa đổi cuối:
+                </div>
+                <div className="text-sm pl-2">
+                  {formatDateWithTime(file.lastModifiedDate)}
+                </div>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+
+      {/* Form chỉnh sửa thông tin file */}
+      {editingFile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl animate-scale-in">
+            <h2 className="text-xl font-bold mb-4">
+              Chỉnh sửa thông tin tập tin
+            </h2>
+
+            {editError && (
+              <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 p-3 rounded-md">
+                {editError}
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-sm text-gray-400 mb-2">
+                Tên tập tin (không thể thay đổi phần mở rộng)
+              </label>
+              <input
+                type="text"
+                className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                placeholder="File name"
+                value={editOriginalName}
+                onChange={(e) => handleOriginalNameChange(e.target.value)}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                Tập tin gốc: {editingFile?.originalName}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm text-gray-400 mb-2">
+                Description
+              </label>
+              <textarea
+                className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white"
+                rows="4"
+                placeholder="Nhập mô tả tập tin"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+              ></textarea>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 transition-colors rounded-md"
+                onClick={closeEditForm}
+                disabled={isUpdating}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 transition-colors rounded-md flex items-center"
+                onClick={handleUpdateFile}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Đang cập nhật...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={16} className="mr-2" />
+                    Lưu thay đổi
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 4. Component TaskFileUpload
+const TaskFileUpload = ({ taskId, onFileUploaded, showToast }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [description, setDescription] = useState("");
+  const [showDescriptionForm, setShowDescriptionForm] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const fileInputRef = useRef(null);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      setSelectedFiles(Array.from(files));
+      setShowDescriptionForm(true);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files.length) {
+      setSelectedFiles(Array.from(files));
+      setShowDescriptionForm(true);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append("taskId", taskId);
+
+    const storedUser = localStorage.getItem("user");
+    let userId = null;
+    let token = null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      userId = user.id;
+      token = user.accessToken;
+    }
+    formData.append("userId", userId);
+
+    if (description.trim()) {
+      formData.append("description", description);
+    }
+
+    if (selectedFiles.length === 1) {
+      formData.append("file", selectedFiles[0]);
+
+      try {
+        const simulateProgress = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 90) {
+              clearInterval(simulateProgress);
+              return prev;
+            }
+            return prev + 5;
+          });
+        }, 100);
+
+        const response = await axios.post(
+          "http://localhost:8080/api/task-files",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        clearInterval(simulateProgress);
+        setUploadProgress(100);
+
+        onFileUploaded([response.data]);
+        setIsUploading(false);
+        setUploadProgress(0);
+        setSelectedFiles([]);
+        setDescription("");
+        setShowDescriptionForm(false);
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        setIsUploading(false);
+        setUploadProgress(0);
+        showToast("Failed to upload file", "error");
+      }
+    } else {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        formData.append("files", selectedFiles[i]);
+      }
+
+      try {
+        const simulateProgress = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 90) {
+              clearInterval(simulateProgress);
+              return prev;
+            }
+            return prev + 5;
+          });
+        }, 100);
+
+        const response = await axios.post(
+          "http://localhost:8080/api/task-files/multiple",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        clearInterval(simulateProgress);
+        setUploadProgress(100);
+
+        onFileUploaded(response.data);
+        setIsUploading(false);
+        setUploadProgress(0);
+        setSelectedFiles([]);
+        setDescription("");
+        setShowDescriptionForm(false);
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } catch (error) {
+        console.error("Error uploading files:", error);
+        setIsUploading(false);
+        setUploadProgress(0);
+        showToast("Failed to upload files", "error");
+      }
+    }
+  };
+
+  return (
+    <div className="mb-4">
+      {showDescriptionForm && selectedFiles.length > 0 ? (
+        <div className="bg-gray-800 rounded-lg p-6 mb-4 border border-gray-700">
+          <h3 className="text-lg font-medium mb-4">
+            Tải lên {selectedFiles.length}{" "}
+            {selectedFiles.length === 1 ? "file" : "files"}
+          </h3>
+
+          <div className="mb-4 max-h-40 overflow-y-auto">
+            {selectedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center py-2 border-b border-gray-700"
+              >
+                <div className="text-gray-400 mr-2">{index + 1}.</div>
+                <div className="truncate">{file.name}</div>
+                <div className="text-gray-400 ml-2 text-sm">
+                  ({(file.size / 1024).toFixed(1)} KB)
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm text-gray-400 mb-2">
+              Mô tả (tùy chọn)
+            </label>
+            <textarea
+              className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white"
+              rows="3"
+              placeholder="Nhập mô tả cho các tập tin này"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            ></textarea>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md"
+              onClick={() => {
+                setSelectedFiles([]);
+                setDescription("");
+                setShowDescriptionForm(false);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                }
+              }}
+            >
+              Hủy
+            </button>
+            <button
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md flex items-center"
+              onClick={handleUpload}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Đang tải lên...
+                </>
+              ) : (
+                <>
+                  <Upload size={16} className="mr-2" />
+                  Tải lên {selectedFiles.length > 1 ? "Files" : "File"}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+            isDragging
+              ? "border-purple-500 bg-purple-500 bg-opacity-10"
+              : "border-gray-600 hover:border-purple-500"
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {isUploading ? (
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 mb-4 relative">
+                <svg
+                  className="animate-spin w-16 h-16 text-purple-500"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-purple-500 font-medium">
+                    {uploadProgress}%
+                  </span>
+                </div>
+              </div>
+              <p>Đang tải lên tập tin...</p>
+            </div>
+          ) : (
+            <>
+              <Upload size={40} className="mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-300 mb-1">Kéo & thả tập tin vào đây</p>
+              <p className="text-gray-400 text-sm">hoặc nhấp để duyệt</p>
+            </>
+          )}
+          <input
+            type="file"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            multiple
+          />
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Format date for display
 const formatDate = (dateString) => {
@@ -379,10 +1259,30 @@ const MemberDropdownMenu = ({ isOpen, onClose, users, onSelect }) => {
   );
 };
 
-const Toast = ({ message, type }) => {
-  const bgColor = type === "success" ? "bg-green-600" : "bg-red-600";
-  const icon =
-    type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />;
+const Toast = ({ message, type, onClose }) => {
+  let bgColor, icon;
+
+  switch (type) {
+    case "success":
+      bgColor = "bg-green-600";
+      icon = <CheckCircle size={20} />;
+      break;
+    case "error":
+      bgColor = "bg-red-600";
+      icon = <XCircle size={20} />;
+      break;
+    case "info":
+      bgColor = "bg-blue-600";
+      icon = <Info size={20} />;
+      break;
+    case "warning":
+      bgColor = "bg-yellow-600";
+      icon = <AlertTriangle size={20} />;
+      break;
+    default:
+      bgColor = "bg-gray-600";
+      icon = <Info size={20} />;
+  }
 
   return (
     <div
@@ -390,6 +1290,12 @@ const Toast = ({ message, type }) => {
     >
       {icon}
       <span>{message}</span>
+      <button
+        onClick={onClose}
+        className="ml-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
+      >
+        <X size={16} />
+      </button>
     </div>
   );
 };
@@ -532,7 +1438,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                     className="hover:text-red-400"
                     onClick={() => onDelete && onDelete(comment.id)}
                   >
-                    Delete
+                    Xóa
                   </button>
                 )}
             </div>
@@ -791,7 +1697,8 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
       }
 
       if (subtaskDue > taskDue) {
-        errors.dueDate = "Ngày kết thúc nhiệm vụ con không thể muộn hơn ngày kết thúc nhiệm vụ";
+        errors.dueDate =
+          "Ngày kết thúc nhiệm vụ con không thể muộn hơn ngày kết thúc nhiệm vụ";
       }
     }
 
@@ -1157,6 +2064,12 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
             active={activeTab === "comments"}
             onClick={() => setActiveTab("comments")}
           />
+          <Tab
+            icon={<File size={18} />}
+            label="Files"
+            active={activeTab === "files"}
+            onClick={() => setActiveTab("files")}
+          />
         </div>
       </div>
 
@@ -1174,9 +2087,16 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                       ? "text-purple-500 hover:text-purple-400"
                       : "text-gray-500 cursor-not-allowed opacity-60"
                   } flex items-center`}
-                  onClick={() => task.status === "IN_PROGRESS" && setShowAddSubtask(!showAddSubtask)}
+                  onClick={() =>
+                    task.status === "IN_PROGRESS" &&
+                    setShowAddSubtask(!showAddSubtask)
+                  }
                   disabled={task.status !== "IN_PROGRESS"}
-                  title={task.status !== "IN_PROGRESS" ? "Nhiệm vụ phải ở trạng thái đang tiến hành để thêm nhiệm vụ con" : ""}
+                  title={
+                    task.status !== "IN_PROGRESS"
+                      ? "Nhiệm vụ phải ở trạng thái đang tiến hành để thêm nhiệm vụ con"
+                      : ""
+                  }
                 >
                   <Plus size={16} className="mr-1" />
                   Thêm nhiệm vụ con
@@ -1265,7 +2185,7 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                       </div>
                       <div>
                         <label className="block text-sm text-gray-400 mb-1">
-                          Ngày kết thúc 
+                          Ngày kết thúc
                           <span className="text-xs text-gray-500">
                             (Định dạng: MM/DD/YYYY - Phải trong khoảng từ{" "}
                             {formatDate(subtaskStartDate || task.startDate)} and{" "}
@@ -1394,164 +2314,224 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
                 </div>
               )}
 
-{subtasks.length === 0 ? (
-  <div className="text-center py-8 text-gray-400 bg-gray-800 rounded-lg border border-gray-700">
-    <div className="flex flex-col items-center">
-      <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
-        <CheckCircle size={24} className="text-gray-500" />
-      </div>
-      <p className="text-lg font-medium text-gray-300 mb-2">Chưa có nhiệm vụ con</p>
-      <p className="text-sm text-gray-500">Thêm nhiệm vụ con để chia nhỏ công việc</p>
-    </div>
-  </div>
-) : (
-  <div className="space-y-4">
-    {subtasks.map((subtask) => {
-      const subtaskStartDate = new Date(subtask.startDate);
-      const subtaskDueDate = new Date(subtask.dueDate);
-      const today = new Date();
-      const isOverdue = subtaskDueDate < today && !subtask.completed;
-      const daysRemaining = Math.ceil((subtaskDueDate - today) / (1000 * 60 * 60 * 24));
-      
-      return (
-        <div
-          key={subtask.id}
-          className={`border rounded-lg p-4 transition-all duration-200 ${
-            subtask.completed 
-              ? "bg-gray-800/50 border-green-500/30" 
-              : isOverdue
-              ? "bg-red-900/20 border-red-500/30"
-              : "bg-gray-800 border-gray-700 hover:border-purple-500/50"
-          }`}
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3 flex-1">
-              <div className="mt-1">
-                <input
-                  type="checkbox"
-                  checked={subtask.completed}
-                  onChange={() => handleToggleSubtask(subtask.id)}
-                  className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-purple-600 
+              {subtasks.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 bg-gray-800 rounded-lg border border-gray-700">
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle size={24} className="text-gray-500" />
+                    </div>
+                    <p className="text-lg font-medium text-gray-300 mb-2">
+                      Chưa có nhiệm vụ con
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Thêm nhiệm vụ con để chia nhỏ công việc
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {subtasks.map((subtask) => {
+                    const subtaskStartDate = new Date(subtask.startDate);
+                    const subtaskDueDate = new Date(subtask.dueDate);
+                    const today = new Date();
+                    const isOverdue =
+                      subtaskDueDate < today && !subtask.completed;
+                    const daysRemaining = Math.ceil(
+                      (subtaskDueDate - today) / (1000 * 60 * 60 * 24)
+                    );
+
+                    return (
+                      <div
+                        key={subtask.id}
+                        className={`border rounded-lg p-4 transition-all duration-200 ${
+                          subtask.completed
+                            ? "bg-gray-800/50 border-green-500/30"
+                            : isOverdue
+                            ? "bg-red-900/20 border-red-500/30"
+                            : "bg-gray-800 border-gray-700 hover:border-purple-500/50"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <div className="mt-1">
+                              <input
+                                type="checkbox"
+                                checked={subtask.completed}
+                                onChange={() => handleToggleSubtask(subtask.id)}
+                                className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-purple-600 
                            focus:ring-purple-500 focus:ring-2 focus:ring-offset-0 
                            focus:ring-offset-gray-800"
-                />
-              </div>
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <h4 className={`font-medium text-lg ${
-                    subtask.completed
-                      ? "line-through text-gray-500"
-                      : "text-white"
-                  }`}>
-                    {subtask.name}
-                  </h4>
-                  
-                  {/* Status badges */}
-                  <div className="flex items-center gap-2">
-                    {subtask.completed && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs 
-                                     bg-green-100 text-green-800 font-medium">
-                        <CheckCircle size={12} className="mr-1" />
-                        Hoàn thành
-                      </span>
-                    )}
-                    
-                    {isOverdue && !subtask.completed && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs 
-                                     bg-red-100 text-red-800 font-medium">
-                        <AlertTriangle size={12} className="mr-1" />
-                        Quá hạn
-                      </span>
-                    )}
-                    
-                    {!subtask.completed && !isOverdue && daysRemaining <= 3 && daysRemaining > 0 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs 
-                                     bg-yellow-100 text-yellow-800 font-medium">
-                        <Clock size={12} className="mr-1" />
-                        Sắp hết hạn
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Assignee Info */}
-                {subtask.assigneeName && (
-                  <div className="flex items-center mb-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 
-                                  flex items-center justify-center text-white text-sm mr-3">
-                      {subtask.assigneeName.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-200">{subtask.assigneeName}</p>
-                      <p className="text-xs text-gray-400">{subtask.assigneeEmail}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Date Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                  <div className="flex items-center text-sm text-gray-400">
-                    <Calendar size={14} className="mr-2 text-green-400" />
-                    <div>
-                      <span className="font-medium text-gray-300">Bắt đầu:</span>
-                      <span className="ml-1">{formatDate(subtask.startDate)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center text-sm text-gray-400">
-                    <Calendar size={14} className={`mr-2 ${isOverdue ? 'text-red-400' : 'text-blue-400'}`} />
-                    <div>
-                      <span className="font-medium text-gray-300">Kết thúc:</span>
-                      <span className={`ml-1 ${isOverdue ? 'text-red-400' : ''}`}>
-                        {formatDate(subtask.dueDate)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Time remaining */}
-                {!subtask.completed && (
-                  <div className="text-sm">
-                    {isOverdue ? (
-                      <span className="text-red-400 font-medium">
-                        Quá hạn {Math.abs(daysRemaining)} ngày
-                      </span>
-                    ) : daysRemaining === 0 ? (
-                      <span className="text-yellow-400 font-medium">
-                        Hết hạn hôm nay
-                      </span>
-                    ) : (
-                      <span className={`font-medium ${daysRemaining <= 3 ? 'text-yellow-400' : 'text-gray-400'}`}>
-                        Còn {daysRemaining} ngày
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Completion info */}
-                {subtask.completed && (
-                  <div className="text-sm text-green-400">
-                    <span>Hoàn thành vào {formatDate(subtask.lastModifiedDate)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <button
-              className="text-gray-400 hover:text-red-400 hover:bg-red-900/20 
+                              />
+                            </div>
+
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-3">
+                                <h4
+                                  className={`font-medium text-lg ${
+                                    subtask.completed
+                                      ? "line-through text-gray-500"
+                                      : "text-white"
+                                  }`}
+                                >
+                                  {subtask.name}
+                                </h4>
+
+                                {/* Status badges */}
+                                <div className="flex items-center gap-2">
+                                  {subtask.completed && (
+                                    <span
+                                      className="inline-flex items-center px-2 py-1 rounded-full text-xs 
+                                     bg-green-100 text-green-800 font-medium"
+                                    >
+                                      <CheckCircle size={12} className="mr-1" />
+                                      Hoàn thành
+                                    </span>
+                                  )}
+
+                                  {isOverdue && !subtask.completed && (
+                                    <span
+                                      className="inline-flex items-center px-2 py-1 rounded-full text-xs 
+                                     bg-red-100 text-red-800 font-medium"
+                                    >
+                                      <AlertTriangle
+                                        size={12}
+                                        className="mr-1"
+                                      />
+                                      Quá hạn
+                                    </span>
+                                  )}
+
+                                  {!subtask.completed &&
+                                    !isOverdue &&
+                                    daysRemaining <= 3 &&
+                                    daysRemaining > 0 && (
+                                      <span
+                                        className="inline-flex items-center px-2 py-1 rounded-full text-xs 
+                                     bg-yellow-100 text-yellow-800 font-medium"
+                                      >
+                                        <Clock size={12} className="mr-1" />
+                                        Sắp hết hạn
+                                      </span>
+                                    )}
+                                </div>
+                              </div>
+
+                              {/* Assignee Info */}
+                              {subtask.assigneeName && (
+                                <div className="flex items-center mb-3">
+                                  <div
+                                    className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 
+                                  flex items-center justify-center text-white text-sm mr-3"
+                                  >
+                                    {subtask.assigneeName
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")
+                                      .substring(0, 2)}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-200">
+                                      {subtask.assigneeName}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                      {subtask.assigneeEmail}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Date Info */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                <div className="flex items-center text-sm text-gray-400">
+                                  <Calendar
+                                    size={14}
+                                    className="mr-2 text-green-400"
+                                  />
+                                  <div>
+                                    <span className="font-medium text-gray-300">
+                                      Bắt đầu:
+                                    </span>
+                                    <span className="ml-1">
+                                      {formatDate(subtask.startDate)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center text-sm text-gray-400">
+                                  <Calendar
+                                    size={14}
+                                    className={`mr-2 ${
+                                      isOverdue
+                                        ? "text-red-400"
+                                        : "text-blue-400"
+                                    }`}
+                                  />
+                                  <div>
+                                    <span className="font-medium text-gray-300">
+                                      Kết thúc:
+                                    </span>
+                                    <span
+                                      className={`ml-1 ${
+                                        isOverdue ? "text-red-400" : ""
+                                      }`}
+                                    >
+                                      {formatDate(subtask.dueDate)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Time remaining */}
+                              {!subtask.completed && (
+                                <div className="text-sm">
+                                  {isOverdue ? (
+                                    <span className="text-red-400 font-medium">
+                                      Quá hạn {Math.abs(daysRemaining)} ngày
+                                    </span>
+                                  ) : daysRemaining === 0 ? (
+                                    <span className="text-yellow-400 font-medium">
+                                      Hết hạn hôm nay
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className={`font-medium ${
+                                        daysRemaining <= 3
+                                          ? "text-yellow-400"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      Còn {daysRemaining} ngày
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Completion info */}
+                              {subtask.completed && (
+                                <div className="text-sm text-green-400">
+                                  <span>
+                                    Hoàn thành vào{" "}
+                                    {formatDate(subtask.lastModifiedDate)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <button
+                            className="text-gray-400 hover:text-red-400 hover:bg-red-900/20 
                        p-2 rounded-full transition-colors ml-2"
-              onClick={() => handleDeleteSubtask(subtask.id)}
-              title="Xóa nhiệm vụ con"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-)}
+                            onClick={() => handleDeleteSubtask(subtask.id)}
+                            title="Xóa nhiệm vụ con"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1683,6 +2663,15 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
             </div>
           </div>
         )}
+        {activeTab === "files" && (
+          <div>
+            <TaskFileManager
+              taskId={task.id}
+              showToast={showToast}
+              onClose={() => setToast(null)}
+            />
+          </div>
+        )}
       </div>
       {/* Toast notification */}
       {toast && <Toast message={toast.message} type={toast.type} />}
@@ -1693,7 +2682,8 @@ const TaskDetail = ({ task: initialTask, onBack }) => {
           <div className="bg-gray-800 p-6 rounded-lg max-w-md">
             <h3 className="text-xl font-bold mb-4">Xác nhận xóa</h3>
             <p className="mb-6">
-              Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không
+              thể hoàn tác.
             </p>
             <div className="flex justify-end space-x-3">
               <button

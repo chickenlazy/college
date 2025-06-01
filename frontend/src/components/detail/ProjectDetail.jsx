@@ -283,7 +283,7 @@ const FileManager = ({ projectId }) => {
                 onClick={confirmDeleteFile}
               >
                 <Trash2 size={16} />
-                Delete
+                Xóa
               </button>
             </div>
           </div>
@@ -1210,7 +1210,7 @@ const Comment = ({ comment, onReply, onDelete }) => {
                     className="hover:text-red-400"
                     onClick={() => onDelete && onDelete(comment.id)}
                   >
-                    Delete
+                    Xóa
                   </button>
                 )}
             </div>
@@ -3011,7 +3011,7 @@ ${
                     onClick={handleDeleteProject}
                   >
                     <Trash2 size={16} />
-                    Delete
+                    Xóa
                   </button>
                 </div>
               </div>

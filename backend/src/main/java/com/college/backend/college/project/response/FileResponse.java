@@ -26,6 +26,10 @@ public class FileResponse {
     private Integer projectId;
     private String projectName;
 
+    // Thông tin về project
+    private Integer taskId;
+    private String taskName;
+
     // Thông tin về người upload
     private Integer uploadedById;
     private String uploadedBy;

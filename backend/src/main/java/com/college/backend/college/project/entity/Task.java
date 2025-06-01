@@ -69,4 +69,7 @@ public class Task {
     @ManyToOne
     @JoinColumn(name = "created_by")
     private User createdBy;
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TaskFile> files;
 }

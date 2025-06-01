@@ -144,6 +144,24 @@ CREATE TABLE project_files (
 
 CREATE INDEX idx_project_files_project_id ON project_files(project_id);
 
+CREATE TABLE task_files (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  content_type VARCHAR(100) NOT NULL,
+  size BIGINT NOT NULL,
+  path VARCHAR(500) NOT NULL,
+  description TEXT,
+  task_id INT NOT NULL,
+  uploaded_by INT NOT NULL,
+  upload_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  FOREIGN KEY (uploaded_by) REFERENCES users(id)
+);
+
+CREATE INDEX idx_task_files_task_id ON task_files(task_id);
+
 -- Tạo bảng daily_goals
 DROP TABLE IF EXISTS daily_goals;
 CREATE TABLE daily_goals (
