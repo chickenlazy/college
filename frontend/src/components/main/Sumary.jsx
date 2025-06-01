@@ -112,96 +112,232 @@ const SectionHeader = ({ title, viewAllLink }) => (
 
 // Project Card Component
 const ProjectCard = ({ project }) => {
-  const daysRemaining = getDaysRemaining(project.dueDate);
+    const daysRemaining = getDaysRemaining(project.dueDate);
+    
+    return (
+      <div className="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1">
+            <h3 className="font-medium mb-2">{project.name}</h3>
+            {/* Hiển thị tags nếu có */}
+            {project.tags && project.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {project.tags.slice(0, 3).map((tag, index) => (
+                  <span 
+                    key={index}
+                    className="px-2 py-0.5 bg-purple-900 text-purple-200 text-xs rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {project.tags.length > 3 && (
+                  <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded-full">
+                    +{project.tags.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <StatusBadge status={project.status} />
+        </div>
+        
+        <div className="mb-3">
+          <div className="flex justify-between text-sm text-gray-400 mb-1">
+            <span>Tiến độ</span>
+            <span>{project.progress.toFixed(1)}%</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-1.5">
+            <div
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                project.progress >= 100
+                  ? "bg-green-500"
+                  : project.progress > 0
+                  ? "bg-blue-500"
+                  : "bg-gray-600"
+              }`}
+              style={{ width: `${project.progress}%` }}
+            ></div>
+          </div>
+        </div>
+        
+        <div className="flex items-center text-sm text-gray-400 mb-2">
+          <Calendar size={14} className="mr-1" />
+          <span>Hạn: {formatDate(project.dueDate)}</span>
+          <span className={`ml-2 ${
+            daysRemaining < 0 ? 'text-red-400' : 
+            daysRemaining < 7 ? 'text-yellow-400' : 
+            'text-gray-400'
+          }`}>
+            ({daysRemaining < 0 ? `quá hạn ${Math.abs(daysRemaining)} ngày` : `còn ${daysRemaining} ngày`})
+          </span>
+        </div>
+        
+        {project.manager && (
+          <div className="flex items-center text-sm text-gray-400">
+            <User size={14} className="mr-1" />
+            <span>Quản lý: {project.manager.fullName}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
+// Deadline Item Component
+const DeadlineItem = ({ item }) => {
+    const daysRemaining = getDaysRemaining(item.dueDate);
+    
+    return (
+      <div className="flex items-center py-3 border-b border-gray-700 hover:bg-gray-750 transition-colors">
+        <div className="flex-1">
+          <div className="font-medium mb-1">{item.name}</div>
+          {item.projectName && (
+            <div className="text-xs text-gray-400">{item.projectName}</div>
+          )}
+          <div className="text-xs flex items-center mt-1">
+            <span
+              className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                item.type === "task"
+                  ? "bg-blue-900 text-blue-200"
+                  : "bg-purple-900 text-purple-200"
+              }`}
+            >
+              {item.type === "task" ? "CÔNG VIỆC" : "DỰ ÁN"}
+            </span>
+          </div>
+        </div>
+        <div className="text-sm text-right mr-4">
+          <div>{formatDate(item.dueDate)}</div>
+          <div className={`text-xs font-medium ${
+            daysRemaining < 0 ? 'text-red-400' : 
+            daysRemaining < 3 ? 'text-yellow-400' : 
+            'text-gray-400'
+          }`}>
+            {daysRemaining < 0 ? 
+              `Quá hạn ${Math.abs(daysRemaining)} ngày` : 
+              `Còn ${daysRemaining} ngày`
+            }
+          </div>
+        </div>
+        <div>
+          <StatusBadge status={item.status} />
+        </div>
+      </div>
+    );
+  };
+
+// Team Workload Component
+const TeamWorkloadRow = ({ member }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="font-medium">{project.name}</h3>
-        <StatusBadge status={project.status} />
+    <div 
+      className="flex items-center py-3 border-b border-gray-700 hover:bg-gray-750 transition-colors relative"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-3">
+        {member.fullName
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .substring(0, 2)}
       </div>
-      <div className="mb-3">
-        <div className="flex justify-between text-sm text-gray-400 mb-1">
-          <span>Tiến độ</span>
-          <span>{project.progress.toFixed(1)}%</span>
+      <div className="flex-1">
+        <div className="font-medium">{member.fullName}</div>
+        <div className="text-xs text-gray-400 capitalize">
+          {member.role.replace('ROLE_', '').toLowerCase()}
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-1.5">
-          <div
-            className={`h-1.5 rounded-full ${
-              project.progress >= 100
-                ? "bg-green-500"
-                : project.progress > 0
-                ? "bg-blue-500"
-                : "bg-gray-600"
-            }`}
-            style={{ width: `${project.progress}%` }}
-          ></div>
+        {/* Hiển thị workload và performance */}
+        <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-full text-xs ${
+            member.workloadPercentage > 75 ? 'bg-red-900 text-red-200' :
+            member.workloadPercentage > 50 ? 'bg-yellow-900 text-yellow-200' :
+            'bg-green-900 text-green-200'
+          }`}>
+            {member.workloadPercentage}% workload
+          </span>
+          <span className={`px-2 py-0.5 rounded-full text-xs ${
+            member.performanceScore >= 80 ? 'bg-green-900 text-green-200' :
+            member.performanceScore >= 60 ? 'bg-yellow-900 text-yellow-200' :
+            'bg-red-900 text-red-200'
+          }`}>
+            {member.performanceScore.toFixed(1)} score
+          </span>
         </div>
       </div>
-      <div className="flex items-center text-sm text-gray-400">
-        <Calendar size={14} className="mr-1" />
-        <span>Hạn: {formatDate(project.dueDate)}</span>
-        <span className="ml-2">(còn {daysRemaining} ngày)</span>
+      <div className="text-right">
+        <div className="font-medium text-lg">
+          {member.completedTasks}/{member.assignedTasks}
+        </div>
+        <div className="text-xs text-gray-400">Hoàn thành</div>
+        
+        {/* Hiển thị thông tin bổ sung */}
+        <div className="text-xs space-y-1 mt-1">
+          {member.overdueTasks > 0 && (
+            <div className="text-red-400 font-medium">
+              {member.overdueTasks} quá hạn
+            </div>
+          )}
+          {member.currentActiveProjects > 0 && (
+            <div className="text-blue-400">
+              {member.currentActiveProjects} dự án
+            </div>
+          )}
+        </div>
       </div>
-      {project.manager && (
-        <div className="flex items-center mt-2 text-sm text-gray-400">
-          <User size={14} className="mr-1" />
-          <span>Quản lý: {project.manager.fullName}</span>
+
+      {/* Tooltip */}
+      {showTooltip && (
+        <div className="absolute left-full ml-2 top-0 z-10 w-64">
+          <WorkloadTooltip member={member} />
         </div>
       )}
     </div>
   );
 };
 
-// Deadline Item Component
-const DeadlineItem = ({ item }) => (
-  <div className="flex items-center py-3 border-b border-gray-700">
-    <div className="flex-1">
-      <div className="font-medium mb-1">{item.name}</div>
-      {item.projectName && (
-        <div className="text-xs text-gray-400">{item.projectName}</div>
-      )}
-      <div className="text-xs flex items-center mt-1">
-        <span
-          className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-            item.type === "task"
-              ? "bg-blue-900 text-blue-200"
-              : "bg-purple-900 text-purple-200"
-          }`}
-        >
-          {item.type === "task" ? "CÔNG VIỆC" : "DỰ ÁN"}
-        </span>
+// Thêm component để hiển thị chi tiết workload
+const WorkloadTooltip = ({ member }) => (
+  <div className="bg-gray-700 border border-gray-600 p-3 rounded-lg text-xs space-y-2 shadow-lg">
+    <div className="font-medium text-white border-b border-gray-600 pb-2">
+      Chi tiết công việc
+    </div>
+    
+    <div className="grid grid-cols-2 gap-2">
+      <div>
+        <div className="text-gray-400">Đang làm:</div>
+        <div className="text-blue-300 font-medium">{member.inProgressTasks}</div>
+      </div>
+      <div>
+        <div className="text-gray-400">Quá hạn:</div>
+        <div className="text-red-300 font-medium">{member.overdueTasks}</div>
       </div>
     </div>
-    <div className="text-sm text-right mr-4">
-      <div>{formatDate(item.dueDate)}</div>
-      <div className="text-xs text-gray-400">
-        Còn {getDaysRemaining(item.dueDate)} ngày
+    
+    <div className="grid grid-cols-2 gap-2">
+      <div>
+        <div className="text-gray-400">Dự án tham gia:</div>
+        <div className="text-purple-300 font-medium">{member.currentActiveProjects}</div>
+      </div>
+      <div>
+        <div className="text-gray-400">Hoàn thành tuần này:</div>
+        <div className="text-green-300 font-medium">{member.thisWeekCompletedTasks}</div>
       </div>
     </div>
+    
+    <div className="border-t border-gray-600 pt-2">
+      <div className="text-gray-400">Tỷ lệ đúng hạn:</div>
+      <div className="text-yellow-300 font-medium">{member.onTimeCompletionRate.toFixed(1)}%</div>
+    </div>
+    
     <div>
-      <StatusBadge status={item.status} />
-    </div>
-  </div>
-);
-
-// Team Workload Component
-const TeamWorkloadRow = ({ member }) => (
-  <div className="flex items-center py-3 border-b border-gray-700">
-    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white mr-3">
-      {member.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")}
-    </div>
-    <div className="flex-1">
-      <div className="font-medium">{member.fullName}</div>
-    </div>
-    <div className="text-right">
-      <div className="font-medium">
-        {member.completedTasks}/{member.assignedTasks}
+      <div className="text-gray-400">Thời gian hoàn thành TB:</div>
+      <div className="text-indigo-300 font-medium">
+        {member.averageTaskCompletionDays > 0 ? 
+          `${member.averageTaskCompletionDays.toFixed(1)} ngày` : 
+          'Chưa có dữ liệu'
+        }
       </div>
-      <div className="text-xs text-gray-400">Công việc đã hoàn thành</div>
     </div>
   </div>
 );

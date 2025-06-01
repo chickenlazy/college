@@ -1032,35 +1032,35 @@ const getStatusInfo = (status) => {
         color: "bg-gray-500",
         textColor: "text-gray-500",
         icon: <Clock size={16} />,
-        text: "Not Started",
+        text: "Chưa bắt đầu",
       };
     case "IN_PROGRESS":
       return {
         color: "bg-blue-500",
         textColor: "text-blue-500",
         icon: <Clock size={16} />,
-        text: "In Progress",
+        text: "Đang tiến hành",
       };
     case "COMPLETED":
       return {
         color: "bg-green-500",
         textColor: "text-green-500",
         icon: <CheckCircle size={16} />,
-        text: "Completed",
+        text: "Hoàn thành",
       };
     case "ON_HOLD":
       return {
         color: "bg-yellow-500",
         textColor: "text-yellow-500",
         icon: <AlertCircle size={16} />,
-        text: "On Hold",
+        text: "Tạm dừng",
       };
     case "OVER_DUE":
       return {
         color: "bg-red-500",
         textColor: "text-red-500",
         icon: <AlertTriangle size={16} />,
-        text: "Over Due",
+        text: "Quá hạn",
       };
     default:
       return {
@@ -1284,19 +1284,19 @@ const getPriorityInfo = (priority) => {
       return {
         color: "bg-red-500",
         textColor: "text-red-500",
-        text: "High",
+        text: "Cao",
       };
     case "MEDIUM":
       return {
         color: "bg-yellow-500",
         textColor: "text-yellow-500",
-        text: "Medium",
+        text: "Trung bình",
       };
     case "LOW":
       return {
         color: "bg-green-500",
         textColor: "text-green-500",
-        text: "Low",
+        text: "Thấp",
       };
     default:
       return {
@@ -1567,14 +1567,14 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
           <div className="text-sm text-gray-300 mb-3">{task.description}</div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Status</p>
+              <p className="text-xs text-gray-400 mb-1">Trạng thái</p>
               <div className="flex items-center">
                 {statusInfo.icon}
                 <span className="ml-1">{statusInfo.text}</span>
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Priority</p>
+              <p className="text-xs text-gray-400 mb-1">Độ ưu tiên</p>
               <div className="flex items-center">
                 <span className={`mr-1 ${priorityInfo.textColor}`}>●</span>
                 <span>{priorityInfo.text}</span>
@@ -1583,14 +1583,14 @@ const TaskItem = ({ task, index, onTaskDetail, onTaskDeleted }) => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Start Date</p>
+              <p className="text-xs text-gray-400 mb-1">Ngày bắt đầu</p>
               <div className="flex items-center">
                 <Calendar size={14} className="mr-1 text-gray-400" />
                 <span>{formatDate(task.startDate)}</span>
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Due Date</p>
+              <p className="text-xs text-gray-400 mb-1">Ngày kết thúc</p>
               <div className="flex items-center">
                 <Calendar size={14} className="mr-1 text-gray-400" />
                 <span>{formatDate(task.dueDate)}</span>
@@ -2772,7 +2772,7 @@ ${
             {activeTab === "tags" && (
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Project Tags</h2>
+                  <h2 className="text-xl font-semibold">Nhãn</h2>
                   {currentUser?.role !== "ROLE_USER" && (
                     <div className="relative">
                       <button
